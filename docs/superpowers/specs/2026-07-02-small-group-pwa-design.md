@@ -17,13 +17,13 @@ The app is multi-group from day one so other groups in the church can adopt it.
 
 | Concern | Choice |
 |---|---|
-| Framework | Next.js 15, App Router, TypeScript |
+| Framework | Next.js 16 (latest stable), App Router, TypeScript, Turbopack |
 | Database (prod) | Neon Postgres (Vercel marketplace) |
 | Database (local) | Postgres in Docker with a named volume (`docker-compose.yml` in repo) |
 | ORM / migrations | Drizzle |
 | Auth | Better Auth with the organization plugin |
 | UI | Tailwind CSS + shadcn/ui, mobile-first |
-| PWA | Serwist (manifest, service worker, app-shell caching) |
+| PWA | Serwist via `@serwist/turbopack` (manifest, service worker, app-shell caching) |
 | Tooling | mise (`mise.toml` pins Node + pnpm, defines tasks); pnpm for JS dependencies |
 | Hosting | Vercel |
 | Testing | Vitest (unit + integration), Playwright (e2e smoke) |
