@@ -104,6 +104,17 @@ One private note per member per meeting. Freeform text, autosaved. A "my notes" 
 - **Vitest integration:** claim uniqueness under contention and draw transaction behavior, against the Docker Postgres.
 - **Playwright smoke:** the three main flows — set a meal & claim items, run a prayer session end-to-end, write a note.
 
+## CI/CD
+
+- **CI — GitHub Actions**, one workflow on every PR and push to `main`:
+  - `jdx/mise-action` installs Node + pnpm from `mise.toml`, so CI runs the exact tool versions pinned for local dev.
+  - Jobs: ESLint → `tsc --noEmit` → Vitest unit + integration → `next build`. Integration tests run against a Postgres **service container** (same image/version as local Docker).
+  - A second job runs the Playwright smoke suite against the built app, on every PR.
+- **Branch protection on `main`:** all changes via PRs; CI checks required to merge.
+- **CD — Vercel Git integration** (no deploy YAML): preview deployment per PR, production deploy on merge to `main`. Neon's per-preview database branching is a possible later addition.
+- **Dependabot** for automated dependency-update PRs, validated by CI.
+- **Code review:** CI checks only — no automated review bot. Local `/code-review` before pushing as desired.
+
 ## Out of scope for v1
 
 - Push notifications (PWA architecture leaves room; nothing built).
