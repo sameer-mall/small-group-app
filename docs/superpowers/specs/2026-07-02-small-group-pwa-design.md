@@ -110,6 +110,7 @@ One private note per member per meeting. Freeform text, autosaved. A "my notes" 
   - `jdx/mise-action` installs Node + pnpm from `mise.toml`, so CI runs the exact tool versions pinned for local dev.
   - Jobs: ESLint → `tsc --noEmit` → Vitest unit + integration → `next build`. Integration tests run against a Postgres **service container** (same image/version as local Docker).
   - A second job runs the Playwright smoke suite against the built app, on every PR.
+- **Branching:** trunk-based. `main` is the only long-lived branch and deploys to production; work happens on short-lived feature branches merged via PR. No `staging` branch — Vercel's per-PR preview deployments serve that role.
 - **Branch protection on `main`:** all changes via PRs; CI checks required to merge.
 - **CD — Vercel Git integration** (no deploy YAML): preview deployment per PR, production deploy on merge to `main`. Neon's per-preview database branching is a possible later addition.
 - **Dependabot** for automated dependency-update PRs, validated by CI.
