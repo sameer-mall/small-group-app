@@ -22,6 +22,7 @@ The app is multi-group from day one so other groups in the church can adopt it.
 | Database (local) | Postgres in Docker with a named volume (`docker-compose.yml` in repo) |
 | ORM / migrations | Drizzle |
 | Auth | Better Auth with the organization plugin |
+| Transactional email | Resend (magic-link sign-in emails; free tier) |
 | UI | Tailwind CSS + shadcn/ui, mobile-first |
 | PWA | Serwist via `@serwist/turbopack` (manifest, service worker, app-shell caching) |
 | Tooling | mise (`mise.toml` pins Node + pnpm, defines tasks); pnpm for JS dependencies |
