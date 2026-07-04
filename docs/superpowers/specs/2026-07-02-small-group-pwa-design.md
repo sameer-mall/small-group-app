@@ -41,8 +41,10 @@ Notes:
 
 - Sign-in: **email magic link** and **Google**. No passwords.
 - Better Auth organizations = groups. Roles: `admin`, `member`. A group can have multiple admins.
-- Any signed-in user can **create a group** and becomes its admin. Users can belong to multiple groups; the UI has an active-group switcher.
-- **Joining:** each group has an invite link (rotating code). A new user follows the link, signs in, and lands as a **pending join request**. Pending users see only a "waiting for approval" screen. An admin approves or denies.
+- **Open sign-up:** anyone can create an account, invite or not. After sign-in, a user with group memberships lands in their group (last active group if several); a user with none lands on a no-group home with a **create a group** button (creator becomes admin) and a note that joining an existing group happens via an invite link from its admin.
+- Users can belong to multiple groups; the UI has an active-group switcher.
+- **Joining:** each group has an invite link (rotating code). A new user follows the link, signs in, and lands as a **pending join request**. An admin approves or denies.
+- Pending status is **per group**: the requested group shows a "waiting for approval" state, but the user can still use other groups they belong to — or create their own.
 - **Admin capabilities:** approve/deny join requests, remove members, promote members to admin, rename the group, rotate the invite link.
 - **Authorization rule:** every query and mutation is scoped by group membership, enforced server-side in a shared data-access layer — never trusted from the client.
 
