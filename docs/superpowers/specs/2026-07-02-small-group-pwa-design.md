@@ -126,6 +126,18 @@ One private note per member per meeting. Freeform text, autosaved. A "my notes" 
 - **Dependabot** for automated dependency-update PRs, validated by CI.
 - **Code review:** CI checks only — no automated review bot. Local `/code-review` before pushing as desired.
 
+## External accounts & secrets
+
+| Service | Account needed? | When | Credential |
+|---|---|---|---|
+| Vercel | Yes — free Hobby, sign up with GitHub | Plan 1, final task (first deploy) | None locally; Git integration handles deploys |
+| Neon | No separate account — provisioned via Vercel Marketplace | Plan 2 (first prod DB use) | `DATABASE_URL` auto-injected into Vercel env |
+| Better Auth | **No account — it's a library** | Plan 2 | `BETTER_AUTH_SECRET`, generated locally |
+| Google Cloud | Yes — free; OAuth client for "Sign in with Google" | Plan 2 | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` |
+| Resend | Yes — free tier (100 emails/day) | Plan 2 (magic-link emails) | `RESEND_API_KEY` |
+
+**Secrets handling rule:** credentials go from the provider's dashboard directly into `.env` (gitignored) locally and into Vercel's environment settings for deploys — entered by the account owner. They are never committed, and never pasted into chat sessions.
+
 ## Out of scope for v1
 
 - Push notifications (PWA architecture leaves room; nothing built).
