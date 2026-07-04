@@ -1,0 +1,15 @@
+[tools]
+node = "24"
+pnpm = "10"
+
+[tasks.dev]
+run = "pnpm next dev"
+
+[tasks.build]
+run = "pnpm next build"
+
+[tasks.lint]
+run = "pnpm eslint ."
+
+[tasks.typecheck]
+run = "pnpm tsc --noEmit"
