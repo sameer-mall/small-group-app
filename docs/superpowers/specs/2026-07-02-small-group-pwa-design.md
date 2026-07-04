@@ -47,10 +47,12 @@ Notes:
 ## Auth, groups & membership
 
 - Sign-in: **email magic link** and **Google**. No passwords.
+- Every user has a **display name**, required on first sign-in (prefilled from Google when available) — the UI runs on names everywhere: claims, prayer buckets, avatar initials.
 - Better Auth organizations = groups. Roles: `admin`, `member`. A group can have multiple admins.
 - **Open sign-up:** anyone can create an account, invite or not. After sign-in, a user with group memberships lands in their group (last active group if several); a user with none lands on a no-group home with a **create a group** button (creator becomes admin) and a note that joining an existing group happens via an invite link from its admin.
 - Users can belong to multiple groups; the UI has an active-group switcher.
-- **Joining:** each group has an invite link (rotating code). A new user follows the link, signs in, and lands as a **pending join request**. An admin approves or denies.
+- **Joining:** each group has an invite link (rotating code). A new user follows the link, signs in, and lands as a **pending join request**. An admin approves or denies. Rotating the link only invalidates the old URL for new joiners — existing members and pending requests are unaffected.
+- **Leaving:** any member can leave a group. A group must always have **at least one admin**: the last admin can't be demoted, removed, or leave without promoting someone first.
 - Pending status is **per group**: the requested group shows a "waiting for approval" state, but the user can still use other groups they belong to — or create their own.
 - **Admin capabilities:** approve/deny join requests, remove members, promote members to admin, rename the group, rotate the invite link.
 - **Authorization rule:** every query and mutation is scoped by group membership, enforced server-side in a shared data-access layer — never trusted from the client.
@@ -76,14 +78,14 @@ Better Auth owns `users`, `sessions`, `organizations` (groups), `members`, and i
 
 ### Meetings
 
-Any member creates a meeting with a title and date ("Week 12 — Romans 8", July 9). The app lists upcoming and past meetings; opening one shows its meal plan, prayer session, and your note.
+Any member creates a meeting with a title and date ("Week 12 — Romans 8", July 9). Dates are date-only (no time-of-day — the group knows when they meet), and nothing prevents two meetings in the same week. The app lists upcoming and past meetings; opening one shows its meal plan, prayer session, and your note.
 
 ### Recipes & meal sign-ups
 
 - **Recipe library:** create a recipe with a name and an ordered list of items; edit and delete later. Group-scoped.
 - **Weekly plan:** any member sets the meeting's meal by picking a recipe. Its items are copied into the plan as claimable slots.
 - **Claiming:** tap an unclaimed item to claim it; tap your own claim to release it. One person per item; one person may claim many items. Everyone sees who's bringing what.
-- **Ad-hoc items:** any member can add extra items to the week's plan (e.g. "brownies"), labeled with who added them, claimable like any other. They exist on that plan only — the saved recipe is untouched.
+- **Ad-hoc items:** any member can add extra items to the week's plan (e.g. "brownies"), labeled with who added them, claimable like any other. They exist on that plan only — the saved recipe is untouched. The adder or an admin can remove an ad-hoc item while it's unclaimed.
 - **Changing the recipe** after claims exist warns, then clears the plan (items and claims) and loads the new recipe's items.
 
 ### Prayer bowl
@@ -136,6 +138,8 @@ One private note per member per meeting. Freeform text, autosaved. A "my notes" 
 | Google Cloud | Yes — free; OAuth client for "Sign in with Google" | Plan 2 | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` |
 | Resend | Yes — free tier (100 emails/day) | Plan 2 (magic-link emails) | `RESEND_API_KEY` |
 
+**Resend domain requirement:** sending magic links to real members in production requires a **verified sending domain** in Resend (test mode only delivers to the account owner's inbox). Plan on owning a domain (~$10–20/yr) by the time plan 2 ships — it doubles as the app's custom domain.
+
 **Secrets handling rule:** credentials go from the provider's dashboard directly into `.env` (gitignored) locally and into Vercel's environment settings for deploys — entered by the account owner. They are never committed, and never pasted into chat sessions.
 
 ## Out of scope for v1
@@ -146,4 +150,5 @@ One private note per member per meeting. Freeform text, autosaved. A "my notes" 
 - Item quantities / multi-person claims per item.
 - Multiple prayer requests per person per session.
 - Saving ad-hoc items back into the recipe.
+- Group deletion (leave/remove covers v1; a dead group just goes quiet).
 - minimal.dev adoption.
