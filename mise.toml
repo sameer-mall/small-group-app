@@ -16,3 +16,15 @@ run = "pnpm tsc --noEmit"
 
 [tasks.test]
 run = "pnpm vitest run"
+
+[tasks."db:up"]
+run = "docker compose up -d db --wait"
+
+[tasks."db:down"]
+run = "docker compose down"
+
+[tasks."db:generate"]
+run = "pnpm drizzle-kit generate"
+
+[tasks."db:migrate"]
+run = "pnpm drizzle-kit migrate"
