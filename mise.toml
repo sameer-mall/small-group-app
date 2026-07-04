@@ -17,6 +17,9 @@ run = "pnpm tsc --noEmit"
 [tasks.test]
 run = "pnpm vitest run"
 
+[tasks.e2e]
+run = "pnpm playwright test"
+
 [tasks."db:up"]
 run = "docker compose up -d db --wait"
 
