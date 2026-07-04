@@ -13,3 +13,6 @@ run = "pnpm eslint ."
 
 [tasks.typecheck]
 run = "pnpm tsc --noEmit"
+
+[tasks.test]
+run = "pnpm vitest run"
