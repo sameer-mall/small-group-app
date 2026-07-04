@@ -1,131 +1,189 @@
 /* ============================================================
-   Hearth — church small group PWA theme
-   Warm cream + terracotta. Serif headings (Lora), sans body
-   (Public Sans). Highly legible for a mixed-age group.
+   Hearth — church small group PWA theme (Tailwind v4 ready)
+   Warm cream + terracotta. Lora headings, Public Sans body.
+   Distilled from the Claude Design handoff; raw token names
+   match the original export for cross-referencing.
 
-   Usage: import this file, set data-theme="dark" on <html>
-   (or rely on prefers-color-scheme) for dark mode.
+   Usage (plan 1, task 2):
+   1. src/app/globals.css keeps its leading `@import "tailwindcss";`
+      (and shadcn's animate import if present).
+   2. Replace ALL shadcn-generated blocks (:root, .dark,
+      @theme inline, @custom-variant dark) with this file's contents.
+   3. Fonts: next/font sets --font-heading (Lora) and --font-body
+      (Public Sans) on <html>. No CSS font @import — offline PWA.
+   4. Dark mode: next-themes sets data-theme="dark" on <html>.
+
+   Utility cheat sheet:
+   - Terracotta CTA:  bg-primary text-primary-foreground
+   - Links / active tab: text-accent-strong
+   - Cards: bg-card rounded-card shadow-card
+   - Tinted chips / info boxes: bg-surface-tint rounded-chip
+   - Metadata: text-muted-foreground; hints: text-tertiary
+   - Section labels: text-xs tracking-label uppercase
+   - Claim pill: bg-primary text-primary-foreground rounded-full
+   - Tap targets: min-h-tap (44px)
+   NOTE: bg-accent is shadcn's subtle hover tint, NOT terracotta —
+   terracotta is bg-primary.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Public+Sans:wght@400..700&display=swap');
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  /* ---------- Typography ---------- */
-  --font-heading: 'Lora', Georgia, serif;        /* headings, recipe/meeting titles, prayer text */
-  --font-body: 'Public Sans', system-ui, sans-serif;
+  /* ---------- Raw palette: light (default) ---------- */
+  --bg: #faf5ec;               /* app background (cream) */
+  --surface: #ffffff;          /* cards */
+  --surface-subtle: #fffdf8;   /* past/muted cards, sheets */
+  --surface-tint: #f6ebdd;     /* tinted chips, recipe banner, info boxes */
+  --surface-tab: #fffdf9;      /* tab bar */
 
-  --text-3xl: 28px;   /* page titles (h1) — weight 600, heading font */
-  --text-2xl: 27px;   /* meeting page title */
-  --text-xl: 19px;    /* card section titles — weight 600, heading font */
-  --text-lg: 17px;    /* list item titles, prayer quotes (heading font, line-height 1.6) */
-  --text-base: 15px;  /* body, list rows */
-  --text-sm: 13px;    /* metadata, trailing labels */
-  --text-xs: 12px;    /* captions, pill labels, "private to you" hints */
-  --text-tab: 11px;   /* tab bar labels — weight 600 (700 when active) */
-  --tracking-label: .08em; /* uppercase section labels (UPCOMING, MEMBERS) */
+  --text: #33291f;             /* primary text (warm near-black) */
+  --text-secondary: #8a7a66;   /* metadata, descriptions */
+  --text-tertiary: #b4a48c;    /* placeholders, faintest hints */
+  --text-strong: #5c4a33;      /* form labels, emphasized secondary */
+  --text-prayer: #3e3324;      /* drawn prayer quote text */
 
-  /* ---------- Color: light (default) ---------- */
-  --bg: #FAF5EC;               /* app background (cream) */
-  --surface: #FFFFFF;          /* cards */
-  --surface-subtle: #FFFDF8;   /* past/muted cards, sheets */
-  --surface-tint: #F6EBDD;     /* tinted chips, recipe banner, info boxes */
-  --surface-tab: #FFFDF9;      /* tab bar */
+  --accent: #c4693f;           /* terracotta — primary buttons, claim pills */
+  --accent-strong: #a05a38;    /* accent text on cream (links, active tab) */
+  --accent-contrast: #ffffff;  /* text on accent */
+  --accent-tint: #f6e3d4;      /* ADMIN pill background */
 
-  --text: #33291F;             /* primary text (warm near-black) */
-  --text-secondary: #8A7A66;   /* metadata, descriptions */
-  --text-tertiary: #B4A48C;    /* placeholders, faintest hints */
-  --text-strong: #5C4A33;      /* form labels, emphasized secondary */
-  --text-prayer: #3E3324;      /* drawn prayer quote text */
+  --success: #6b7e5a;          /* "submitted ✓", approve, all-claimed */
+  --success-tint: #eff2e7;     /* drawn-state pill background */
+  --danger: #b3563b;           /* remove member, delete recipe */
+  --warning-surface: #fff4e6;  /* "wants to join" callout bg */
+  --warning-border: #ebd3b4;
 
-  --accent: #C4693F;           /* terracotta — primary buttons, active tab icon fill bg */
-  --accent-strong: #A05A38;    /* accent text on cream (links, back buttons, active tab) */
-  --accent-contrast: #FFFFFF;  /* text on accent */
-  --accent-tint: #F6E3D4;      /* ADMIN pill background */
+  --border-hairline: #e4d6be;  /* input borders, card outlines */
+  --divider: #f0e7d8;          /* row separators inside cards */
+  --divider-tab: #ede3d2;      /* tab bar top border */
+  --border-dashed: #c9b594;    /* unclaimed slot avatar (dashed) */
 
-  --success: #6B7E5A;          /* "submitted ✓", approve button, all-claimed */
-  --success-tint: #EFF2E7;     /* drawn-state pill background */
-  --danger: #B3563B;           /* remove member, delete recipe */
-  --warning-surface: #FFF4E6;  /* "wants to join" callout bg */
-  --warning-border: #EBD3B4;
+  --avatar-bg: #dcc9ae;        /* member initials background */
+  --avatar-text: #5c4a33;
 
-  --border: #E4D6BE;           /* input borders, card outlines */
-  --divider: #F0E7D8;          /* row separators inside cards */
-  --divider-tab: #EDE3D2;      /* tab bar top border */
-  --border-dashed: #C9B594;    /* unclaimed slot avatar (dashed) */
-
-  --avatar-bg: #DCC9AE;        /* member initials background */
-  --avatar-text: #5C4A33;
-
-  --shadow-card: 0 1px 2px rgba(64, 45, 26, .07);
-  --scrim: rgba(51, 41, 31, .35); /* bottom-sheet overlay */
-
-  /* ---------- Radii ---------- */
-  --radius-card: 18px;
-  --radius-input: 14px;   /* also primary buttons */
-  --radius-chip: 12px;    /* recipe banner, inner tints */
-  --radius-thumb: 10px;   /* recipe letter-thumbnails (44px use 14px, 34px use 10px) */
-  --radius-pill: 99px;    /* chips, claim buttons, toggles */
-  --radius-sheet: 24px;   /* bottom sheet top corners */
-
-  /* ---------- Spacing ---------- */
-  --space-page-x: 20px;   /* page header gutter */
-  --space-card-x: 16px;   /* card side margins on page */
-  --space-card-pad: 18px; /* card inner padding */
-  --space-row-y: 11px;    /* list row vertical padding */
-  --tap-target: 44px;     /* minimum hit target */
-
-  /* ---------- Component recipes ----------
-     Primary button: bg --accent, text --accent-contrast, 700 16px,
-       radius --radius-input, padding 14-15px, full width.
-     Claim button (inline): bg --accent, 700 13px, radius pill, 6px 14px.
-     Input: bg --surface, 1.5px solid --border (accent when focused),
-       radius --radius-input, padding 15px 16px, 16px text.
-     Card: bg --surface, radius --radius-card, shadow --shadow-card.
-     Tab bar: 4 equal columns, 22px stroke icons (stroke-width 1.8),
-       active = --accent-strong + weight 700, inactive #A99878.
-     Toggle: 48x28 pill, --accent when on, 22px white knob.
-  ------------------------------------------ */
+  --card-shadow: 0 1px 2px rgb(64 45 26 / 0.07);
+  --scrim: rgb(51 41 31 / 0.35); /* bottom-sheet overlay */
 }
 
-/* ---------- Color: dark (warm brown, ember terracotta) ---------- */
-[data-theme='dark'] {
+[data-theme="dark"] {
+  /* ---------- Raw palette: dark (warm brown, never gray) ---------- */
   --bg: #201914;
-  --surface: #2C231B;
-  --surface-subtle: #2C231B;
-  --surface-tint: #3A2E22;
+  --surface: #2c231b;
+  --surface-subtle: #2c231b;
+  --surface-tint: #3a2e22;
   --surface-tab: #191410;
 
-  --text: #EFE5D6;
-  --text-secondary: #A08D74;
-  --text-tertiary: #7E6C52;
-  --text-strong: #D6C4A8;
-  --text-prayer: #DACDB8;
+  --text: #efe5d6;
+  --text-secondary: #a08d74;
+  --text-tertiary: #7e6c52;
+  --text-strong: #d6c4a8;
+  --text-prayer: #dacdb8;
 
-  --accent: #C4693F;           /* buttons keep the same terracotta */
-  --accent-strong: #D98A5C;    /* ember — links & active tab on dark */
-  --accent-contrast: #FFFFFF;
-  --accent-tint: #3A2E22;
+  --accent: #c4693f;           /* buttons keep the same terracotta */
+  --accent-strong: #d98a5c;    /* ember — links & active tab on dark */
+  --accent-contrast: #ffffff;
+  --accent-tint: #3a2e22;
 
-  --success: #9BAF7E;
-  --success-tint: #2E3324;
-  --danger: #D97757;
-  --warning-surface: #33281C;
-  --warning-border: #4A3B2A;
+  --success: #9baf7e;
+  --success-tint: #2e3324;
+  --danger: #d97757;
+  --warning-surface: #33281c;
+  --warning-border: #4a3b2a;
 
-  --border: #4A3B2A;
-  --divider: #3A2F24;
-  --divider-tab: #33291F;
-  --border-dashed: #6B573F;
+  --border-hairline: #4a3b2a;
+  --divider: #3a2f24;
+  --divider-tab: #33291f;
+  --border-dashed: #6b573f;
 
-  --avatar-bg: #4A3B2A;
-  --avatar-text: #D6C4A8;
+  --avatar-bg: #4a3b2a;
+  --avatar-text: #d6c4a8;
 
-  --shadow-card: none;         /* dark surfaces separate by tone, not shadow */
-  --scrim: rgba(0, 0, 0, .5);
+  --card-shadow: none;         /* dark surfaces separate by tone, not shadow */
+  --scrim: rgb(0 0 0 / 0.5);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    /* mirror the [data-theme='dark'] block if auto-switching is wanted */
-  }
+@theme inline {
+  /* ---------- Fonts (raw vars come from next/font on <html>) ---------- */
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-heading);
+
+  /* ---------- Type scale (matches the design 1:1) ---------- */
+  --text-xs: 12px;    /* captions, pill labels, "private to you" hints */
+  --text-sm: 13px;    /* metadata, trailing labels */
+  --text-base: 15px;  /* body, list rows */
+  --text-lg: 17px;    /* list item titles, prayer quotes (serif, leading 1.6) */
+  --text-xl: 19px;    /* card section titles — weight 600, serif */
+  --text-2xl: 27px;   /* meeting page title */
+  --text-3xl: 28px;   /* page titles (h1) — weight 600, serif */
+  --text-tab: 11px;   /* tab bar labels — weight 600 (700 active) */
+  --tracking-label: 0.08em; /* uppercase section labels (UPCOMING, MEMBERS) */
+
+  /* ---------- shadcn semantic mapping ---------- */
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-contrast);
+  --color-secondary: var(--surface-tint);
+  --color-secondary-foreground: var(--text-strong);
+  --color-muted: var(--surface-tint);
+  --color-muted-foreground: var(--text-secondary);
+  --color-accent: var(--surface-tint);          /* shadcn hover tint — NOT terracotta */
+  --color-accent-foreground: var(--text-strong);
+  --color-destructive: var(--danger);
+  --color-border: var(--border-hairline);
+  --color-input: var(--border-hairline);
+  --color-ring: var(--accent);
+
+  /* ---------- Hearth-specific utilities ---------- */
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-tint: var(--surface-tint);
+  --color-surface-tab: var(--surface-tab);
+  --color-strong: var(--text-strong);
+  --color-tertiary: var(--text-tertiary);
+  --color-prayer: var(--text-prayer);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-tint: var(--accent-tint);
+  --color-success: var(--success);
+  --color-success-tint: var(--success-tint);
+  --color-warning-surface: var(--warning-surface);
+  --color-warning-border: var(--warning-border);
+  --color-divider: var(--divider);
+  --color-divider-tab: var(--divider-tab);
+  --color-slot-dashed: var(--border-dashed);
+  --color-avatar: var(--avatar-bg);
+  --color-avatar-foreground: var(--avatar-text);
+  --color-scrim: var(--scrim);
+
+  /* ---------- Radii (shadcn scale + named Hearth radii) ---------- */
+  --radius: 14px;                          /* inputs + primary buttons */
+  --radius-sm: calc(var(--radius) - 4px);  /* 10px */
+  --radius-md: calc(var(--radius) - 2px);  /* 12px */
+  --radius-lg: var(--radius);              /* 14px */
+  --radius-xl: calc(var(--radius) + 4px);  /* 18px */
+  --radius-card: 18px;   /* rounded-card */
+  --radius-input: 14px;  /* rounded-input */
+  --radius-chip: 12px;   /* rounded-chip */
+  --radius-thumb: 10px;  /* rounded-thumb (34px thumbs; 44px thumbs use 14px) */
+  --radius-sheet: 24px;  /* rounded-sheet (bottom sheet top corners) */
+
+  /* ---------- Shadows & spacing ---------- */
+  --shadow-card: var(--card-shadow);
+  --spacing-tap: 44px;   /* minimum hit target: min-h-tap / size-tap */
 }
+
+/* ---------- Component recipes (from the handoff) ----------
+   Primary button: bg-primary text-primary-foreground font-bold text-base
+     rounded-input px-4 py-3.5, full width.
+   Claim button (inline): bg-primary text-primary-foreground font-bold
+     text-sm rounded-full px-3.5 py-1.5.
+   Input: bg-card border-[1.5px] border-border focus:border-primary
+     rounded-input px-4 py-3.5 text-[16px].
+   Card: bg-card rounded-card shadow-card.
+   Tab bar: 4 equal columns, 22px stroke icons (stroke-width 1.8),
+     active = text-accent-strong font-bold, inactive #A99878.
+   Toggle: 48x28 rounded-full, bg-primary when on, 22px white knob.
+   ----------------------------------------------------------- */

@@ -39,8 +39,8 @@ Notes:
 
 ## Visual design — "Hearth" theme
 
-- **Design reference:** `docs/design/hearth/` (exported from Claude Design). **High-fidelity — colors, type, spacing, radii, and copy are final; recreate faithfully.** `Small Group PWA.dc.html` holds all screens (ids 3a–3n, plus 2a dark-mode reference); `Flow Walkthrough.dc.html` shows the four core flows and state transitions.
-- **Tokens:** `docs/design/hearth/theme.css` is the source of truth — warm cream (`#FAF5EC`) + terracotta (`#C4693F`) palette, 18px card radius, pill claim buttons, 44px minimum tap targets. Translate these custom properties into the Tailwind/shadcn variable system rather than inventing parallel tokens.
+- **Design reference:** the "Hearth" handoff from Claude Design. **High-fidelity — colors, type, spacing, radii, and copy are final; recreate faithfully.** The repo vendors only the distilled parts: `docs/design/hearth/theme.css` (tokens) and `docs/design/hearth/README.md` (screen inventory + interaction notes). The full HTML mockups (screens 3a–3n, dark reference 2a, flow walkthrough) stay in the Claude Design project and the original export zip — deliberately not committed.
+- **Tokens:** `docs/design/hearth/theme.css` is the source of truth, written as Tailwind v4 CSS (`@theme inline`). Pasted into `globals.css` it themes every shadcn component (via `--color-primary`, `--color-background`, …) and generates Hearth utilities (`bg-surface-tint`, `text-accent-strong`, `rounded-card`, `shadow-card`, `min-h-tap`) — screens are styled with plain Tailwind classes, warm cream (`#FAF5EC`) + terracotta (`#C4693F`), 44px minimum tap targets.
 - **Typography:** Lora (headings, meeting/recipe titles, prayer-quote text) + Public Sans (body), loaded via `next/font` (self-hosted at build, not the Google Fonts CDN — required for offline PWA and no layout shift).
 - **Dark mode:** warm brown, never gray/black, with ember terracotta (`#D98A5C`) for links/active states. Switched via `data-theme="dark"` on `<html>`, following `prefers-color-scheme` by default.
 

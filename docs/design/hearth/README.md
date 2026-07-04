@@ -62,7 +62,5 @@ understand navigation and state transitions.
   `--danger`).
 
 ## Files
-- `theme.css` — design tokens (use this)
-- `Small Group PWA.dc.html` — all screens (design reference)
-- `Flow Walkthrough.dc.html` — annotated flows (design reference)
-- `uploads/2026-07-02-small-group-pwa-design.md` — original product spec
+- `theme.css` — design tokens, rewritten as Tailwind v4 CSS (`@theme inline`); paste into `src/app/globals.css` per its header comment
+- The full HTML mockups (`Small Group PWA.dc.html`, `Flow Walkthrough.dc.html`, `support.js`) are **not vendored** to keep the repo lean — they live in the Claude Design project and the original export zip (`~/Downloads/Church small group PWA.zip`). The screen inventory and interaction notes above are the in-repo summary.
