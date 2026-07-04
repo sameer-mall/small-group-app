@@ -37,6 +37,13 @@ Notes:
 - minimal.dev was evaluated and skipped for v1: it overlaps with mise (declarative tools + tasks) and its sandboxing/hermetic-build focus isn't needed here. It's early-access; revisit later if desired.
 - mise tasks (at minimum): `dev`, `db:up`, `db:migrate`, `test`, `e2e`.
 
+## Visual design — "Hearth" theme
+
+- **Design reference:** `docs/design/hearth/` (exported from Claude Design). **High-fidelity — colors, type, spacing, radii, and copy are final; recreate faithfully.** `Small Group PWA.dc.html` holds all screens (ids 3a–3n, plus 2a dark-mode reference); `Flow Walkthrough.dc.html` shows the four core flows and state transitions.
+- **Tokens:** `docs/design/hearth/theme.css` is the source of truth — warm cream (`#FAF5EC`) + terracotta (`#C4693F`) palette, 18px card radius, pill claim buttons, 44px minimum tap targets. Translate these custom properties into the Tailwind/shadcn variable system rather than inventing parallel tokens.
+- **Typography:** Lora (headings, meeting/recipe titles, prayer-quote text) + Public Sans (body), loaded via `next/font` (self-hosted at build, not the Google Fonts CDN — required for offline PWA and no layout shift).
+- **Dark mode:** warm brown, never gray/black, with ember terracotta (`#D98A5C`) for links/active states. Switched via `data-theme="dark"` on `<html>`, following `prefers-color-scheme` by default.
+
 ## Auth, groups & membership
 
 - Sign-in: **email magic link** and **Google**. No passwords.

@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Source+Serif+4:opsz,wght@8..60,400..700&family=Public+Sans:wght@400..700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#f0eee9;font-family:system-ui,sans-serif}.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}.dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}</style>
+</helmet>
+
+<section class="dv-turn" id="t3">
+<div class="dv-thd"><a class="dv-tid" href="#t3">3</a><span class="dv-tname">Hearth — full screen set, light mode. Placeholder app name: "Hearth". Dark mode: <a class="dv-oid" href="#2a">2a</a></span></div>
+
+<div style="font:600 11px/1 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45);margin:0 0 14px">AUTH &amp; JOINING</div>
+<div class="dv-opts" style="margin-bottom:34px">
+
+<!-- 3a sign in -->
+<div class="dv-opt" id="3a">
+<div class="dv-olabel"><a class="dv-oid" href="#3a">3a</a>Sign in — magic link + Google</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;min-height:760px;display:flex;flex-direction:column;padding:0 28px">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding-top:70px">
+    <div style="width:64px;height:64px;border-radius:20px;background:#C4693F;color:#FFF7EC;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:32px;font-weight:600">H</div>
+    <div style="font-family:Lora,serif;font-size:32px;font-weight:600;margin-top:8px">Hearth</div>
+    <div style="font-size:15px;color:#8A7A66;text-align:center;line-height:1.5;max-width:260px">Meals, prayer, and notes for your small group</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;padding-bottom:44px">
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:13px;font-weight:600;color:#5C4A33">Email</div>
+      <div style="background:#FFFFFF;border:1.5px solid #E4D6BE;border-radius:14px;padding:15px 16px;font-size:16px;color:#B4A48C">you@example.com</div>
+    </div>
+    <div style="background:#C4693F;color:#fff;text-align:center;font-weight:700;font-size:16px;border-radius:14px;padding:15px">Email me a sign-in link</div>
+    <div style="display:flex;align-items:center;gap:12px;color:#B4A48C;font-size:13px;margin:4px 0"><div style="flex:1;height:1px;background:#E9DEC9"></div>or<div style="flex:1;height:1px;background:#E9DEC9"></div></div>
+    <div style="background:#FFFFFF;border:1.5px solid #E4D6BE;border-radius:14px;padding:14px;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;font-size:15px"><div style="width:20px;height:20px;border-radius:50%;background:conic-gradient(#4285F4 0 25%,#34A853 0 50%,#FBBC05 0 75%,#EA4335 0)"></div>Continue with Google</div>
+    <div style="text-align:center;font-size:12px;color:#B4A48C;line-height:1.5;margin-top:6px">No passwords — we'll email you a link that signs you in.</div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- 3b waiting -->
+<div class="dv-opt" id="3b">
+<div class="dv-olabel"><a class="dv-oid" href="#3b">3b</a>Joined via invite — waiting for approval</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;min-height:760px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 36px;text-align:center;gap:14px">
+  <div style="width:74px;height:74px;border-radius:50%;background:#F6EBDD;display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="#C4693F" stroke-width="2"/><line x1="12" y1="7.5" x2="12" y2="12.5" stroke="#C4693F" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="12.5" x2="15" y2="14.5" stroke="#C4693F" stroke-width="2" stroke-linecap="round"/></svg></div>
+  <div style="font-family:Lora,serif;font-size:26px;font-weight:600;line-height:1.2">You're almost in</div>
+  <div style="font-size:15.5px;color:#8A7A66;line-height:1.55;max-width:280px">You've asked to join <strong style="color:#5C4A33">The Hendersons' Group</strong>. An admin will approve your request — we'll bring you right in.</div>
+  <div style="background:#FFFFFF;border-radius:14px;padding:12px 18px;font-size:13.5px;color:#8A7A66;margin-top:10px">Signed in as <span style="color:#33291F;font-weight:600">priya@example.com</span></div>
+  <div style="font-size:14px;font-weight:600;color:#A05A38;margin-top:6px">Sign out</div>
+</div>
+</div>
+</div>
+
+<!-- 3c create group -->
+<div class="dv-opt" id="3c">
+<div class="dv-olabel"><a class="dv-oid" href="#3c">3c</a>Create a group</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;min-height:760px;display:flex;flex-direction:column;padding:54px 24px 40px">
+  <div style="font-size:14px;font-weight:600;color:#A05A38">‹ Back</div>
+  <div style="font-family:Lora,serif;font-size:28px;font-weight:600;margin-top:18px">Start a group</div>
+  <div style="font-size:15px;color:#8A7A66;line-height:1.55;margin-top:8px">Name your small group. You can invite people the moment it's created.</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:28px">
+    <div style="font-size:13px;font-weight:600;color:#5C4A33">Group name</div>
+    <div style="background:#FFFFFF;border:1.5px solid #C4693F;border-radius:14px;padding:15px 16px;font-size:16px">The Hendersons' Group<span style="border-right:2px solid #C4693F"> </span></div>
+  </div>
+  <div style="display:flex;gap:12px;background:#F6EBDD;border-radius:14px;padding:14px 16px;font-size:13.5px;color:#8A7A66;line-height:1.5;margin-top:16px"><span style="color:#C4693F;font-weight:700">ⓘ</span>You'll be the group's admin. Admins approve new members and manage the invite link.</div>
+  <div style="flex:1"></div>
+  <div style="background:#C4693F;color:#fff;text-align:center;font-weight:700;font-size:16px;border-radius:14px;padding:15px">Create group</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<div style="font:600 11px/1 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45);margin:0 0 14px">MEETINGS</div>
+<div class="dv-opts" style="margin-bottom:34px">
+
+<!-- 3n meeting: meal sign-up + prayer waiting -->
+<div class="dv-opt" id="3n">
+<div class="dv-olabel"><a class="dv-oid" href="#3n">3n</a>Meeting — meal sign-up &amp; prayer bowl waiting</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column">
+  <div style="padding:54px 20px 18px;display:flex;flex-direction:column;gap:4px">
+    <div style="display:flex;align-items:center;gap:8px;color:#A05A38;font-size:14px;font-weight:600">‹ Meetings</div>
+    <div style="font-family:Lora,serif;font-size:27px;font-weight:600;line-height:1.15;margin-top:6px">Week 12 — Romans 8</div>
+    <div style="font-size:15px;color:#8A7A66">Wednesday, July 9</div>
+  </div>
+  <div style="margin:6px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:18px 18px 14px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:19px;font-weight:600">Meal sign-up</div>
+      <div style="font-size:13px;color:#A05A38;font-weight:600">Change recipe</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;background:#F6EBDD;border-radius:12px;padding:10px 14px">
+      <div style="width:34px;height:34px;border-radius:10px;background:#C4693F;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:17px">T</div>
+      <div><div style="font-weight:600;font-size:15px">Tacos</div><div style="font-size:12.5px;color:#8A7A66">6 items · 4 claimed</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #F0E7D8">
+        <div style="width:26px;height:26px;border-radius:50%;background:#DCC9AE;color:#5C4A33;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">SM</div>
+        <div style="flex:1;font-size:15px">2 lbs ground beef</div>
+        <div style="font-size:13px;color:#8A7A66">Sarah</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #F0E7D8">
+        <div style="width:26px;height:26px;border-radius:50%;background:#C4693F;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">You</div>
+        <div style="flex:1;font-size:15px;font-weight:600">Spanish rice</div>
+        <div style="font-size:13px;color:#A05A38;font-weight:600">Release</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #F0E7D8">
+        <div style="width:26px;height:26px;border-radius:50%;border:1.5px dashed #C9B594"></div>
+        <div style="flex:1;font-size:15px">Chips — 2 bags</div>
+        <div style="font-size:13px;font-weight:700;color:#fff;background:#C4693F;border-radius:99px;padding:6px 14px">Claim</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 2px">
+        <div style="width:26px;height:26px;border-radius:50%;background:#DCC9AE;color:#5C4A33;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">DK</div>
+        <div style="flex:1;font-size:15px">Brownies <span style="font-size:12px;color:#8A7A66">· added by Dan</span></div>
+        <div style="font-size:13px;color:#8A7A66">Dan</div>
+      </div>
+    </div>
+    <div style="align-self:flex-start;font-size:14px;font-weight:600;color:#A05A38;padding:4px 0">＋ Add an item</div>
+  </div>
+  <div style="margin:14px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:18px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:19px;font-weight:600">Prayer bowl</div>
+      <div style="font-size:12px;color:#8A7A66;background:#F6EBDD;border-radius:99px;padding:4px 10px">Gathering</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:14.5px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="color:#6B7E5A;font-weight:700">✓</span><span style="color:#8A7A66;font-size:13px;width:82px">Submitted</span><span style="font-weight:600">You, Sarah, Dan, Ruth</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="color:#C4693F;font-weight:700">…</span><span style="color:#8A7A66;font-size:13px;width:82px">Waiting on</span><span>Mike, Priya</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="color:#C9B594">○</span><span style="color:#8A7A66;font-size:13px;width:82px">Not joined</span><span style="color:#B4A48C">Tom, Grace</span></div>
+    </div>
+    <div style="background:#C4693F;color:#fff;text-align:center;font-weight:700;font-size:16px;border-radius:14px;padding:14px">Draw the bowl</div>
+    <div style="text-align:center;font-size:12.5px;color:#8A7A66;margin-top:-6px">6 people in · you'll each draw one request</div>
+  </div>
+  <div style="margin:14px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:18px;display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:19px;font-weight:600">My note</div>
+      <div style="font-size:12px;color:#8A7A66">Saved just now</div>
+    </div>
+    <div style="font-size:15px;line-height:1.55;color:#4A3D2E">v. 28 — "all things work together" ≠ all things are good. Ask about Sarah's job interview…<span style="border-right:2px solid #C4693F"> </span></div>
+    <div style="font-size:12px;color:#B4A48C">Only you can see this</div>
+  </div>
+  <div style="margin-top:18px;background:#FFFDF9;border-top:1px solid #EDE3D2;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A05A38"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:700">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:600">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+
+<!-- 3d home -->
+<div class="dv-opt" id="3d">
+<div class="dv-olabel"><a class="dv-oid" href="#3d">3d</a>Home — upcoming &amp; past meetings</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column;min-height:760px">
+  <div style="padding:54px 20px 14px;display:flex;flex-direction:column;gap:10px">
+    <div style="align-self:flex-start;display:flex;align-items:center;gap:6px;background:#F6EBDD;border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;color:#5C4A33">The Hendersons' Group <span style="color:#A99878">▾</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:28px;font-weight:600">Meetings</div>
+      <div style="background:#C4693F;color:#fff;font-size:14px;font-weight:700;border-radius:99px;padding:9px 16px">＋ New</div>
+    </div>
+  </div>
+  <div style="padding:4px 16px 0;display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#B4A48C;padding:0 4px">UPCOMING</div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-family:Lora,serif;font-size:18px;font-weight:600">Week 12 — Romans 8</div><div style="font-size:13px;color:#A05A38;font-weight:600">Wed Jul 9</div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:600;background:#F6EBDD;border-radius:99px;padding:4px 10px;color:#5C4A33">Tacos · 4 of 6 claimed</span>
+        <span style="font-size:12px;font-weight:600;background:#F6EBDD;border-radius:99px;padding:4px 10px;color:#5C4A33">Prayer gathering</span>
+      </div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font-family:Lora,serif;font-size:18px;font-weight:600">Week 13 — Romans 9</div><div style="font-size:13px;color:#A05A38;font-weight:600">Wed Jul 16</div></div>
+      <div style="font-size:13px;color:#B4A48C">No meal set yet</div>
+    </div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#B4A48C;padding:10px 4px 0">PAST</div>
+    <div style="background:#FFFDF8;border-radius:18px;padding:4px 18px;display:flex;flex-direction:column">
+      <div style="display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid #F0E7D8;color:#6B5B44"><div style="font-size:15px">Week 11 — Romans 7</div><div style="font-size:13px;color:#B4A48C">Jul 2</div></div>
+      <div style="display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid #F0E7D8;color:#6B5B44"><div style="font-size:15px">Week 10 — Romans 6</div><div style="font-size:13px;color:#B4A48C">Jun 25</div></div>
+      <div style="display:flex;justify-content:space-between;padding:13px 0;color:#6B5B44"><div style="font-size:15px">Week 9 — Romans 5</div><div style="font-size:13px;color:#B4A48C">Jun 18</div></div>
+    </div>
+  </div>
+  <div style="flex:1"></div>
+  <div style="margin-top:18px;background:#FFFDF9;border-top:1px solid #EDE3D2;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A05A38"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:700">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:600">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- 3e home empty -->
+<div class="dv-opt" id="3e">
+<div class="dv-olabel"><a class="dv-oid" href="#3e">3e</a>Home — empty state</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column;min-height:760px">
+  <div style="padding:54px 20px 14px;display:flex;flex-direction:column;gap:10px">
+    <div style="align-self:flex-start;display:flex;align-items:center;gap:6px;background:#F6EBDD;border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;color:#5C4A33">The Hendersons' Group <span style="color:#A99878">▾</span></div>
+    <div style="font-family:Lora,serif;font-size:28px;font-weight:600">Meetings</div>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:0 40px">
+    <div style="width:70px;height:70px;border-radius:22px;background:#F6EBDD;display:flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="#C4693F" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="#C4693F" stroke-width="1.8"/><line x1="11" y1="12" x2="11" y2="16" stroke="#C4693F" stroke-width="1.8" stroke-linecap="round"/><line x1="9" y1="14" x2="13" y2="14" stroke="#C4693F" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+    <div style="font-family:Lora,serif;font-size:21px;font-weight:600">No meetings yet</div>
+    <div style="font-size:14.5px;color:#8A7A66;line-height:1.55">Create your first meeting and the meal sign-up, prayer bowl, and notes will hang off it.</div>
+    <div style="background:#C4693F;color:#fff;font-size:15px;font-weight:700;border-radius:99px;padding:12px 22px;margin-top:6px">＋ New meeting</div>
+  </div>
+  <div style="margin-top:18px;background:#FFFDF9;border-top:1px solid #EDE3D2;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A05A38"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:700">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:600">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- 3f new meeting sheet -->
+<div class="dv-opt" id="3f">
+<div class="dv-olabel"><a class="dv-oid" href="#3f">3f</a>New meeting — bottom sheet</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;font-family:'Public Sans',sans-serif;min-height:760px;display:flex;flex-direction:column;justify-content:flex-end;position:relative">
+  <div style="position:absolute;inset:0;background:rgba(51,41,31,.35)"></div>
+  <div style="position:relative;background:#FFFDF8;border-radius:24px 24px 0 0;padding:14px 24px 40px;display:flex;flex-direction:column;gap:18px;color:#33291F">
+    <div style="width:40px;height:4px;border-radius:99px;background:#E4D6BE;align-self:center"></div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div style="font-family:Lora,serif;font-size:22px;font-weight:600">New meeting</div>
+      <div style="font-size:14px;color:#8A7A66">Cancel</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:13px;font-weight:600;color:#5C4A33">Title</div>
+      <div style="background:#FFFFFF;border:1.5px solid #C4693F;border-radius:14px;padding:15px 16px;font-size:16px">Week 13 — Romans 9<span style="border-right:2px solid #C4693F"> </span></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:13px;font-weight:600;color:#5C4A33">Date</div>
+      <div style="background:#FFFFFF;border:1.5px solid #E4D6BE;border-radius:14px;padding:15px 16px;font-size:16px;display:flex;justify-content:space-between;align-items:center">Wednesday, July 16<svg width="18" height="18" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="#A99878" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="#A99878" stroke-width="1.8"/></svg></div>
+    </div>
+    <div style="background:#C4693F;color:#fff;text-align:center;font-weight:700;font-size:16px;border-radius:14px;padding:15px;margin-top:4px">Create meeting</div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- 3g meeting open states -->
+<div class="dv-opt" id="3g">
+<div class="dv-olabel"><a class="dv-oid" href="#3g">3g</a>Meeting — no meal yet · prayer bowl open (compose)</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column">
+  <div style="padding:54px 20px 18px;display:flex;flex-direction:column;gap:4px">
+    <div style="display:flex;align-items:center;gap:8px;color:#A05A38;font-size:14px;font-weight:600">‹ Meetings</div>
+    <div style="font-family:Lora,serif;font-size:27px;font-weight:600;line-height:1.15;margin-top:6px">Week 13 — Romans 9</div>
+    <div style="font-size:15px;color:#8A7A66">Wednesday, July 16</div>
+  </div>
+  <div style="margin:6px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:18px;display:flex;flex-direction:column;gap:12px">
+    <div style="font-family:Lora,serif;font-size:19px;font-weight:600">Meal sign-up</div>
+    <div style="border:1.5px dashed #DCC9AE;border-radius:14px;padding:20px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center">
+      <div style="font-size:14.5px;color:#8A7A66">No meal set for this week yet.</div>
+      <div style="background:#F6EBDD;color:#A05A38;font-size:14px;font-weight:700;border-radius:99px;padding:10px 18px">Choose a recipe</div>
+    </div>
+  </div>
+  <div style="margin:14px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:18px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:19px;font-weight:600">Prayer bowl</div>
+      <div style="font-size:12px;color:#8A7A66;background:#F6EBDD;border-radius:99px;padding:4px 10px">Open</div>
+    </div>
+    <div style="font-size:14.5px;color:#8A7A66;line-height:1.5">The bowl is open. Write a request — it stays sealed until everyone draws.</div>
+    <div style="border:1.5px solid #E4D6BE;border-radius:14px;padding:14px;font-size:15px;line-height:1.55;color:#4A3D2E;min-height:84px">Pray for my mom's surgery on Friday — that it goes smoothly and she isn't afraid.<span style="border-right:2px solid #C4693F"> </span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:14.5px;font-weight:600;color:#5C4A33">Include my name</div>
+      <div style="width:48px;height:28px;border-radius:99px;background:#C4693F;position:relative"><div style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;background:#fff"></div></div>
+    </div>
+    <div style="background:#C4693F;color:#fff;text-align:center;font-weight:700;font-size:16px;border-radius:14px;padding:14px">Put it in the bowl</div>
+    <div style="text-align:center;font-size:12.5px;color:#8A7A66;margin-top:-6px">You can edit or remove it until the draw</div>
+  </div>
+  <div style="margin:14px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:18px;display:flex;flex-direction:column;gap:10px">
+    <div style="font-family:Lora,serif;font-size:19px;font-weight:600">My note</div>
+    <div style="font-size:15px;color:#B4A48C">Tap to start a private note…</div>
+  </div>
+  <div style="margin-top:18px;background:#FFFDF9;border-top:1px solid #EDE3D2;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A05A38"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:700">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:600">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- 3h drawn -->
+<div class="dv-opt" id="3h">
+<div class="dv-olabel"><a class="dv-oid" href="#3h">3h</a>Meeting — after the draw</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column">
+  <div style="padding:54px 20px 18px;display:flex;flex-direction:column;gap:4px">
+    <div style="display:flex;align-items:center;gap:8px;color:#A05A38;font-size:14px;font-weight:600">‹ Meetings</div>
+    <div style="font-family:Lora,serif;font-size:27px;font-weight:600;line-height:1.15;margin-top:6px">Week 12 — Romans 8</div>
+    <div style="font-size:15px;color:#8A7A66">Wednesday, July 9</div>
+  </div>
+  <div style="margin:6px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:16px 18px;display:flex;align-items:center;gap:12px">
+    <div style="width:34px;height:34px;border-radius:10px;background:#C4693F;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:17px">T</div>
+    <div style="flex:1"><div style="font-weight:600;font-size:15px">Tacos</div><div style="font-size:12.5px;color:#6B7E5A;font-weight:600">All 6 items claimed ✓</div></div>
+    <div style="color:#B4A48C;font-size:18px">›</div>
+  </div>
+  <div style="margin:14px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:26px 22px 22px;display:flex;flex-direction:column;gap:18px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:19px;font-weight:600">Prayer bowl</div>
+      <div style="font-size:12px;color:#6B7E5A;background:#EFF2E7;border-radius:99px;padding:4px 10px">Drawn · Jul 9</div>
+    </div>
+    <div style="text-align:center;font-size:12.5px;letter-spacing:.1em;color:#B4A48C;font-weight:700">YOU DREW</div>
+    <div style="font-family:Lora,serif;font-size:20px;line-height:1.6;color:#3E3324;text-align:center;padding:0 6px">"Pray for patience with my kids this summer — I've been short with them and I don't want this season to feel that way."</div>
+    <div style="text-align:center;font-size:14.5px;color:#8A7A66">— Ruth</div>
+    <div style="height:1px;background:#F0E7D8"></div>
+    <div style="text-align:center;font-size:13px;color:#8A7A66;line-height:1.5">Carry this with you through the week.<br><span style="color:#A05A38;font-weight:600">See all my prayers ›</span></div>
+  </div>
+  <div style="margin:14px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:18px;display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:19px;font-weight:600">My note</div>
+      <div style="font-size:12px;color:#8A7A66">Saved just now</div>
+    </div>
+    <div style="font-size:15px;line-height:1.55;color:#4A3D2E">v. 28 — "all things work together" ≠ all things are good. Ask about Sarah's job interview…</div>
+  </div>
+  <div style="margin-top:18px;background:#FFFDF9;border-top:1px solid #EDE3D2;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A05A38"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:700">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:600">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+</div>
+
+<div style="font:600 11px/1 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45);margin:0 0 14px">RECIPES</div>
+<div class="dv-opts" style="margin-bottom:34px">
+
+<!-- 3i recipes list -->
+<div class="dv-opt" id="3i">
+<div class="dv-olabel"><a class="dv-oid" href="#3i">3i</a>Recipes — library</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column;min-height:760px">
+  <div style="padding:54px 20px 14px;display:flex;align-items:center;justify-content:space-between">
+    <div style="font-family:Lora,serif;font-size:28px;font-weight:600">Recipes</div>
+    <div style="background:#C4693F;color:#fff;font-size:14px;font-weight:700;border-radius:99px;padding:9px 16px">＋ New</div>
+  </div>
+  <div style="padding:4px 16px 0;display:flex;flex-direction:column;gap:10px">
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;border-radius:14px;background:#C4693F;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:20px">T</div>
+      <div style="flex:1"><div style="font-family:Lora,serif;font-size:17px;font-weight:600">Tacos</div><div style="font-size:13px;color:#8A7A66">6 items · used last week</div></div>
+      <div style="color:#B4A48C;font-size:18px">›</div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;border-radius:14px;background:#A87243;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:20px">C</div>
+      <div style="flex:1"><div style="font-family:Lora,serif;font-size:17px;font-weight:600">Chili night</div><div style="font-size:13px;color:#8A7A66">5 items</div></div>
+      <div style="color:#B4A48C;font-size:18px">›</div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;border-radius:14px;background:#8A7A52;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:20px">B</div>
+      <div style="flex:1"><div style="font-family:Lora,serif;font-size:17px;font-weight:600">Breakfast for dinner</div><div style="font-size:13px;color:#8A7A66">7 items</div></div>
+      <div style="color:#B4A48C;font-size:18px">›</div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;border-radius:14px;background:#9B5B4A;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:20px">S</div>
+      <div style="flex:1"><div style="font-family:Lora,serif;font-size:17px;font-weight:600">Soup &amp; bread</div><div style="font-size:13px;color:#8A7A66">4 items</div></div>
+      <div style="color:#B4A48C;font-size:18px">›</div>
+    </div>
+    <div style="text-align:center;font-size:13px;color:#B4A48C;padding:12px 30px;line-height:1.5">Recipes are shared with the whole group — anyone can add or edit.</div>
+  </div>
+  <div style="flex:1"></div>
+  <div style="margin-top:18px;background:#FFFDF9;border-top:1px solid #EDE3D2;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A05A38"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:700">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- 3j recipe detail -->
+<div class="dv-opt" id="3j">
+<div class="dv-olabel"><a class="dv-oid" href="#3j">3j</a>Recipe detail</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column;min-height:760px">
+  <div style="padding:54px 20px 16px;display:flex;flex-direction:column;gap:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="color:#A05A38;font-size:14px;font-weight:600">‹ Recipes</div>
+      <div style="color:#A05A38;font-size:14px;font-weight:600">Edit</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:8px">
+      <div style="width:52px;height:52px;border-radius:16px;background:#C4693F;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:24px">T</div>
+      <div><div style="font-family:Lora,serif;font-size:26px;font-weight:600">Tacos</div><div style="font-size:13.5px;color:#8A7A66">Added by Sarah · sized for 8–10</div></div>
+    </div>
+  </div>
+  <div style="margin:4px 16px 0;background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:8px 18px">
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid #F0E7D8"><span style="color:#B4A48C;font-size:13px;width:16px">1</span><span style="font-size:15px">2 lbs ground beef</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid #F0E7D8"><span style="color:#B4A48C;font-size:13px;width:16px">2</span><span style="font-size:15px">Spanish rice</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid #F0E7D8"><span style="color:#B4A48C;font-size:13px;width:16px">3</span><span style="font-size:15px">Chips — 2 bags</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid #F0E7D8"><span style="color:#B4A48C;font-size:13px;width:16px">4</span><span style="font-size:15px">Shredded cheese &amp; lettuce</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 0;border-bottom:1px solid #F0E7D8"><span style="color:#B4A48C;font-size:13px;width:16px">5</span><span style="font-size:15px">Salsa &amp; sour cream</span></div>
+    <div style="display:flex;align-items:center;gap:10px;padding:13px 0"><span style="color:#B4A48C;font-size:13px;width:16px">6</span><span style="font-size:15px">Tortillas — 2 dozen</span></div>
+  </div>
+  <div style="margin:12px 16px 0;background:#F6EBDD;border-radius:14px;padding:13px 16px;font-size:13.5px;color:#8A7A66;line-height:1.5">Weekly plans copy these items — editing this recipe never changes past weeks.</div>
+  <div style="flex:1"></div>
+  <div style="margin:0 16px;text-align:center;font-size:14px;font-weight:600;color:#B3563B;padding:14px">Delete recipe</div>
+  <div style="margin-top:8px;background:#FFFDF9;border-top:1px solid #EDE3D2;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A05A38"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:700">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- 3k new recipe -->
+<div class="dv-opt" id="3k">
+<div class="dv-olabel"><a class="dv-oid" href="#3k">3k</a>New recipe</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column;min-height:760px;padding:54px 20px 40px">
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <div style="color:#8A7A66;font-size:14px;font-weight:600">Cancel</div>
+    <div style="font-family:Lora,serif;font-size:18px;font-weight:600">New recipe</div>
+    <div style="color:#B4A48C;font-size:14px;font-weight:700">Save</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:24px">
+    <div style="font-size:13px;font-weight:600;color:#5C4A33">Name</div>
+    <div style="background:#FFFFFF;border:1.5px solid #C4693F;border-radius:14px;padding:15px 16px;font-size:16px">Baked potato bar<span style="border-right:2px solid #C4693F"> </span></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-top:20px">
+    <div style="font-size:13px;font-weight:600;color:#5C4A33">Items <span style="font-weight:400;color:#B4A48C">— one line per thing someone brings</span></div>
+    <div style="background:#FFFFFF;border:1.5px solid #E4D6BE;border-radius:14px;padding:4px 16px">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #F0E7D8"><span style="color:#D3C3A6">⠿</span><span style="font-size:15px;flex:1">10 lbs russet potatoes</span><span style="color:#D3C3A6">✕</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #F0E7D8"><span style="color:#D3C3A6">⠿</span><span style="font-size:15px;flex:1">Shredded cheese — 2 bags</span><span style="color:#D3C3A6">✕</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid #F0E7D8"><span style="color:#D3C3A6">⠿</span><span style="font-size:15px;flex:1">Bacon bits &amp; chives</span><span style="color:#D3C3A6">✕</span></div>
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 0"><span style="color:#D3C3A6">⠿</span><span style="font-size:15px;flex:1;color:#B4A48C">Add an item…</span></div>
+    </div>
+  </div>
+  <div style="font-size:13.5px;color:#8A7A66;line-height:1.5;margin-top:14px;padding:0 4px">Size items for your whole group — e.g. "chips — 2 bags", not "chips".</div>
+  <div style="flex:1"></div>
+  <div style="background:#C4693F;color:#fff;text-align:center;font-weight:700;font-size:16px;border-radius:14px;padding:15px">Save recipe</div>
+</div>
+</div>
+</div>
+
+</div>
+
+<div style="font:600 11px/1 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.45);margin:0 0 14px">MY PRAYERS &amp; GROUP</div>
+<div class="dv-opts">
+
+<!-- 3l my prayers -->
+<div class="dv-opt" id="3l">
+<div class="dv-olabel"><a class="dv-oid" href="#3l">3l</a>My prayers — drawn history by week</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column;min-height:760px">
+  <div style="padding:54px 20px 6px">
+    <div style="font-family:Lora,serif;font-size:28px;font-weight:600">My prayers</div>
+    <div style="font-size:14px;color:#8A7A66;margin-top:4px">Requests you've drawn, week by week</div>
+  </div>
+  <div style="padding:10px 16px 0;display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#B4A48C;padding:0 4px">THIS WEEK · JUL 9</div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:20px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-family:Lora,serif;font-size:17.5px;line-height:1.6;color:#3E3324">"Pray for patience with my kids this summer — I've been short with them and I don't want this season to feel that way."</div>
+      <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#8A7A66">— Ruth</span><span style="color:#B4A48C">Week 12 — Romans 8</span></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#B4A48C;padding:10px 4px 0">JUL 2</div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:20px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-family:Lora,serif;font-size:17.5px;line-height:1.6;color:#3E3324">"That I'd have courage to invite my neighbor to church. I keep putting it off."</div>
+      <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#B4A48C;font-style:italic">Name not shared</span><span style="color:#B4A48C">Week 11 — Romans 7</span></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#B4A48C;padding:10px 4px 0">JUN 25</div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:20px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-family:Lora,serif;font-size:17.5px;line-height:1.6;color:#3E3324">"My dad's health. He won't see a doctor and I'm worried."</div>
+      <div style="display:flex;justify-content:space-between;font-size:13.5px"><span style="color:#8A7A66">— Mike</span><span style="color:#B4A48C">Week 10 — Romans 6</span></div>
+    </div>
+  </div>
+  <div style="flex:1"></div>
+  <div style="margin-top:18px;background:#FFFDF9;border-top:1px solid #EDE3D2;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:600">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A05A38"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:700">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- 3m group admin -->
+<div class="dv-opt" id="3m">
+<div class="dv-olabel"><a class="dv-oid" href="#3m">3m</a>Group — admin view</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#FAF5EC;color:#33291F;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column;min-height:760px">
+  <div style="padding:54px 20px 6px">
+    <div style="font-family:Lora,serif;font-size:28px;font-weight:600">The Hendersons' Group</div>
+    <div style="font-size:14px;color:#8A7A66;margin-top:4px">8 members · you're an admin</div>
+  </div>
+  <div style="padding:12px 16px 0;display:flex;flex-direction:column;gap:12px">
+    <div style="background:#FFF4E6;border:1.5px solid #EBD3B4;border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:12px">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#A05A38">WANTS TO JOIN</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:34px;height:34px;border-radius:50%;background:#DCC9AE;color:#5C4A33;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">PK</div>
+        <div style="flex:1"><div style="font-size:15px;font-weight:600">Priya K.</div><div style="font-size:12.5px;color:#8A7A66">priya@example.com · via invite link</div></div>
+        <div style="display:flex;gap:6px">
+          <div style="font-size:13px;font-weight:700;color:#fff;background:#6B7E5A;border-radius:99px;padding:7px 14px">Approve</div>
+          <div style="font-size:13px;font-weight:700;color:#8A7A66;background:#F1E6D3;border-radius:99px;padding:7px 12px">Deny</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:16px 18px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#B4A48C">INVITE LINK</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;background:#F6EBDD;border-radius:10px;padding:10px 12px;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:#5C4A33;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">hearth.app/join/hendersons-x7f2</div>
+        <div style="font-size:13px;font-weight:700;color:#fff;background:#C4693F;border-radius:10px;padding:9px 14px">Copy</div>
+      </div>
+      <div style="font-size:12.5px;color:#8A7A66">Anyone with this link can request to join. <span style="color:#A05A38;font-weight:600">Rotate link</span></div>
+    </div>
+    <div style="background:#FFFFFF;border-radius:18px;box-shadow:0 1px 2px rgba(64,45,26,.07);padding:8px 18px">
+      <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#B4A48C;padding:10px 0 4px">MEMBERS</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F0E7D8">
+        <div style="width:32px;height:32px;border-radius:50%;background:#C4693F;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">You</div>
+        <div style="flex:1;font-size:15px;font-weight:600">You</div>
+        <span style="font-size:11px;font-weight:700;color:#A05A38;background:#F6E3D4;border-radius:99px;padding:3px 9px">ADMIN</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F0E7D8">
+        <div style="width:32px;height:32px;border-radius:50%;background:#DCC9AE;color:#5C4A33;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">SM</div>
+        <div style="flex:1;font-size:15px">Sarah M.</div>
+        <span style="font-size:11px;font-weight:700;color:#A05A38;background:#F6E3D4;border-radius:99px;padding:3px 9px">ADMIN</span>
+        <span style="color:#B4A48C;font-size:17px;padding:0 2px">⋯</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F0E7D8">
+        <div style="width:32px;height:32px;border-radius:50%;background:#DCC9AE;color:#5C4A33;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">DK</div>
+        <div style="flex:1;font-size:15px">Dan K.</div>
+        <span style="color:#B4A48C;font-size:17px;padding:0 2px">⋯</span>
+      </div>
+      <div style="background:#FAF5EC;border-radius:12px;margin:2px 0 8px;padding:6px 14px;display:flex;flex-direction:column">
+        <div style="font-size:14px;font-weight:600;color:#5C4A33;padding:10px 0;border-bottom:1px solid #EFE5D2">Make admin</div>
+        <div style="font-size:14px;font-weight:600;color:#B3563B;padding:10px 0">Remove from group</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F0E7D8">
+        <div style="width:32px;height:32px;border-radius:50%;background:#DCC9AE;color:#5C4A33;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">RW</div>
+        <div style="flex:1;font-size:15px">Ruth W.</div>
+        <span style="color:#B4A48C;font-size:17px;padding:0 2px">⋯</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 0">
+        <div style="width:32px;height:32px;border-radius:50%;background:#DCC9AE;color:#5C4A33;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">MT</div>
+        <div style="flex:1;font-size:15px">Mike T.</div>
+        <span style="color:#B4A48C;font-size:17px;padding:0 2px">⋯</span>
+      </div>
+    </div>
+  </div>
+  <div style="flex:1"></div>
+  <div style="margin-top:18px;background:#FFFDF9;border-top:1px solid #EDE3D2;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:600">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A99878"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#A05A38"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:700">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "dark-mode versions of these" · "show the draw confirm dialog" · "member (non-admin) group view"</p>
+</section>
+
+<section class="dv-turn" id="t2">
+<div class="dv-thd"><a class="dv-tid" href="#t2">2</a><span class="dv-tname">Dark mode for Hearth</span></div>
+<div class="dv-opts">
+
+<!-- ============ 2a: Hearth dark ============ -->
+<div class="dv-opt" id="2a">
+<div class="dv-olabel"><a class="dv-oid" href="#2a">2a</a>Hearth — dark (warm brown, ember terracotta)</div>
+<div class="dv-card" style="width:390px">
+<div style="background:#201914;color:#EFE5D6;font-family:'Public Sans',sans-serif;display:flex;flex-direction:column">
+  <!-- header -->
+  <div style="padding:54px 20px 18px;display:flex;flex-direction:column;gap:4px">
+    <div style="display:flex;align-items:center;gap:8px;color:#D98A5C;font-size:14px;font-weight:600">‹ Meetings</div>
+    <div style="font-family:Lora,serif;font-size:27px;font-weight:600;line-height:1.15;margin-top:6px">Week 12 — Romans 8</div>
+    <div style="font-size:15px;color:#A08D74">Wednesday, July 9</div>
+  </div>
+  <!-- meal card -->
+  <div style="margin:6px 16px 0;background:#2C231B;border-radius:18px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:19px;font-weight:600">Meal sign-up</div>
+      <div style="font-size:13px;color:#D98A5C;font-weight:600">Change recipe</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;background:#3A2E22;border-radius:12px;padding:10px 14px">
+      <div style="width:34px;height:34px;border-radius:10px;background:#C4693F;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Lora,serif;font-size:17px">T</div>
+      <div><div style="font-weight:600;font-size:15px">Tacos</div><div style="font-size:12.5px;color:#A08D74">6 items · 4 claimed</div></div>
+    </div>
+    <div style="display:flex;flex-direction:column">
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #3A2F24">
+        <div style="width:26px;height:26px;border-radius:50%;background:#4A3B2A;color:#D6C4A8;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">SM</div>
+        <div style="flex:1;font-size:15px">2 lbs ground beef</div>
+        <div style="font-size:13px;color:#A08D74">Sarah</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #3A2F24">
+        <div style="width:26px;height:26px;border-radius:50%;background:#C4693F;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">You</div>
+        <div style="flex:1;font-size:15px;font-weight:600">Spanish rice</div>
+        <div style="font-size:13px;color:#D98A5C;font-weight:600">Release</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 2px;border-bottom:1px solid #3A2F24">
+        <div style="width:26px;height:26px;border-radius:50%;border:1.5px dashed #6B573F"></div>
+        <div style="flex:1;font-size:15px">Chips — 2 bags</div>
+        <div style="font-size:13px;font-weight:700;color:#fff;background:#C4693F;border-radius:99px;padding:6px 14px">Claim</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:11px 2px">
+        <div style="width:26px;height:26px;border-radius:50%;background:#4A3B2A;color:#D6C4A8;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">DK</div>
+        <div style="flex:1;font-size:15px">Brownies <span style="font-size:12px;color:#A08D74">· added by Dan</span></div>
+        <div style="font-size:13px;color:#A08D74">Dan</div>
+      </div>
+    </div>
+    <div style="align-self:flex-start;font-size:14px;font-weight:600;color:#D98A5C;padding:4px 0">＋ Add an item</div>
+  </div>
+  <!-- prayer card -->
+  <div style="margin:14px 16px 0;background:#2C231B;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:19px;font-weight:600">Prayer bowl</div>
+      <div style="font-size:12px;color:#C9B896;background:#3A2E22;border-radius:99px;padding:4px 10px">Gathering</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;font-size:14.5px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="color:#9BAF7E;font-weight:700">✓</span><span style="color:#A08D74;font-size:13px;width:82px">Submitted</span><span style="font-weight:600">You, Sarah, Dan, Ruth</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="color:#D98A5C;font-weight:700">…</span><span style="color:#A08D74;font-size:13px;width:82px">Waiting on</span><span>Mike, Priya</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span style="color:#6B573F">○</span><span style="color:#A08D74;font-size:13px;width:82px">Not joined</span><span style="color:#7E6C52">Tom, Grace</span></div>
+    </div>
+    <div style="background:#C4693F;color:#fff;text-align:center;font-weight:700;font-size:16px;border-radius:14px;padding:14px">Draw the bowl</div>
+    <div style="text-align:center;font-size:12.5px;color:#A08D74;margin-top:-6px">6 people in · you'll each draw one request</div>
+  </div>
+  <!-- note card -->
+  <div style="margin:14px 16px 0;background:#2C231B;border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-family:Lora,serif;font-size:19px;font-weight:600">My note</div>
+      <div style="font-size:12px;color:#A08D74">Saved just now</div>
+    </div>
+    <div style="font-size:15px;line-height:1.55;color:#DACDB8">v. 28 — "all things work together" ≠ all things are good. Ask about Sarah's job interview…<span style="border-right:2px solid #D98A5C"> </span></div>
+    <div style="font-size:12px;color:#7E6C52">Only you can see this</div>
+  </div>
+  <!-- tab bar -->
+  <div style="margin-top:18px;background:#191410;border-top:1px solid #33291F;display:grid;grid-template-columns:repeat(4,1fr);padding:10px 0 26px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#D98A5C"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="3" y="4" width="16" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="3" y1="9" x2="19" y2="9" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:700">Meetings</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#8A7860"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="3" width="14" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="7" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.6"/><line x1="7" y1="12" x2="15" y2="12" stroke="currentColor" stroke-width="1.6"/></svg><span style="font-size:11px;font-weight:600">Recipes</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#8A7860"><svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 10 a7 5.5 0 0 0 14 0 Z" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="8" y1="19" x2="14" y2="19" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">My prayers</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;color:#8A7860"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="8" cy="8" r="3.4" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="15" cy="9.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 18c0-3 2.4-4.6 5-4.6s5 1.6 5 4.6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg><span style="font-size:11px;font-weight:600">Group</span></div>
+  </div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "build out all screens in Hearth, light + dark" · "warmer/dimmer ember accent in <a class="dv-oid" href="#2a">2a</a>" · "true-black background instead"</p>
+</section>
+
+
+
+</x-dc>
+</body>
+</html>
