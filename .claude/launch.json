@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["next", "dev"],
       "port": 3000
+    },
+    {
+      "name": "web-start",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["next", "start", "-p", "3200"],
+      "port": 3200
     }
   ]
 }

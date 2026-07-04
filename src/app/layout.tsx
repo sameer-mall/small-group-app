@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lora, Public_Sans } from "next/font/google";
+import { SerwistProvider } from "@serwist/turbopack/react";
 import "./globals.css";
 
 const lora = Lora({ subsets: ["latin"], variable: "--font-heading" });
@@ -20,7 +21,9 @@ export default function RootLayout({
       lang="en"
       className={`${lora.variable} ${publicSans.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <SerwistProvider swUrl="/serwist/sw.js">{children}</SerwistProvider>
+      </body>
     </html>
   );
 }
