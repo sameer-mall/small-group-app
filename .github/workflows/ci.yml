@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_USER: smallgroup
+          POSTGRES_PASSWORD: smallgroup
+          POSTGRES_DB: smallgroup
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U smallgroup"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://smallgroup:smallgroup@localhost:5432/smallgroup
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: pnpm install --frozen-lockfile
+      - run: mise run lint
+      - run: mise run typecheck
+      - run: mise run test
+      - run: mise run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm playwright install --with-deps chromium
+      - run: mise run build
+      - run: mise run e2e
