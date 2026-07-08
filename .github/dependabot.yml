@@ -4,6 +4,11 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # @types/node must track the Node major pinned in mise.toml (currently 24).
+      # Bump this rule when the runtime major changes.
+      - dependency-name: "@types/node"
+        versions: [">=25"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
