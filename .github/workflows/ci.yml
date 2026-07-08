@@ -26,7 +26,7 @@ jobs:
       DATABASE_URL: postgres://smallgroup:smallgroup@localhost:5432/smallgroup
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@v4
       - run: pnpm install --frozen-lockfile
       - run: mise run lint
       - run: mise run typecheck
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@v4
       - run: pnpm install --frozen-lockfile
       - run: pnpm playwright install --with-deps chromium
       - run: mise run build
