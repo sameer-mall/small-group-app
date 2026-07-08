@@ -2,6 +2,8 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
+    // Vite 8's native tsconfig-paths support — intentional replacement for the
+    // vite-tsconfig-paths plugin (deprecated for Vite 8) named in the original plan.
     tsconfigPaths: true,
   },
   test: {
