@@ -138,7 +138,7 @@ One private note per member per meeting. Freeform text, autosaved. A "my notes" 
 | Google Cloud | Yes — free; OAuth client for "Sign in with Google" | Plan 2 | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` |
 | Resend | Yes — free tier (100 emails/day) | Plan 2 (magic-link emails) | `RESEND_API_KEY` |
 
-**Resend domain requirement:** sending magic links to real members in production requires a **verified sending domain** in Resend (test mode only delivers to the account owner's inbox). Plan on owning a domain (~$10–20/yr) by the time plan 2 ships — it doubles as the app's custom domain.
+**Resend domain requirement:** sending magic links to real members in production requires a **verified sending domain** in Resend (test mode only delivers to the account owner's inbox). Resolved: the owner's existing domain `sameermall.com` is used, sending from the subdomain `send.sameermall.com` (isolates the app's email reputation; from-address is the `AUTH_EMAIL_FROM` env var, so swapping domains later is config-only). A custom domain for the app itself remains optional/later.
 
 **Secrets handling rule:** credentials go from the provider's dashboard directly into `.env` (gitignored) locally and into Vercel's environment settings for deploys — entered by the account owner. They are never committed, and never pasted into chat sessions.
 
