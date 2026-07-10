@@ -9,7 +9,7 @@
 **Tech Stack:** better-auth (+ organization & magic-link plugins, Drizzle adapter), Resend SDK (email, test-mode only for now), Drizzle migrations, Neon (prod), existing Hearth/shadcn UI system.
 
 **Decisions binding this plan:**
-- **Production sign-in is Google-only for now.** Magic links fully work locally (console/file transport) and in Resend test mode (delivers only to the account owner). Resend domain verification is a deferred follow-up — do NOT block any task on it.
+- **Magic links are production-ready at launch.** The user owns `sameermall.com`; Resend sends from the verified subdomain `send.sameermall.com` (from-address configured via the `AUTH_EMAIL_FROM` env var — switching domains later is an env change, no code). Domain verification is a user action in Task 10; if DNS verification is ever pending, Google sign-in still works — nothing else blocks on it.
 - Meetings tab ships as the Hearth empty state (screen 3e) only — no meeting creation (plan 3).
 - Recipes and My prayers tabs render as Hearth-styled "coming soon" screens so the tab bar ships in its final shape.
 
@@ -252,11 +252,11 @@ export async function sendAuthEmail({ to, url }: { to: string; url: string }) {
     return;
   }
   if (mode === "resend") {
-    // Test mode until a sending domain is verified: delivers only to the
-    // Resend account owner's inbox. Production sign-in is Google-only for now.
+    // AUTH_EMAIL_FROM must be on a Resend-verified domain (send.sameermall.com
+    // in prod). The resend.dev fallback is test mode: owner's inbox only.
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
-      from: "Small Group <onboarding@resend.dev>",
+      from: process.env.AUTH_EMAIL_FROM ?? "Small Group <onboarding@resend.dev>",
       to,
       subject: "Your sign-in link",
       text: `Sign in to Small Group: ${url}\n\nThis link expires in 5 minutes. If you didn't request it, ignore this email.`,
@@ -267,7 +267,7 @@ export async function sendAuthEmail({ to, url }: { to: string; url: string }) {
 }
 ```
 
-Run: `mise run test` → PASS. Add `RESEND_API_KEY=` and `AUTH_EMAIL_FILE=` lines (empty, commented) to `.env.example`.
+Run: `mise run test` → PASS. Add `RESEND_API_KEY=`, `AUTH_EMAIL_FILE=`, and `AUTH_EMAIL_FROM=` lines (empty, commented) to `.env.example`.
 
 - [ ] **Step 3: Enable the magic-link plugin**
 
@@ -1054,11 +1054,12 @@ Expected: both e2e specs pass. Full local suite green.
 - Consumes: everything; user's Vercel + Google dashboards.
 - Produces: production auth against Neon; Google-only prod sign-in live.
 
-- [ ] **Step 1: USER ACTION — provision Neon + env vars**
+- [ ] **Step 1: USER ACTION — provision Neon, verify the sending domain, env vars**
 
 1. Vercel dashboard → project → Storage (or Marketplace) → add **Neon Postgres** (free tier, closest region) → connect to the project. This injects `DATABASE_URL` into the project env.
-2. Vercel → Settings → Environment Variables, user adds: `BETTER_AUTH_SECRET` (fresh one: `npx @better-auth/cli secret` — different from local), `BETTER_AUTH_URL=https://small-group-app-beta.vercel.app`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`. (No `RESEND_API_KEY` — production is Google-only until the domain follow-up.)
-3. Google console → the OAuth client → add origin `https://small-group-app-beta.vercel.app` and redirect URI `https://small-group-app-beta.vercel.app/api/auth/callback/google`.
+2. Resend dashboard → Domains → Add domain → `send.sameermall.com` → add the DNS records Resend lists (SPF TXT, DKIM TXTs, MX) at sameermall.com's DNS host → wait for "Verified". Then create an API key.
+3. Vercel → Settings → Environment Variables, user adds: `BETTER_AUTH_SECRET` (fresh one: `npx @better-auth/cli secret` — different from local), `BETTER_AUTH_URL=https://small-group-app-beta.vercel.app`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`, `AUTH_EMAIL_FROM=Small Group <signin@send.sameermall.com>`.
+4. Google console → the OAuth client → add origin `https://small-group-app-beta.vercel.app` and redirect URI `https://small-group-app-beta.vercel.app/api/auth/callback/google`.
 
 - [ ] **Step 2: Migrate on build**
 
@@ -1074,16 +1075,16 @@ Known limitation to note in the PR body: preview deployments run migrations agai
 
 - [ ] **Step 3: Docs**
 
-README: under Development add `mise run db:generate` note + an "Auth" paragraph (Google in prod; magic links local/test-mode pending domain). CLAUDE.md conventions add: "Auth: Better Auth (`src/lib/auth.ts`); group operations live in `src/lib/groups.ts` behind DAL guards (`src/lib/dal.ts`) — server actions stay thin." Spec: change status line to "Plans 1–2 implemented; production sign-in Google-only pending Resend domain."
+README: under Development add `mise run db:generate` note + an "Auth" paragraph (Google + magic links from send.sameermall.com in prod; console transport locally). CLAUDE.md conventions add: "Auth: Better Auth (`src/lib/auth.ts`); group operations live in `src/lib/groups.ts` behind DAL guards (`src/lib/dal.ts`) — server actions stay thin." Spec: change status line to "Plans 1–2 implemented."
 
 - [ ] **Step 4: Ship and verify live**
 
-Branch/commit/PR ("Add production auth: Neon migrate-on-build and prod config"); merge when green. Then verify on https://small-group-app-beta.vercel.app: sign in with Google → /welcome skipped → create a real group → invite link renders → sign out/in persists session. Confirm Neon dashboard shows the tables. Expected: full loop works; magic-link path intentionally untested in prod.
+Branch/commit/PR ("Add production auth: Neon migrate-on-build and prod config"); merge when green. Then verify on https://small-group-app-beta.vercel.app: sign in with Google → /welcome skipped → create a real group → invite link renders → sign out/in persists session; AND the magic-link path — request a link to an address that is NOT the Resend account owner (e.g. the user's work email) and confirm it arrives from signin@send.sameermall.com and signs in. Confirm Neon dashboard shows the tables.
 
 ---
 
 ## Plan Self-Review (completed)
 
-- **Spec coverage:** sign-in methods, display names, open sign-up, no-group landing, multi-group + switcher, invite rotation semantics, per-group pending, last-admin invariant, admin capabilities, authorization rule, Neon — each maps to a task. Deferred by decision: Resend domain (follow-up), meetings creation (plan 3).
+- **Spec coverage:** sign-in methods, display names, open sign-up, no-group landing, multi-group + switcher, invite rotation semantics, per-group pending, last-admin invariant, admin capabilities, authorization rule, Neon, Resend sending domain (send.sameermall.com) — each maps to a task. Deferred by decision: meetings creation (plan 3).
 - **Placeholder scan:** Task 5 Step 2 intentionally shows two functions in full and binds the rest by signature + notes (the test file in Step 1 defines their exact behavior); Tasks 6–8 are UI tasks with binding design/interface specs rather than full page code — acceptable altitude, no TBDs.
 - **Type consistency:** domain signatures in Task 5 match call sites in Tasks 6–8 (`createGroup(user.id, name)`, `requestToJoin(actorId, code)`, error strings `forbidden|not-found|last-admin|already-member`); `AUTH_EMAIL_FILE` name consistent across Tasks 2 and 9; `data-testid="invite-url"` produced in Task 8, consumed in Task 9.
