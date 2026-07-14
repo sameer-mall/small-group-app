@@ -21,6 +21,12 @@ export function SignInForm({ next }: { next: string }) {
     else setSent(true);
   }
 
+  async function signInWithGoogle() {
+    setError(null);
+    const { error } = await authClient.signIn.social({ provider: "google", callbackURL: next });
+    if (error) setError("Couldn't sign in with Google. Try again.");
+  }
+
   if (sent)
     return (
       <div className="bg-card rounded-card shadow-card mx-auto w-full max-w-sm p-6 text-center">
@@ -52,19 +58,14 @@ export function SignInForm({ next }: { next: string }) {
         <p className="text-tertiary text-xs text-center">
           No password needed. We&apos;ll email you a secure link.
         </p>
-        {error && <p className="text-destructive text-sm text-center">{error}</p>}
       </form>
       <div className="text-muted-foreground flex items-center gap-3 text-xs">
         <div className="bg-divider h-px flex-1" /> or <div className="bg-divider h-px flex-1" />
       </div>
-      <Button
-        variant="outline"
-        size="lg"
-        className="min-h-tap w-full"
-        onClick={() => authClient.signIn.social({ provider: "google", callbackURL: next })}
-      >
+      <Button variant="outline" size="lg" className="min-h-tap w-full" onClick={signInWithGoogle}>
         Continue with Google
       </Button>
+      {error && <p className="text-destructive text-sm text-center">{error}</p>}
     </div>
   );
 }
