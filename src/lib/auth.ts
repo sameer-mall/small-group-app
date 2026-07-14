@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink } from "better-auth/plugins";
+import { magicLink, organization } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
@@ -17,6 +17,10 @@ export const auth = betterAuth({
     },
   },
   plugins: [
+    organization({
+      creatorRole: "admin",
+      allowUserToCreateOrganization: true,
+    }),
     magicLink({
       sendMagicLink: async ({ email, url }) => {
         await sendAuthEmail({ to: email, url });
