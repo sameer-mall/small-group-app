@@ -8,6 +8,13 @@
       "when": 1783713344244,
       "tag": "0000_sad_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1783988817511,
+      "tag": "0001_spooky_jocasta",
+      "breakpoints": true
     }
   ]
 }
