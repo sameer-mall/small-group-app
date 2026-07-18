@@ -74,4 +74,40 @@ describe("groups domain", () => {
     expect(await adminCount(groupId)).toBe(2);
     await expect(leaveGroup(alice, groupId)).resolves.toBeUndefined();
   });
+
+  it("approving the same request twice throws not-found on the second call and does not duplicate the member row", async () => {
+    const { groupId } = await createGroup(alice, "Double approve");
+    const code = await getInviteCode(groupId);
+    await requestToJoin(bob, code);
+    const [pending] = (await db.execute(
+      sql`select id from join_requests where group_id = ${groupId} and user_id = ${bob} and status = 'pending'`,
+    )).rows as { id: string }[];
+
+    await approveRequest(alice, pending.id);
+    expect((await getMembership(groupId, bob))?.role).toBe("member");
+
+    // Second approval of the same (now-approved) request must not re-insert
+    // a member row — the update matches zero pending rows, so it's not-found.
+    await expect(approveRequest(alice, pending.id)).rejects.toThrow("not-found");
+
+    const memberRows = (
+      await db.execute(
+        sql`select id from member where organization_id = ${groupId} and user_id = ${bob}`,
+      )
+    ).rows;
+    expect(memberRows).toHaveLength(1);
+  });
+
+  it("a user who is already a member cannot request to join again", async () => {
+    const { groupId } = await createGroup(alice, "No re-request");
+    const code = await getInviteCode(groupId);
+    await requestToJoin(bob, code);
+    const [pending] = (await db.execute(
+      sql`select id from join_requests where group_id = ${groupId} and user_id = ${bob} and status = 'pending'`,
+    )).rows as { id: string }[];
+    await approveRequest(alice, pending.id);
+    expect((await getMembership(groupId, bob))?.role).toBe("member");
+
+    await expect(requestToJoin(bob, code)).rejects.toThrow("already-member");
+  });
 });
