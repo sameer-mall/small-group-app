@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
-  adminCount, approveRequest, createGroup, demoteMember, getInviteCode,
-  getMembership, leaveGroup, promoteMember, removeMember, requestToJoin,
-  rotateInviteCode,
+  adminCount, approveRequest, createGroup, demoteMember, getGroupByInviteCode,
+  getInviteCode, getMembership, leaveGroup, listPendingRequestsForUser,
+  promoteMember, removeMember, requestToJoin, rotateInviteCode,
 } from "@/lib/groups";
 
 async function mkUser(id: string) {
@@ -109,5 +109,43 @@ describe("groups domain", () => {
     expect((await getMembership(groupId, bob))?.role).toBe("member");
 
     await expect(requestToJoin(bob, code)).rejects.toThrow("already-member");
+  });
+
+  it("getGroupByInviteCode resolves a live code without creating a request, and returns null for a dead one", async () => {
+    const { groupId } = await createGroup(alice, "Read-only lookup");
+    const code = await getInviteCode(groupId);
+
+    const found = await getGroupByInviteCode(code);
+    expect(found).toEqual({ groupId, name: "Read-only lookup" });
+
+    // Read-only: no join_requests row should have been created as a side effect.
+    const rows = (
+      await db.execute(sql`select id from join_requests where group_id = ${groupId} and user_id = ${bob}`)
+    ).rows;
+    expect(rows).toHaveLength(0);
+
+    expect(await getGroupByInviteCode("not-a-real-code")).toBeNull();
+  });
+
+  it("listPendingRequestsForUser lists only pending requests, joined to group names", async () => {
+    // A fresh user id per run — this suite runs against a persistent local
+    // Postgres, so a fixed id would accumulate pending rows across runs.
+    const dan = await mkUser(`u_dan_${crypto.randomUUID()}`);
+    const groupA = await createGroup(alice, "Pending A");
+    const groupB = await createGroup(alice, "Pending B");
+    const groupC = await createGroup(alice, "Approved C");
+
+    await requestToJoin(dan, await getInviteCode(groupA.groupId));
+    await requestToJoin(dan, await getInviteCode(groupB.groupId));
+    await requestToJoin(dan, await getInviteCode(groupC.groupId));
+    const [approvedReq] = (await db.execute(
+      sql`select id from join_requests where group_id = ${groupC.groupId} and user_id = ${dan}`,
+    )).rows as { id: string }[];
+    await approveRequest(alice, approvedReq.id);
+
+    const pending = await listPendingRequestsForUser(dan);
+    expect(pending).toHaveLength(2);
+    expect(pending.map((r) => r.groupName).sort()).toEqual(["Pending A", "Pending B"]);
+    expect(pending.every((r) => r.groupId === groupA.groupId || r.groupId === groupB.groupId)).toBe(true);
   });
 });
