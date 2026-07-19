@@ -1,7 +1,7 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { inviteCodes, joinRequests } from "@/db/schema";
-import { member, organization } from "@/db/auth-schema";
+import { member, organization, user } from "@/db/auth-schema";
 
 type Role = "admin" | "member";
 
@@ -36,21 +36,40 @@ export async function getMembership(
   return row ? { role: row.role as Role } : null;
 }
 
+// Joined to `user` for name/email — the group admin UI (member rows, ⋯ menu)
+// needs a display name and can't query auth tables directly (DAL/domain
+// boundary), so this is the one place that resolves it.
 export async function listMembers(groupId: string) {
   return db
     .select({
       userId: member.userId,
       role: member.role,
       createdAt: member.createdAt,
+      name: user.name,
+      email: user.email,
     })
     .from(member)
+    .innerJoin(user, eq(user.id, member.userId))
     .where(eq(member.organizationId, groupId));
 }
 
+// Joined to `user` for name/email — same reasoning as listMembers above;
+// the "<name> wants to join" callout needs a display name.
 export async function listPendingRequests(groupId: string) {
   return db
-    .select()
+    .select({
+      id: joinRequests.id,
+      groupId: joinRequests.groupId,
+      userId: joinRequests.userId,
+      status: joinRequests.status,
+      createdAt: joinRequests.createdAt,
+      respondedAt: joinRequests.respondedAt,
+      respondedBy: joinRequests.respondedBy,
+      name: user.name,
+      email: user.email,
+    })
     .from(joinRequests)
+    .innerJoin(user, eq(user.id, joinRequests.userId))
     .where(and(eq(joinRequests.groupId, groupId), eq(joinRequests.status, "pending")));
 }
 
