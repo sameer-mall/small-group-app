@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 import { initials } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,7 +46,7 @@ export function PendingRequestRow({ request }: { request: PendingRequest }) {
           <button
             type="button"
             className="bg-success rounded-full px-3.5 py-1.5 text-sm font-bold text-white"
-            onClick={() => approveAction(new FormData())}
+            onClick={() => startTransition(() => approveAction(new FormData()))}
           >
             Approve
           </button>
@@ -55,7 +55,7 @@ export function PendingRequestRow({ request }: { request: PendingRequest }) {
             variant="ghost"
             size="sm"
             className="rounded-full"
-            onClick={() => denyAction(new FormData())}
+            onClick={() => startTransition(() => denyAction(new FormData()))}
           >
             Deny
           </Button>

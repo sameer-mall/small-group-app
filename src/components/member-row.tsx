@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 import { cn, initials } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -81,17 +81,21 @@ export function MemberRow({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {member.role === "member" ? (
-                <DropdownMenuItem onClick={() => promoteAction(new FormData())}>
+                <DropdownMenuItem
+                  onClick={() => startTransition(() => promoteAction(new FormData()))}
+                >
                   Make admin
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={() => demoteAction(new FormData())}>
+                <DropdownMenuItem
+                  onClick={() => startTransition(() => demoteAction(new FormData()))}
+                >
                   Remove admin
                 </DropdownMenuItem>
               )}
               <DropdownMenuItem
                 variant="destructive"
-                onClick={() => removeAction(new FormData())}
+                onClick={() => startTransition(() => removeAction(new FormData()))}
               >
                 Remove from group
               </DropdownMenuItem>

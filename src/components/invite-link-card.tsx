@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { startTransition, useActionState, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -87,7 +87,10 @@ export function InviteLinkCard({
                 <DialogClose render={<Button variant="outline" type="button" />}>
                   Cancel
                 </DialogClose>
-                <Button type="button" onClick={() => rotateAction(new FormData())}>
+                <Button
+                  type="button"
+                  onClick={() => startTransition(() => rotateAction(new FormData()))}
+                >
                   Rotate link
                 </Button>
               </DialogFooter>

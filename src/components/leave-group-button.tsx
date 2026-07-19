@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,7 +36,11 @@ export function LeaveGroupButton({ groupId }: { groupId: string }) {
           {state.error && <p className="text-destructive text-xs">{state.error}</p>}
           <DialogFooter>
             <DialogClose render={<Button variant="outline" type="button" />}>Cancel</DialogClose>
-            <Button type="button" variant="destructive" onClick={() => action(new FormData())}>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => startTransition(() => action(new FormData()))}
+            >
               Leave group
             </Button>
           </DialogFooter>
