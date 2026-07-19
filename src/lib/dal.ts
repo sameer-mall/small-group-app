@@ -7,13 +7,27 @@ export async function getSession() {
   return auth.api.getSession({ headers: await headers() });
 }
 
+// Falls back to the pathname middleware.ts stamps on every request. This
+// matters because (app)/layout.tsx — which wraps every page, including
+// /join/[code] — calls requireUser() with no argument; without this
+// fallback its redirect would always win the race against a page's own
+// requireUser(nextPath) call (a parent Server Component's redirect() fires
+// before its child page component is ever invoked), dropping `next`
+// entirely for signed-out users. Pages can still pass an explicit
+// nextPath to be self-sufficient regardless of the middleware matcher.
+async function resolveNextPath(nextPath?: string) {
+  if (nextPath) return nextPath;
+  return (await headers()).get("x-pathname") ?? undefined;
+}
+
 export async function requireUser(nextPath?: string) {
   const session = await getSession();
+  const path = await resolveNextPath(nextPath);
   if (!session) {
-    redirect(nextPath ? `/sign-in?next=${encodeURIComponent(nextPath)}` : "/sign-in");
+    redirect(path ? `/sign-in?next=${encodeURIComponent(path)}` : "/sign-in");
   }
   if (!session.user.name?.trim()) {
-    redirect(nextPath ? `/welcome?next=${encodeURIComponent(nextPath)}` : "/welcome");
+    redirect(path ? `/welcome?next=${encodeURIComponent(path)}` : "/welcome");
   }
   return session.user;
 }
