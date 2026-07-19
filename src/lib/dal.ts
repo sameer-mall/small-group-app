@@ -7,14 +7,14 @@ export async function getSession() {
   return auth.api.getSession({ headers: await headers() });
 }
 
-// Falls back to the pathname middleware.ts stamps on every request. This
+// Falls back to the pathname src/proxy.ts stamps on every request. This
 // matters because (app)/layout.tsx — which wraps every page, including
 // /join/[code] — calls requireUser() with no argument; without this
 // fallback its redirect would always win the race against a page's own
 // requireUser(nextPath) call (a parent Server Component's redirect() fires
 // before its child page component is ever invoked), dropping `next`
 // entirely for signed-out users. Pages can still pass an explicit
-// nextPath to be self-sufficient regardless of the middleware matcher.
+// nextPath to be self-sufficient regardless of the proxy's matcher.
 async function resolveNextPath(nextPath?: string) {
   if (nextPath) return nextPath;
   return (await headers()).get("x-pathname") ?? undefined;
