@@ -35,6 +35,10 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    env:
+      # CI-only value; real secret lives in Vercel env. Required since / renders auth.
+      BETTER_AUTH_SECRET: ci-e2e-only-secret-not-used-in-production
+      BETTER_AUTH_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v7
       - uses: jdx/mise-action@v4
