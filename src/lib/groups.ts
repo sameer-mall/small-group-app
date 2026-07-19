@@ -225,3 +225,41 @@ export async function getInviteCode(groupId: string): Promise<string> {
   if (!row) throw new Error("not-found");
   return row.code;
 }
+
+// Read-only lookup: resolves an invite code to its group without creating a
+// join request or checking membership. Used by the join page's GET render,
+// which must not mutate.
+export async function getGroupByInviteCode(
+  code: string,
+): Promise<{ groupId: string; name: string } | null> {
+  const [row] = await db
+    .select({ groupId: inviteCodes.groupId, name: organization.name })
+    .from(inviteCodes)
+    .innerJoin(organization, eq(organization.id, inviteCodes.groupId))
+    .where(eq(inviteCodes.code, code));
+  return row ?? null;
+}
+
+export async function getPendingRequest(groupId: string, userId: string) {
+  const [row] = await db
+    .select()
+    .from(joinRequests)
+    .where(
+      and(
+        eq(joinRequests.groupId, groupId),
+        eq(joinRequests.userId, userId),
+        eq(joinRequests.status, "pending"),
+      ),
+    );
+  return row ?? null;
+}
+
+export async function listPendingRequestsForUser(
+  userId: string,
+): Promise<{ groupId: string; groupName: string }[]> {
+  return db
+    .select({ groupId: joinRequests.groupId, groupName: organization.name })
+    .from(joinRequests)
+    .innerJoin(organization, eq(organization.id, joinRequests.groupId))
+    .where(and(eq(joinRequests.userId, userId), eq(joinRequests.status, "pending")));
+}
