@@ -18,7 +18,7 @@ export function SignOutButton() {
     <button
       type="button"
       onClick={handleSignOut}
-      className="text-tertiary min-h-tap text-sm font-semibold"
+      className="text-tertiary border-border min-h-tap rounded-input border-[1.5px] px-5 text-sm font-semibold"
     >
       Sign out
     </button>
