@@ -23,7 +23,7 @@ const serwist = new Serwist({
   navigationPreload: true,
   runtimeCaching: [
     {
-      matcher: ({ url }) => url.pathname.startsWith("/api/auth/"),
+      matcher: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith("/api/auth/"),
       handler: new NetworkOnly(),
     },
     ...defaultCache,

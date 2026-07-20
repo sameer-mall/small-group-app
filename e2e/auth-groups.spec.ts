@@ -3,11 +3,19 @@ import { expect, test, type Page } from "@playwright/test";
 
 const MAIL = ".e2e-mail.jsonl";
 
+// Every assertion below follows a server action + revalidatePath (or a
+// navigation to a page whose data a prior action just mutated). Under CI/
+// worker load that round trip has been observed to take ~1-4s+, well past
+// Playwright's 5s default expect timeout, so those assertions all use this
+// longer-timeout expect instead. Plain fast-path checks (e.g. URL checks)
+// can stay on the default `expect`.
+const expectApp = expect.configure({ timeout: 10_000 });
+
 async function signIn(page: Page, email: string, name: string) {
   await page.goto("/sign-in");
   await page.getByLabel("Email address").fill(email);
   await page.getByRole("button", { name: "Send magic link" }).click();
-  await expect(page.getByText("Check your email")).toBeVisible();
+  await expectApp(page.getByText("Check your email")).toBeVisible();
   const lines = readFileSync(MAIL, "utf8").trim().split("\n");
   const { url } = JSON.parse(lines[lines.length - 1]);
   await page.goto(url);
@@ -26,7 +34,7 @@ test("two users: create group, invite, approve, member arrives", async ({ browse
   await alice.getByRole("link", { name: "Create a group" }).click();
   await alice.getByLabel("Group name").fill(`Tuesday ${run}`);
   await alice.getByRole("button", { name: "Create group" }).click();
-  await expect(alice.getByText(`Tuesday ${run}`)).toBeVisible();
+  await expectApp(alice.getByText(`Tuesday ${run}`)).toBeVisible();
 
   await alice.getByRole("link", { name: "Group" }).click();
   const inviteUrl = await alice.getByTestId("invite-url").innerText();
@@ -35,7 +43,7 @@ test("two users: create group, invite, approve, member arrives", async ({ browse
   await signIn(bob, `bob-${run}@example.com`, "Bob");
   await bob.goto(new URL(inviteUrl).pathname);
   await bob.getByRole("button", { name: "Ask to join" }).click();
-  await expect(bob.getByText("Waiting for approval")).toBeVisible();
+  await expectApp(bob.getByText("Waiting for approval")).toBeVisible();
 
   await alice.reload();
   await alice.getByRole("button", { name: "Approve" }).click();
@@ -44,12 +52,11 @@ test("two users: create group, invite, approve, member arrives", async ({ browse
   // ("Bob wants to join" + "bob-...@example.com") also substring-matches
   // "Bob" case-insensitively, which is a Playwright strict-mode violation,
   // not just "not visible yet" — so an unscoped locator flakes under worker
-  // contention even with a longer timeout. A generous timeout covers the
-  // server action + revalidatePath round trip (observed ~4s locally).
-  await expect(
+  // contention even with a longer timeout.
+  await expectApp(
     alice.getByTestId("member-row").filter({ hasText: "Bob" }),
-  ).toBeVisible({ timeout: 10_000 });
+  ).toBeVisible();
 
   await bob.goto("/");
-  await expect(bob.getByText(`Tuesday ${run}`)).toBeVisible();
+  await expectApp(bob.getByText(`Tuesday ${run}`)).toBeVisible();
 });
