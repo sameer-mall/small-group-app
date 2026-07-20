@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { WaitingForApproval } from "@/components/waiting-for-approval";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export function NoGroupHome({
   pendingGroups = [],
@@ -30,6 +31,7 @@ export function NoGroupHome({
       <p className="text-tertiary max-w-sm text-xs">
         Joining an existing group? Ask its admin for the invite link.
       </p>
+      <SignOutButton />
     </main>
   );
 }

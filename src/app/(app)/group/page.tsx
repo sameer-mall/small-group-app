@@ -8,6 +8,7 @@ import { MemberRow } from "@/components/member-row";
 import { PendingRequestRow } from "@/components/pending-request-row";
 import { InviteLinkCard } from "@/components/invite-link-card";
 import { LeaveGroupButton } from "@/components/leave-group-button";
+import { SignOutButton } from "@/components/sign-out-button";
 
 export default async function GroupPage() {
   const user = await requireUser();
@@ -79,6 +80,10 @@ export default async function GroupPage() {
       </div>
 
       <LeaveGroupButton groupId={activeGroup.id} />
+
+      <div className="flex justify-center pb-4">
+        <SignOutButton />
+      </div>
     </main>
   );
 }
