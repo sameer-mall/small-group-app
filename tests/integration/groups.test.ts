@@ -2,17 +2,17 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import {
-  adminCount, approveRequest, createGroup, demoteMember, getGroupByInviteCode,
-  getInviteCode, getMembership, leaveGroup, listPendingRequestsForUser,
-  promoteMember, removeMember, requestToJoin, rotateInviteCode,
+  adminCount, approveRequest, createGroup, demoteMember, denyRequest, getGroupByInviteCode,
+  getInviteCode, getMembership, leaveGroup, listMembers, listPendingRequests,
+  listPendingRequestsForUser, promoteMember, removeMember, requestToJoin, rotateInviteCode,
 } from "@/lib/groups";
 
-async function mkUser(id: string) {
+async function mkUser(id: string, name = id) {
   // Deviation from brief: real generated columns are snake_case
   // (email_verified/created_at/updated_at), not camelCase-quoted — same fact
   // already documented in tests/integration/group-tables.test.ts (Task 4).
   await db.execute(sql`insert into "user" (id, name, email, email_verified, created_at, updated_at)
-    values (${id}, ${id}, ${id + "@example.com"}, true, now(), now()) on conflict do nothing`);
+    values (${id}, ${name}, ${id + "@example.com"}, true, now(), now()) on conflict do nothing`);
   return id;
 }
 
@@ -147,5 +147,39 @@ describe("groups domain", () => {
     expect(pending).toHaveLength(2);
     expect(pending.map((r) => r.groupName).sort()).toEqual(["Pending A", "Pending B"]);
     expect(pending.every((r) => r.groupId === groupA.groupId || r.groupId === groupB.groupId)).toBe(true);
+  });
+
+  it("listMembers includes each member's name and email for the group UI", async () => {
+    const eve = await mkUser(`u_eve_${crypto.randomUUID()}`, "Eve Example");
+    const { groupId } = await createGroup(eve, "Named members");
+    const members = await listMembers(groupId);
+    expect(members).toHaveLength(1);
+    expect(members[0]).toMatchObject({
+      userId: eve,
+      role: "admin",
+      name: "Eve Example",
+      email: `${eve}@example.com`,
+    });
+  });
+
+  it("listPendingRequests includes the requester's name and email for the admin UI", async () => {
+    const frank = await mkUser(`u_frank_${crypto.randomUUID()}`, "Frank Foo");
+    const { groupId } = await createGroup(alice, "Named requests");
+    const code = await getInviteCode(groupId);
+    await requestToJoin(frank, code);
+
+    const pending = await listPendingRequests(groupId);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]).toMatchObject({
+      userId: frank,
+      groupId,
+      status: "pending",
+      name: "Frank Foo",
+      email: `${frank}@example.com`,
+    });
+
+    // Denied/approved requests are excluded, same as before this change.
+    await denyRequest(alice, pending[0].id);
+    expect(await listPendingRequests(groupId)).toHaveLength(0);
   });
 });
