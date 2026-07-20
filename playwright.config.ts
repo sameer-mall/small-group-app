@@ -7,5 +7,6 @@ export default defineConfig({
     command: "pnpm next start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
+    env: { AUTH_EMAIL_FILE: ".e2e-mail.jsonl" },
   },
 });
