@@ -1,0 +1,3 @@
+{
+  "buildCommand": "pnpm drizzle-kit migrate && pnpm next build"
+}
