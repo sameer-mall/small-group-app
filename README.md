@@ -26,7 +26,11 @@ mise run build     # production build
 mise run e2e       # Playwright smoke (needs build)
 ```
 
-Also: `mise run lint`, `mise run typecheck`, `mise run db:generate`, `mise run db:migrate`.
+Also: `mise run lint`, `mise run typecheck`, `mise run db:generate`, `mise run db:migrate`. Run `mise run db:generate` after any schema change (`src/db/schema.ts`) to produce a new Drizzle migration in `drizzle/`.
+
+## Auth
+
+Sign-in supports Google OAuth and passwordless email magic links (Better Auth, `src/lib/auth.ts`). In production, magic-link emails are sent via Resend from `signin@send.sameermall.com`. In local dev, no `RESEND_API_KEY` is set, so the email transport falls back to the console — the magic link is printed to the terminal running `mise run dev` instead of being sent.
 
 ## Workflow
 
