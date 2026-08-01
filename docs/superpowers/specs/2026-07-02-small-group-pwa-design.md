@@ -44,6 +44,19 @@ Notes:
 - **Typography:** Lora (headings, meeting/recipe titles, prayer-quote text) + Public Sans (body), loaded via `next/font` (self-hosted at build, not the Google Fonts CDN — required for offline PWA and no layout shift).
 - **Dark mode:** warm brown, never gray/black, with ember terracotta (`#D98A5C`) for links/active states. Switched via `data-theme="dark"` on `<html>`, following `prefers-color-scheme` by default.
 
+## Mobile-first experience
+
+The phone is the primary target — members use this from the couch, the car, and the church parking lot, on cellular. Every feature is designed and verified at a phone viewport first; desktop is the same layout with more whitespace. These are standing requirements, not a polish pass:
+
+- **Mutations feel instant.** Any tap that writes (claiming a meal item, releasing it) updates the UI optimistically and reconciles when the server answers — a round-trip on cellular must never gate the visual response. Server rejections (e.g. an item claimed first by someone else) roll the UI back with a plain-language message and refreshed data.
+- **Fresh on return.** Phones background apps constantly. Views showing shared, contended state refetch when the tab regains focus, so returning to a page never shows stale data. Polling only — no websockets (see Out of scope).
+- **Native input affordances.** Dates use `<input type="date">` (the OS wheel picker), not a custom calendar. Text inputs set `inputMode`/`enterKeyHint` so multi-field entry flows with the on-screen keyboard. Font size stays ≥16px on inputs to prevent iOS auto-zoom.
+- **Nothing hidden by chrome.** The focused field must never sit behind the on-screen keyboard or the fixed bottom tab bar; scrollable content is padded clear of both.
+- **Real content, small screens.** Long user-written labels (item names, meeting titles, recipe names) wrap rather than truncate into uselessness, and their action controls stay reachable.
+- **Destructive actions resist fat fingers.** Confirm steps for delete/clear actions keep the destructive control clear of the tap path of the button that opened them.
+
+Deferred for v1: offline write queueing (the service worker caches reads; syncing conflicting offline claims is out of scope) and swipe gestures (taps only — better discoverability).
+
 ## Auth, groups & membership
 
 - Sign-in: **email magic link** and **Google**. No passwords.
