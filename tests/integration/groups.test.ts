@@ -149,17 +149,19 @@ describe("groups domain", () => {
     expect(pending.every((r) => r.groupId === groupA.groupId || r.groupId === groupB.groupId)).toBe(true);
   });
 
-  it("listMembers includes each member's name and email for the group UI", async () => {
+  it("listMembers returns each member's name and role, but not their email", async () => {
     const eve = await mkUser(`u_eve_${crypto.randomUUID()}`, "Eve Example");
     const { groupId } = await createGroup(eve, "Named members");
     const members = await listMembers(groupId);
     expect(members).toHaveLength(1);
-    expect(members[0]).toMatchObject({
+    expect(members[0]).toEqual({
       userId: eve,
       role: "admin",
       name: "Eve Example",
-      email: `${eve}@example.com`,
     });
+    // Email is PII and the member list is shown to every member + serialized to
+    // the client, so it must not ride along in the payload.
+    expect(members[0]).not.toHaveProperty("email");
   });
 
   it("listPendingRequests includes the requester's name and email for the admin UI", async () => {

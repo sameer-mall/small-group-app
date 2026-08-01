@@ -36,17 +36,17 @@ export async function getMembership(
   return row ? { role: row.role as Role } : null;
 }
 
-// Joined to `user` for name/email — the group admin UI (member rows, ⋯ menu)
-// needs a display name and can't query auth tables directly (DAL/domain
-// boundary), so this is the one place that resolves it.
+// Joined to `user` for the display name — the group member list needs a name
+// and can't query auth tables directly (DAL/domain boundary), so this is the
+// one place that resolves it. Deliberately does NOT return email: this list is
+// shown to every member (not just admins), and the row is serialized to the
+// client, so email would leak co-members' addresses into the page payload.
 export async function listMembers(groupId: string) {
   return db
     .select({
       userId: member.userId,
       role: member.role,
-      createdAt: member.createdAt,
       name: user.name,
-      email: user.email,
     })
     .from(member)
     .innerJoin(user, eq(user.id, member.userId))

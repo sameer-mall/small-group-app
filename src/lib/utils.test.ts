@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cn, initials } from "./utils";
+import { cn, initials, safeNextPath } from "./utils";
 
 describe("cn", () => {
   it("merges conflicting tailwind classes, last wins", () => {
@@ -28,5 +28,30 @@ describe("initials", () => {
   it("falls back to a placeholder for an empty name", () => {
     expect(initials("")).toBe("?");
     expect(initials("   ")).toBe("?");
+  });
+});
+
+describe("safeNextPath", () => {
+  it("allows same-origin absolute paths", () => {
+    expect(safeNextPath("/")).toBe("/");
+    expect(safeNextPath("/group")).toBe("/group");
+    expect(safeNextPath("/join/abc123")).toBe("/join/abc123");
+  });
+
+  it("rejects absolute URLs", () => {
+    expect(safeNextPath("https://evil.com")).toBe("/");
+    expect(safeNextPath("http://evil.com/login")).toBe("/");
+  });
+
+  it("rejects protocol-relative and backslash forms browsers navigate off-origin", () => {
+    expect(safeNextPath("//evil.com")).toBe("/");
+    expect(safeNextPath("/\\evil.com")).toBe("/");
+  });
+
+  it("falls back to / for missing or non-path values", () => {
+    expect(safeNextPath(undefined)).toBe("/");
+    expect(safeNextPath(null)).toBe("/");
+    expect(safeNextPath("")).toBe("/");
+    expect(safeNextPath("evil.com")).toBe("/");
   });
 });

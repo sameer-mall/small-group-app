@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { safeNextPath } from "@/lib/utils";
 import { WelcomeForm } from "./welcome-form";
 
 export default async function WelcomePage({
@@ -10,8 +11,9 @@ export default async function WelcomePage({
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
   const { next } = await searchParams;
+  const safeNext = safeNextPath(next);
   if (!session) redirect("/sign-in");
-  if (session.user.name?.trim()) redirect(next ?? "/");
+  if (session.user.name?.trim()) redirect(safeNext);
   return (
     <main className="flex min-h-dvh flex-col justify-center gap-6 bg-background p-6">
       <div className="text-center">
@@ -20,7 +22,7 @@ export default async function WelcomePage({
           What should the group call you? Your name shows on meal claims and prayers.
         </p>
       </div>
-      <WelcomeForm next={next ?? "/"} />
+      <WelcomeForm next={safeNext} />
     </main>
   );
 }
