@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth, authBaseURL } from "@/lib/auth";
-import { getSession, requireMember, requireUser } from "@/lib/dal";
+import { getSession, requireMember, requireUser, resolveActiveGroup } from "@/lib/dal";
 import { getInviteCode, listMembers, listPendingRequests } from "@/lib/groups";
 import { GroupNameHeader } from "@/components/group-name-header";
 import { MemberRow } from "@/components/member-row";
@@ -19,18 +19,10 @@ export default async function GroupPage() {
     redirect("/");
   }
 
-  // Same active-group resolution as the home page (src/app/(app)/page.tsx):
-  // prefer the session's active organization, falling back to the user's
-  // first membership and persisting that choice.
-  const activeGroupId = session?.session.activeOrganizationId;
-  let activeGroup = organizations.find((org) => org.id === activeGroupId);
-  if (!activeGroup) {
-    activeGroup = organizations[0];
-    await auth.api.setActiveOrganization({
-      body: { organizationId: activeGroup.id },
-      headers: await headers(),
-    });
-  }
+  const activeGroup = await resolveActiveGroup(
+    session?.session.activeOrganizationId,
+    organizations,
+  );
 
   const { role } = await requireMember(activeGroup.id);
   const isAdmin = role === "admin";

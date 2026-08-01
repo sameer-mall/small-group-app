@@ -32,6 +32,27 @@ export async function requireUser(nextPath?: string) {
   return session.user;
 }
 
+// Resolves which group a page should render: the session's active organization
+// if the user still belongs to it, otherwise their first membership — and
+// persists that fallback so the session (and every group-scoped page) agree on
+// the choice. `/` and `/group` each render independently and either is
+// reachable directly, so both resolve through here rather than duplicating the
+// rule and risking drift. Callers must pass a non-empty `organizations` (both
+// handle the no-groups case before calling).
+export async function resolveActiveGroup<T extends { id: string }>(
+  activeOrganizationId: string | null | undefined,
+  organizations: T[],
+): Promise<T> {
+  const active = organizations.find((org) => org.id === activeOrganizationId);
+  if (active) return active;
+  const fallback = organizations[0];
+  await auth.api.setActiveOrganization({
+    body: { organizationId: fallback.id },
+    headers: await headers(),
+  });
+  return fallback;
+}
+
 export async function requireMember(groupId: string) {
   const user = await requireUser();
   const membership = await getMembership(groupId, user.id);
