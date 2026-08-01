@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { auth, authBaseURL } from "@/lib/auth";
 import { getSession, requireMember, requireUser } from "@/lib/dal";
 import { getInviteCode, listMembers, listPendingRequests } from "@/lib/groups";
 import { GroupNameHeader } from "@/components/group-name-header";
@@ -41,7 +41,7 @@ export default async function GroupPage() {
     getInviteCode(activeGroup.id),
   ]);
 
-  const inviteUrl = `${process.env.BETTER_AUTH_URL}/join/${code}`;
+  const inviteUrl = `${authBaseURL}/join/${code}`;
   const memberCount = members.length;
 
   return (
