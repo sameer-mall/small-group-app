@@ -18,12 +18,17 @@ import { sendAuthEmail } from "@/lib/auth-email";
 // register there — not on ad-hoc preview deploys.
 const isPreview = process.env.VERCEL_ENV === "preview";
 const previewHost = process.env.VERCEL_BRANCH_URL ?? process.env.VERCEL_URL;
-const baseURL =
+
+// The origin the app treats as its own — prod's fixed URL, or a preview's
+// per-branch alias. Exported so other server code that builds absolute app
+// URLs (e.g. the invite link on the group screen) resolves to the same origin
+// auth does, instead of re-reading the preview-unaware BETTER_AUTH_URL.
+export const authBaseURL =
   isPreview && previewHost ? `https://${previewHost}` : process.env.BETTER_AUTH_URL;
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
-  baseURL,
+  baseURL: authBaseURL,
   trustedOrigins: isPreview ? ["https://*.vercel.app"] : undefined,
   secret: process.env.BETTER_AUTH_SECRET,
   socialProviders: {

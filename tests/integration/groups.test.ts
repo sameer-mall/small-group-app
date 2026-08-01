@@ -119,8 +119,10 @@ describe("groups domain", () => {
     expect(found).toEqual({ groupId, name: "Read-only lookup" });
 
     // Read-only: no join_requests row should have been created as a side effect.
+    // Scope to the group (getGroupByInviteCode has no user concept, so a
+    // user-filtered check could never match and would assert nothing).
     const rows = (
-      await db.execute(sql`select id from join_requests where group_id = ${groupId} and user_id = ${bob}`)
+      await db.execute(sql`select id from join_requests where group_id = ${groupId}`)
     ).rows;
     expect(rows).toHaveLength(0);
 
