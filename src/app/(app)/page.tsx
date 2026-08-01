@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { getSession, requireUser } from "@/lib/dal";
+import { getSession, requireUser, resolveActiveGroup } from "@/lib/dal";
 import { listPendingRequestsForUser } from "@/lib/groups";
 import { NoGroupHome } from "@/components/no-group-home";
 import { GroupSwitcher } from "@/components/group-switcher";
@@ -19,15 +19,10 @@ export default async function HomePage() {
     return <NoGroupHome pendingGroups={pendingRequests} />;
   }
 
-  const activeGroupId = session?.session.activeOrganizationId;
-  let activeGroup = organizations.find((org) => org.id === activeGroupId);
-  if (!activeGroup) {
-    activeGroup = organizations[0];
-    await auth.api.setActiveOrganization({
-      body: { organizationId: activeGroup.id },
-      headers: await headers(),
-    });
-  }
+  const activeGroup = await resolveActiveGroup(
+    session?.session.activeOrganizationId,
+    organizations,
+  );
 
   return (
     <main className="flex flex-col gap-6 p-6">
