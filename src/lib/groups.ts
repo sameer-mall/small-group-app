@@ -2,7 +2,11 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { inviteCodes, joinRequests } from "@/db/schema";
 import { member, organization, user } from "@/db/auth-schema";
-import { getMembership, requireAdminMembership } from "@/lib/membership";
+import {
+  getMembership,
+  requireAdminMembership,
+  requireMembership,
+} from "@/lib/membership";
 
 // `getMembership` was part of this module's public surface before the guards
 // moved to @/lib/membership; re-exported so existing callers keep working.
@@ -193,8 +197,7 @@ export async function removeMember(userId: string, groupId: string, memberUserId
 }
 
 export async function leaveGroup(userId: string, groupId: string) {
-  const actor = await getMembership(groupId, userId);
-  if (!actor) throw new Error("forbidden");
+  await requireMembership(userId, groupId);
   await db.transaction(async (tx) => {
     // Same lock-then-count pattern as demoteMember — see comment there.
     const adminRows = await tx
