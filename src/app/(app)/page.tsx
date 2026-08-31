@@ -2,9 +2,12 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { getSession, requireUser, resolveActiveGroup } from "@/lib/dal";
 import { listPendingRequestsForUser } from "@/lib/groups";
+import { listMeetings } from "@/lib/meetings";
 import { NoGroupHome } from "@/components/no-group-home";
 import { GroupSwitcher } from "@/components/group-switcher";
 import { MeetingsEmpty } from "@/components/meetings-empty";
+import { MeetingList } from "@/components/meeting-list";
+import { NewMeetingSheet } from "@/components/new-meeting-sheet";
 import { WaitingForApproval } from "@/components/waiting-for-approval";
 
 export default async function HomePage() {
@@ -24,14 +27,27 @@ export default async function HomePage() {
     organizations,
   );
 
+  // The group was just confirmed above via resolveActiveGroup, which only
+  // returns organizations the user belongs to — listMeetings itself does no
+  // authorization, so it must only ever be called with a group membership
+  // already confirmed.
+  const meetings = await listMeetings(activeGroup.id);
+
   return (
     <main className="flex flex-col gap-6 p-6">
+      {/* Renders the group name as the page heading and the switcher trigger,
+          so there is no separate <h1> here. */}
       <GroupSwitcher
         groups={organizations.map(({ id, name }) => ({ id, name }))}
         activeGroupId={activeGroup.id}
         activeGroupName={activeGroup.name}
       />
-      <MeetingsEmpty />
+      {meetings.length === 0 ? (
+        <MeetingsEmpty />
+      ) : (
+        <MeetingList meetings={meetings} serverToday={new Date().toISOString().slice(0, 10)} />
+      )}
+      <NewMeetingSheet groupId={activeGroup.id} />
       {pendingRequests.length > 0 && (
         <div className="flex flex-col gap-4">
           {pendingRequests.map((request) => (
