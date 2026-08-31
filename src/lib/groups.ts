@@ -2,8 +2,12 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { inviteCodes, joinRequests } from "@/db/schema";
 import { member, organization, user } from "@/db/auth-schema";
+import { getMembership, requireAdminMembership } from "@/lib/membership";
 
-type Role = "admin" | "member";
+// `getMembership` was part of this module's public surface before the guards
+// moved to @/lib/membership; re-exported so existing callers keep working.
+// The guards stay internal here — new code imports them from @/lib/membership.
+export { getMembership };
 
 export function newInviteCode(): string {
   return crypto.randomUUID().replace(/-/g, "").slice(0, 10);
@@ -23,17 +27,6 @@ export async function createGroup(userId: string, name: string) {
     await tx.insert(inviteCodes).values({ groupId, code: newInviteCode() });
   });
   return { groupId };
-}
-
-export async function getMembership(
-  groupId: string,
-  userId: string,
-): Promise<{ role: Role } | null> {
-  const [row] = await db
-    .select({ role: member.role })
-    .from(member)
-    .where(and(eq(member.organizationId, groupId), eq(member.userId, userId)));
-  return row ? { role: row.role as Role } : null;
 }
 
 // Joined to `user` for the display name — the group member list needs a name
@@ -142,11 +135,6 @@ export async function denyRequest(userId: string, requestId: string) {
     .update(joinRequests)
     .set({ status: "denied", respondedAt: new Date(), respondedBy: userId })
     .where(and(eq(joinRequests.id, requestId), eq(joinRequests.status, "pending")));
-}
-
-async function requireAdminMembership(userId: string, groupId: string) {
-  const actor = await getMembership(groupId, userId);
-  if (actor?.role !== "admin") throw new Error("forbidden");
 }
 
 export async function promoteMember(userId: string, groupId: string, memberUserId: string) {
