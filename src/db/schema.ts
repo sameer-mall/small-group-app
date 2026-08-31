@@ -2,7 +2,7 @@
 // generated into auth-schema.ts by `@better-auth/cli generate` — regenerate
 // there, never hand-edit. App tables are defined below in this file.
 import { sql } from "drizzle-orm";
-import { date, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { date, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth-schema";
 
 export * from "./auth-schema";
@@ -42,4 +42,20 @@ export const meetings = pgTable("meetings", {
   date: date("date", { mode: "string" }).notNull(),
   createdBy: text("created_by").notNull().references(() => user.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const recipes = pgTable("recipes", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  groupId: text("group_id").notNull().references(() => organization.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  createdBy: text("created_by").notNull().references(() => user.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const recipeItems = pgTable("recipe_items", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  recipeId: text("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  // Zero-based index into the recipe's item list; rewritten wholesale on edit.
+  position: integer("position").notNull(),
 });
