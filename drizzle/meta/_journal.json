@@ -15,6 +15,13 @@
       "when": 1783988817511,
       "tag": "0001_spooky_jocasta",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788138014168,
+      "tag": "0002_flawless_proemial_gods",
+      "breakpoints": true
     }
   ]
 }
