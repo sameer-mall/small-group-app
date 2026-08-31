@@ -35,10 +35,13 @@ export default async function HomePage() {
 
   return (
     <main className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="font-serif text-3xl font-semibold">{activeGroup.name}</h1>
-        <GroupSwitcher activeGroupId={activeGroup.id} />
-      </div>
+      {/* Renders the group name as the page heading and the switcher trigger,
+          so there is no separate <h1> here. */}
+      <GroupSwitcher
+        groups={organizations.map(({ id, name }) => ({ id, name }))}
+        activeGroupId={activeGroup.id}
+        activeGroupName={activeGroup.name}
+      />
       {meetings.length === 0 ? (
         <MeetingsEmpty />
       ) : (

@@ -60,3 +60,32 @@ test("two users: create group, invite, approve, member arrives", async ({ browse
   await bob.goto("/");
   await expectApp(bob.getByText(`Tuesday ${run}`)).toBeVisible();
 });
+
+test("switcher menu creates a second group and switches back", async ({ browser }) => {
+  const run = Date.now();
+
+  const carol = await (await browser.newContext()).newPage();
+  await signIn(carol, `carol-${run}@example.com`, "Carol");
+
+  await carol.getByRole("link", { name: "Create a group" }).click();
+  await carol.getByLabel("Group name").fill(`Tuesday ${run}`);
+  await carol.getByRole("button", { name: "Create group" }).click();
+  await expectApp(carol.getByRole("heading", { name: `Tuesday ${run}` })).toBeVisible();
+
+  // <NoGroupHome /> is gone now that Carol has a group, so the switcher menu is
+  // the only remaining route to a second one.
+  await carol.getByRole("button", { name: `Tuesday ${run}` }).click();
+  await carol.getByRole("menuitem", { name: "Create a group" }).click();
+  await carol.getByLabel("Group name").fill(`Thursday ${run}`);
+  await carol.getByRole("button", { name: "Create group" }).click();
+  await expectApp(carol.getByRole("heading", { name: `Thursday ${run}` })).toBeVisible();
+
+  // Both groups must be listed without a reload: the menu is fed by the server
+  // render, not by a client-side org list that createGroup never invalidates.
+  await carol.getByRole("button", { name: `Thursday ${run}` }).click();
+  await expectApp(
+    carol.getByRole("menuitemradio", { name: `Thursday ${run}` }),
+  ).toBeVisible();
+  await carol.getByRole("menuitemradio", { name: `Tuesday ${run}` }).click();
+  await expectApp(carol.getByRole("heading", { name: `Tuesday ${run}` })).toBeVisible();
+});
