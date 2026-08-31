@@ -37,6 +37,11 @@ export function GroupSwitcher({
 }) {
   const router = useRouter();
 
+  // Split off the trailing word so it can be kept on the chevron's line.
+  const words = activeGroupName.split(" ");
+  const lastWord = words[words.length - 1];
+  const lead = words.slice(0, -1).join(" ");
+
   async function handleSelect(groupId: string) {
     if (groupId === activeGroupId) return;
     await authClient.organization.setActive({ organizationId: groupId });
@@ -46,9 +51,21 @@ export function GroupSwitcher({
   return (
     <h1 className="font-serif text-3xl font-semibold">
       <DropdownMenu>
-        <DropdownMenuTrigger className="flex items-center gap-1.5 text-left">
-          {activeGroupName}
-          <ChevronDown size={22} strokeWidth={2} className="text-tertiary mt-1 shrink-0" />
+        {/* Inline, not flex: a flex row centres the chevron against the whole
+            wrapped block, so a two-line group name flings it to the far right,
+            detached from the text. Inline keeps it trailing the last word at
+            every name length — and the nowrap span stops it wrapping alone
+            onto a line of its own when the name just fills the width. */}
+        <DropdownMenuTrigger className="text-left break-words">
+          {lead && `${lead} `}
+          <span className="whitespace-nowrap">
+            {lastWord}
+            <ChevronDown
+              size={22}
+              strokeWidth={2}
+              className="text-tertiary ml-1.5 inline-block align-middle"
+            />
+          </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-auto min-w-56">
           <DropdownMenuRadioGroup value={activeGroupId} onValueChange={handleSelect}>
