@@ -26,10 +26,11 @@ export default async function HomePage() {
 
   return (
     <main className="flex flex-col gap-6 p-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="font-serif text-3xl font-semibold">{activeGroup.name}</h1>
-        <GroupSwitcher activeGroupId={activeGroup.id} />
-      </div>
+      <GroupSwitcher
+        groups={organizations.map(({ id, name }) => ({ id, name }))}
+        activeGroupId={activeGroup.id}
+        activeGroupName={activeGroup.name}
+      />
       <MeetingsEmpty />
       {pendingRequests.length > 0 && (
         <div className="flex flex-col gap-4">
