@@ -62,3 +62,9 @@ jobs:
       - run: mise run db:migrate
       - run: mise run build
       - run: mise run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7
