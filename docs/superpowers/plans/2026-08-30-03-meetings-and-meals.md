@@ -26,6 +26,7 @@
 - **Error vocabulary** — domain functions throw `Error` with exactly these messages: `"forbidden"`, `"not-found"`, `"already-claimed"`, `"not-claimed"`. Actions map them to copy; anything else rethrows to the error boundary.
 - **Hearth fidelity:** tokens/utilities only, never a hardcoded color that has a token. Available: `bg-card`, `rounded-card`, `shadow-card`, `rounded-input`, `rounded-chip`, `rounded-sheet`, `min-h-tap`, `bg-primary`, `text-primary-foreground`, `text-accent-strong`, `bg-accent-tint`, `bg-surface-tint`, `text-strong`, `text-tertiary`, `text-muted-foreground`, `border-border`, `border-divider`, `border-slot-dashed`, `bg-avatar`, `text-avatar-foreground`, `bg-success`, `text-destructive`, `tracking-label`, `font-serif`. Component recipes are in the comment block in `src/app/globals.css` — the inline "Claim button" recipe is `bg-primary text-primary-foreground font-bold text-sm rounded-full px-3.5 py-1.5`.
 - **Copy:** sentence case, no exclamation marks, verb-first buttons.
+- **Input validation:** no zod. Server actions validate their own inputs the way the four existing action files already do — trim, check required fields, return an inline message — plus an explicit format check on anything the database would reject (notably the `YYYY-MM-DD` date). Adopting a schema library is a separate, whole-codebase decision, not something to introduce piecemeal here.
 - **Mobile-first (binding — see the parent spec's "Mobile-first experience"):** claim/release is optimistic; the meeting page refetches on window focus; dates use `<input type="date">`; the recipe form is keyboard-aware (`enterKeyHint`); long labels wrap rather than truncate; destructive confirms keep the destructive control clear of the opening button's tap path. **Every task that ships UI verifies it at a 390×844 viewport before reporting done.**
 - **Tests green at every commit:** `mise run lint && mise run typecheck && mise run test`; add `mise run build && mise run e2e` where a task says so. Integration tests need Postgres: **Docker Desktop must be running**, then `mise run db:up`.
 - **Trunk-based:** one PR per task, branched off `main`. **NO** `Co-Authored-By`/Claude trailers on commits. **Agents never merge** — each task stops at PR-ready; the user merges; the next task starts from the updated `main`.
@@ -44,7 +45,7 @@
 - Consumes: `db` from `@/db/client`; `getMembership` from `@/lib/groups`; `organization`, `user` from `@/db/auth-schema`.
 - Produces (later tasks call these exactly):
   - `createMeeting(userId: string, groupId: string, input: { title: string; date: string }): Promise<{ meetingId: string }>`
-  - `listMeetings(groupId: string): Promise<Meeting[]>` — **upcoming first (date ascending), then past (date descending)**
+  - `listMeetings(groupId: string): Promise<Meeting[]>` — **all meetings, date ascending.** Deliberately clock-free: whether a meeting is "upcoming" or "past" depends on the *viewer's* timezone, which the server does not know, so that split happens in the UI (Task 2). This also keeps the ordering test deterministic.
   - `getMeeting(meetingId: string): Promise<Meeting | null>`
   - `updateMeeting(userId: string, meetingId: string, input: { title: string; date: string }): Promise<void>`
   - `deleteMeeting(userId: string, meetingId: string): Promise<void>`
@@ -131,15 +132,14 @@ describe("meetings domain", () => {
     ).rejects.toThrow("forbidden");
   });
 
-  it("lists upcoming first (soonest first), then past (most recent first)", async () => {
+  it("lists a group's meetings in date order", async () => {
     const { groupId } = await createGroup(alice, "Ordering");
-    await createMeeting(alice, groupId, { title: "Far future", date: "2099-01-02" });
-    await createMeeting(alice, groupId, { title: "Near future", date: "2099-01-01" });
-    await createMeeting(alice, groupId, { title: "Old", date: "2000-01-01" });
-    await createMeeting(alice, groupId, { title: "Recent past", date: "2000-06-01" });
+    await createMeeting(alice, groupId, { title: "Third", date: "2026-03-01" });
+    await createMeeting(alice, groupId, { title: "First", date: "2026-01-01" });
+    await createMeeting(alice, groupId, { title: "Second", date: "2026-02-01" });
 
     const titles = (await listMeetings(groupId)).map((m) => m.title);
-    expect(titles).toEqual(["Near future", "Far future", "Recent past", "Old"]);
+    expect(titles).toEqual(["First", "Second", "Third"]);
   });
 
   it("the creator or an admin can edit and delete; another member cannot", async () => {
@@ -183,7 +183,7 @@ Expected: FAIL — cannot resolve `@/lib/meetings`.
 - [ ] **Step 5: Implement `src/lib/meetings.ts`**
 
 ```ts
-import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { meetings } from "@/db/schema";
 import { getMembership } from "@/lib/groups";
@@ -195,12 +195,6 @@ export type Meeting = {
   date: string;
   createdBy: string;
 };
-
-// Today as YYYY-MM-DD, for splitting upcoming from past. Dates are date-only,
-// so a string comparison is the correct comparison.
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 async function requireMembership(userId: string, groupId: string) {
   const membership = await getMembership(groupId, userId);
@@ -247,27 +241,24 @@ export async function getMeeting(meetingId: string): Promise<Meeting | null> {
   return row ?? null;
 }
 
-// Upcoming first (soonest first), then past (most recent first). Two queries
-// rather than one clever ORDER BY: the intent stays readable, and each half is
-// individually indexable.
+// Date ascending, and deliberately clock-free. "Upcoming" vs "past" depends on
+// the viewer's local date, which this process does not know: the host runs UTC,
+// where new Date() rolls over to tomorrow at 8pm US Eastern — dropping that
+// evening's meeting into "past" while the group is still sitting in it. The
+// split therefore belongs in the UI (Task 2), where the browser's timezone is
+// known. Staying clock-free also makes this function's test deterministic.
 export async function listMeetings(groupId: string): Promise<Meeting[]> {
-  const columns = {
-    id: meetings.id,
-    groupId: meetings.groupId,
-    title: meetings.title,
-    date: meetings.date,
-    createdBy: meetings.createdBy,
-  };
-  const cutoff = today();
-  const [upcoming, past] = await Promise.all([
-    db.select(columns).from(meetings)
-      .where(and(eq(meetings.groupId, groupId), gte(meetings.date, cutoff)))
-      .orderBy(asc(meetings.date)),
-    db.select(columns).from(meetings)
-      .where(and(eq(meetings.groupId, groupId), lt(meetings.date, cutoff)))
-      .orderBy(desc(meetings.date)),
-  ]);
-  return [...upcoming, ...past];
+  return db
+    .select({
+      id: meetings.id,
+      groupId: meetings.groupId,
+      title: meetings.title,
+      date: meetings.date,
+      createdBy: meetings.createdBy,
+    })
+    .from(meetings)
+    .where(eq(meetings.groupId, groupId))
+    .orderBy(asc(meetings.date));
 }
 
 export async function updateMeeting(
@@ -322,7 +313,7 @@ Stop at PR-ready. Do not merge.
 
 - [ ] **Step 1: Server action**
 
-`src/app/(app)/meetings/actions.ts` — `"use server"`. Define `export type ActionState = { error: string | null; success: boolean }` (same shape as `src/app/(app)/group/actions.ts`, which is the established convention) and a `mapError` mapping `"forbidden"` → `"Only group members can do that."` and `"not-found"` → `"That didn't work — try refreshing the page."`, rethrowing anything else. `createMeetingAction(groupId, _prevState, formData)`: `requireUser()` → read and trim `title` and `date` → if either is empty return `{ error: "Add a title and a date.", success: false }` → `createMeeting(user.id, groupId, { title, date })` in try/catch → `revalidatePath("/")` → `{ error: null, success: true }`.
+`src/app/(app)/meetings/actions.ts` — `"use server"`. Define `export type ActionState = { error: string | null; success: boolean }` (same shape as `src/app/(app)/group/actions.ts`, which is the established convention) and a `mapError` mapping `"forbidden"` → `"Only group members can do that."` and `"not-found"` → `"That didn't work — try refreshing the page."`, rethrowing anything else. `createMeetingAction(groupId, _prevState, formData)`: `requireUser()` → read and trim `title` and `date` → if either is empty return `{ error: "Add a title and a date.", success: false }` → **validate `date` against `/^\d{4}-\d{2}-\d{2}$/`** and return `{ error: "Enter a valid date.", success: false }` if it fails (a hand-crafted POST can send anything, and without this Postgres raises an invalid-input error the user sees as a 500 rather than a message) → `createMeeting(user.id, groupId, { title, date })` in try/catch → `revalidatePath("/")` → `{ error: null, success: true }`.
 
 - [ ] **Step 2: `MeetingRow` (part of screen 3d)**
 
@@ -336,15 +327,30 @@ Client component. A trigger button ("Plan a meeting", primary recipe, `min-h-tap
 - Submit button "Create meeting"; `state.error` rendered inline in `text-destructive text-xs`.
 Close the sheet on `state.success` by adjusting state during render (the `handledState` pattern already used in `src/components/group-name-header.tsx`), not in an effect.
 
-- [ ] **Step 4: Wire the home page**
+- [ ] **Step 4: `MeetingList` — split upcoming from past in the viewer's timezone**
 
-In `src/app/(app)/page.tsx`, after resolving `activeGroup`, call `listMeetings(activeGroup.id)`. If the list is empty render the existing `<MeetingsEmpty />`; otherwise map to `<MeetingRow>`. Render `<NewMeetingSheet groupId={activeGroup.id} />` in both cases. Keep the pending-request cards exactly as they are.
+Client component taking `{ meetings, serverToday }`, where `meetings` is the date-ascending list from the domain. It renders an **Upcoming** group (soonest first) and a **Past** group (most recent first), each under an uppercase `tracking-label` heading, omitting an empty group. The cutoff lives in state:
 
-- [ ] **Step 5: Verify at a phone viewport**
+```tsx
+// The server renders with serverToday so the hydration markup matches; the
+// browser's real local date arrives on mount and corrects the split. "en-CA"
+// formats as YYYY-MM-DD — the same shape the dates are stored in — so these
+// compare as plain strings, with no Date parsing and no timezone conversion.
+const [today, setToday] = useState(serverToday);
+useEffect(() => setToday(new Date().toLocaleDateString("en-CA")), []);
+```
 
-Run `mise run dev`; drive the browser at **390×844**. Confirm: the sheet opens; the date field opens the OS picker; creating a meeting closes the sheet and shows the row; a long title wraps; the empty state still renders for a group with no meetings; no console errors. Report exactly what was verified.
+Do **not** compute the cutoff on the server: the host runs UTC, so a meeting would move to "past" hours early for members in the Americas.
 
-- [ ] **Step 6: Full checks, branch, commit, PR** — `mise run lint && typecheck && test && build`; branch `feat/meetings-list`; title "Add meetings list and new-meeting sheet". Stop at PR-ready.
+- [ ] **Step 5: Wire the home page**
+
+In `src/app/(app)/page.tsx`, after resolving `activeGroup`, call `listMeetings(activeGroup.id)`. If the list is empty render the existing `<MeetingsEmpty />`; otherwise render `<MeetingList meetings={meetings} serverToday={new Date().toISOString().slice(0, 10)} />`. Render `<NewMeetingSheet groupId={activeGroup.id} />` in both cases. Keep the pending-request cards exactly as they are.
+
+- [ ] **Step 6: Verify at a phone viewport**
+
+Run `mise run dev`; drive the browser at **390×844**. Confirm: the sheet opens; the date field opens the OS picker; creating a meeting closes the sheet and shows the row; a long title wraps; **a meeting dated today appears under Upcoming, not Past**; the empty state still renders for a group with no meetings; no console errors and no hydration warning. Report exactly what was verified.
+
+- [ ] **Step 7: Full checks, branch, commit, PR** — `mise run lint && typecheck && test && build`; branch `feat/meetings-list`; title "Add meetings list and new-meeting sheet". Stop at PR-ready.
 
 ---
 
@@ -781,4 +787,5 @@ Change the parent spec's status line to reflect that plans 1–3 are implemented
 - **Spec coverage:** meetings CRUD with creator-or-admin permissions (Tasks 1–3); recipe library group-shared (4–5); meal set/change with copy-on-set (6); ad-hoc items with adder-or-admin removal (9); claim/release with DB-enforced uniqueness and a contention test (7); claim race, ordering (upcoming-first), and the meal-only meeting page all map to tasks. Mobile-first obligations are attached to the tasks that build each flow — optimistic claiming (8), refetch on focus (8), native date input (2), keyboard-aware recipe form (5), wrapping labels (2, 8), destructive tap-safety (3, 5, 9) — with a phone-viewport verification step in every UI task. Testing section satisfied by Tasks 1/4/6/7 (integration) and 10 (Playwright smoke).
 - **Placeholder scan:** no TBDs. Domain modules and tests carry real code; UI tasks carry binding interface/design specs rather than full JSX, matching the altitude accepted for plan 2's UI tasks (6–8) — each still names exact files, components, copy, tokens, and verification.
 - **Type consistency:** `userId` is the first parameter of every domain function (matching `groups.ts`, where the plan-2 rename from `actorId` landed). `date` is a `YYYY-MM-DD` string in the schema, the domain, and `<input type="date">`. `ActionState` is `{ error: string | null; success: boolean }` in every actions file. `MealPlanItem.source` is `"recipe" | "adhoc"` in both the schema enum and the type. `getMealPlan` returns `MealPlan | null` and is consumed as nullable in Task 8.
+- **Timezone correctness:** dates are date-only `YYYY-MM-DD` strings with no instant and no conversion, so they read identically in every timezone. The one place a clock is needed — the upcoming/past cutoff — is computed in the browser (Task 2), because a UTC server is already a day ahead of US members by early evening.
 - **Known gap, deliberate:** deleting a recipe sets `mealPlans.recipeId` to null rather than cascading, so past weeks keep their copied items — the copy guarantee is tested in Task 6.
