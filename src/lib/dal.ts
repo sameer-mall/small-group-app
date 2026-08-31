@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { getMembership } from "@/lib/groups";
+import { getMembership } from "@/lib/membership";
 
 export async function getSession() {
   return auth.api.getSession({ headers: await headers() });

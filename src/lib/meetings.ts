@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { meetings } from "@/db/schema";
-import { getMembership } from "@/lib/groups";
+import { requireMembership } from "@/lib/membership";
 
 export type Meeting = {
   id: string;
@@ -10,12 +10,6 @@ export type Meeting = {
   date: string;
   createdBy: string;
 };
-
-async function requireMembership(userId: string, groupId: string) {
-  const membership = await getMembership(groupId, userId);
-  if (!membership) throw new Error("forbidden");
-  return membership;
-}
 
 // Loads the meeting and confirms the actor may manage it: its creator, or an
 // admin of its group. Any non-member fails the membership check first.
