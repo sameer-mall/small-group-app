@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { MeetingRow } from "@/components/meeting-row";
 import type { Meeting } from "@/lib/meetings";
+
+// The local date never changes while the page is mounted, so there is nothing
+// to subscribe to; React only needs a valid unsubscribe back.
+function subscribeToNothing() {
+  return () => {};
+}
+
+function getLocalToday() {
+  return new Date().toLocaleDateString("en-CA");
+}
 
 export function MeetingList({
   meetings,
@@ -11,18 +21,17 @@ export function MeetingList({
   meetings: Meeting[];
   serverToday: string;
 }) {
-  // The server renders with serverToday so the hydration markup matches; the
-  // browser's real local date arrives on mount and corrects the split. "en-CA"
-  // formats as YYYY-MM-DD — the same shape the dates are stored in — so these
-  // compare as plain strings, with no Date parsing and no timezone conversion.
-  //
-  // This is a one-shot correction of a value the server cannot know (the
-  // viewer's local timezone), not state synchronized from a prop — the
-  // react-hooks/set-state-in-effect rule's cascading-render concern doesn't
-  // apply since the effect only ever runs once, on mount.
-  const [today, setToday] = useState(serverToday);
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setToday(new Date().toLocaleDateString("en-CA")), []);
+  // "Today" differs between the server and the viewer: the host runs UTC, which
+  // is already a day ahead of members in the Americas by evening, so a
+  // server-computed cutoff would drop that evening's meeting into Past while
+  // the group was still in it. useSyncExternalStore is React's primitive for
+  // exactly this shape — getServerSnapshot supplies the value hydration must
+  // match, getSnapshot supplies the browser's real local date, and React
+  // re-renders once if they differ. No effect, no setState, nothing to
+  // suppress. "en-CA" formats as YYYY-MM-DD, the same shape the dates are
+  // stored in, so the comparisons below are plain string comparisons with no
+  // Date parsing and no timezone conversion.
+  const today = useSyncExternalStore(subscribeToNothing, getLocalToday, () => serverToday);
 
   // `meetings` arrives date-ascending from the domain (src/lib/meetings.ts).
   // Upcoming keeps that order (soonest first); past is reversed (most recent

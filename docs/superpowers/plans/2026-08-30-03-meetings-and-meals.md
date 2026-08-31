@@ -333,12 +333,15 @@ Close the sheet on `state.success` by adjusting state during render (the `handle
 Client component taking `{ meetings, serverToday }`, where `meetings` is the date-ascending list from the domain. It renders an **Upcoming** group (soonest first) and a **Past** group (most recent first), each under an uppercase `tracking-label` heading, omitting an empty group. The cutoff lives in state:
 
 ```tsx
-// The server renders with serverToday so the hydration markup matches; the
-// browser's real local date arrives on mount and corrects the split. "en-CA"
-// formats as YYYY-MM-DD — the same shape the dates are stored in — so these
-// compare as plain strings, with no Date parsing and no timezone conversion.
-const [today, setToday] = useState(serverToday);
-useEffect(() => setToday(new Date().toLocaleDateString("en-CA")), []);
+// getServerSnapshot supplies the value hydration must match; getSnapshot
+// supplies the browser's real local date, and React re-renders once if they
+// differ. This is what useSyncExternalStore is for — no effect, no setState,
+// no lint suppression. "en-CA" formats as YYYY-MM-DD, the same shape the dates
+// are stored in, so these compare as plain strings with no timezone conversion.
+const subscribeToNothing = () => () => {};
+const getLocalToday = () => new Date().toLocaleDateString("en-CA");
+
+const today = useSyncExternalStore(subscribeToNothing, getLocalToday, () => serverToday);
 ```
 
 Do **not** compute the cutoff on the server: the host runs UTC, so a meeting would move to "past" hours early for members in the Americas.
