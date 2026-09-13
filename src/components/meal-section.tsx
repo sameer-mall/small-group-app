@@ -3,6 +3,8 @@ import { listRecipes } from "@/lib/recipes";
 import { MealSlotRow } from "@/components/meal-slot-row";
 import { RecipePicker } from "@/components/recipe-picker";
 import { RefreshOnFocus } from "@/components/refresh-on-focus";
+import { AddAdhocItem } from "@/components/add-adhoc-item";
+import { ChangeMealDialog } from "@/components/change-meal-dialog";
 
 // Composes the meal plan for one meeting. Membership was already confirmed by
 // the page that renders this (see meetings/[id]/page.tsx) — getMealPlan and
@@ -11,10 +13,12 @@ export async function MealSection({
   meetingId,
   groupId,
   currentUserId,
+  isAdmin,
 }: {
   meetingId: string;
   groupId: string;
   currentUserId: string;
+  isAdmin: boolean;
 }) {
   const [plan, recipes] = await Promise.all([getMealPlan(meetingId), listRecipes(groupId)]);
 
@@ -36,9 +40,18 @@ export async function MealSection({
   return (
     <section className="flex flex-col gap-3">
       <RefreshOnFocus />
-      <div className="flex flex-col gap-0.5">
-        <span className="text-tertiary tracking-label text-xs font-bold uppercase">Meal</span>
-        <h2 className="font-serif text-xl font-semibold">{plan.recipeName ?? "This week's meal"}</h2>
+      <div className="flex items-end justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="text-tertiary tracking-label text-xs font-bold uppercase">Meal</span>
+          <h2 className="font-serif text-xl font-semibold break-words">
+            {plan.recipeName ?? "This week's meal"}
+          </h2>
+        </div>
+        <ChangeMealDialog
+          meetingId={meetingId}
+          recipes={recipes}
+          hasClaims={plan.items.some((item) => item.claimedBy !== null)}
+        />
       </div>
       <div className="bg-card rounded-card shadow-card flex flex-col px-4">
         {plan.items.map((item) => (
@@ -47,11 +60,11 @@ export async function MealSection({
             item={item}
             meetingId={meetingId}
             currentUserId={currentUserId}
+            isAdmin={isAdmin}
           />
         ))}
       </div>
-      {/* Task 9 mounts the ad-hoc "Add item" control and the change-recipe
-          dialog here. */}
+      <AddAdhocItem meetingId={meetingId} />
     </section>
   );
 }

@@ -13,7 +13,7 @@ import type { RecipeSummary } from "@/lib/recipes";
 
 const initialState: ActionState = { error: null, success: false };
 
-function RecipeChoice({
+export function RecipeChoice({
   recipe,
   meetingId,
   onChosen,

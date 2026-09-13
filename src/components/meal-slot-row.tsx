@@ -1,10 +1,12 @@
 "use client";
 
 import { startTransition, useActionState, useOptimistic, useState } from "react";
+import { XIcon } from "lucide-react";
 import { initials } from "@/lib/utils";
 import {
   claimItemAction,
   releaseItemAction,
+  removeAdhocItemAction,
   type ActionState,
 } from "@/app/(app)/meals/actions";
 import type { MealPlanItem } from "@/lib/meals";
@@ -17,10 +19,12 @@ export function MealSlotRow({
   item,
   meetingId,
   currentUserId,
+  isAdmin,
 }: {
   item: MealPlanItem;
   meetingId: string;
   currentUserId: string;
+  isAdmin: boolean;
 }) {
   const [claimState, claim] = useActionState(
     claimItemAction.bind(null, meetingId, item.id),
@@ -28,6 +32,10 @@ export function MealSlotRow({
   );
   const [releaseState, release] = useActionState(
     releaseItemAction.bind(null, meetingId, item.id),
+    initialState,
+  );
+  const [removeState, remove] = useActionState(
+    removeAdhocItemAction.bind(null, meetingId, item.id),
     initialState,
   );
 
@@ -43,7 +51,13 @@ export function MealSlotRow({
   // focus refresh bringing in the claim that beat us, say — the row already
   // shows who holds it and the message is just noise. Adjusted during render
   // rather than in an effect, the same pattern as new-meeting-sheet.tsx.
-  const failed = claimState.error ? claimState : releaseState.error ? releaseState : null;
+  const failed = claimState.error
+    ? claimState
+    : releaseState.error
+      ? releaseState
+      : removeState.error
+        ? removeState
+        : null;
   const [errorContext, setErrorContext] = useState<{
     state: ActionState | null;
     truthBy: string | null;
@@ -71,6 +85,15 @@ export function MealSlotRow({
       release(new FormData());
     });
   }
+
+  // Ad-hoc rows only, for whoever added it or a group admin, and only while
+  // nobody holds it — removing a claimed item would yank a commitment out from
+  // under the person who made it. The domain enforces all three regardless of
+  // what this renders.
+  const canRemove =
+    item.source === "adhoc" &&
+    !claimed &&
+    (item.addedBy === currentUserId || isAdmin);
 
   return (
     <div className="border-divider flex flex-col border-b last:border-b-0">
@@ -116,6 +139,16 @@ export function MealSlotRow({
         )}
         {claimed && !mine && (
           <span className="text-muted-foreground shrink-0 text-sm">{optimistic.name}</span>
+        )}
+        {canRemove && (
+          <button
+            type="button"
+            onClick={() => startTransition(() => remove(new FormData()))}
+            aria-label={`Remove ${item.label}`}
+            className="text-tertiary min-h-tap flex min-w-tap shrink-0 items-center justify-center"
+          >
+            <XIcon size={16} />
+          </button>
         )}
       </div>
       {error && <p className="text-destructive pb-2 text-xs">{error}</p>}
