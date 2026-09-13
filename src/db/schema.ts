@@ -59,3 +59,32 @@ export const recipeItems = pgTable("recipe_items", {
   // Zero-based index into the recipe's item list; rewritten wholesale on edit.
   position: integer("position").notNull(),
 });
+
+export const mealPlans = pgTable("meal_plans", {
+  // One plan per meeting at most, so the meeting id *is* the key.
+  meetingId: text("meeting_id").primaryKey().references(() => meetings.id, { onDelete: "cascade" }),
+  // Null once the source recipe is deleted — the copied items still stand.
+  recipeId: text("recipe_id").references(() => recipes.id, { onDelete: "set null" }),
+  setBy: text("set_by").notNull().references(() => user.id),
+  setAt: timestamp("set_at").notNull().defaultNow(),
+});
+
+export const mealPlanItems = pgTable("meal_plan_items", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  meetingId: text("meeting_id").notNull().references(() => mealPlans.meetingId, { onDelete: "cascade" }),
+  label: text("label").notNull(),
+  position: integer("position").notNull(),
+  // Copies of recipe items vs. extras added to this week only.
+  source: text("source", { enum: ["recipe", "adhoc"] }).notNull(),
+  // Set for ad-hoc items (who added it); null for copied recipe items.
+  addedBy: text("added_by").references(() => user.id),
+});
+
+export const itemClaims = pgTable("item_claims", {
+  // The primary key IS the one-claimer-per-item guarantee: a second claim on
+  // the same item is a duplicate-key error from Postgres, not a check the
+  // application could race past.
+  itemId: text("item_id").primaryKey().references(() => mealPlanItems.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  claimedAt: timestamp("claimed_at").notNull().defaultNow(),
+});
