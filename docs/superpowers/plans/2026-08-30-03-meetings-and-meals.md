@@ -581,7 +581,7 @@ Run: `mise run test` → PASS.
   - `type MealPlanItem = { id: string; label: string; position: number; source: "recipe" | "adhoc"; addedBy: string | null; addedByName: string | null; claimedBy: string | null; claimedByName: string | null }`
   - `type MealPlan = { meetingId: string; recipeId: string | null; recipeName: string | null; items: MealPlanItem[] }`
 
-- [ ] **Step 1: Append the tables**
+- [x] **Step 1: Append the tables**
 
 ```ts
 export const mealPlans = pgTable("meal_plans", {
@@ -614,25 +614,25 @@ export const itemClaims = pgTable("item_claims", {
 });
 ```
 
-- [ ] **Step 2: Generate and apply the migration**
+- [x] **Step 2: Generate and apply the migration**
 
 ```bash
 mise run db:generate && mise run db:migrate
 ```
 
-- [ ] **Step 3: Write the failing tests**
+- [x] **Step 3: Write the failing tests**
 
 `tests/integration/meals.test.ts` — cover: setting a meal copies the recipe's items in order with `source: "recipe"`; **editing the recipe afterwards does not change the plan** (the copy guarantee); setting a different recipe clears the previous items *and their claims*; `addAdhocItem` records `addedBy` and appends after the recipe items; `removeAdhocItem` succeeds for the adder and for an admin, throws `"forbidden"` for another member, and throws `"forbidden"` when the item is already claimed; a non-member gets `"forbidden"` from `setMeal` and `addAdhocItem`. Use the `mkUser`/`addMember` helpers from Task 1's spec file (repeated inline — do not import across test files).
 
-- [ ] **Step 4: Run the tests to verify they fail** — `mise run test` → FAIL (cannot resolve `@/lib/meals`).
+- [x] **Step 4: Run the tests to verify they fail** — `mise run test` → FAIL (cannot resolve `@/lib/meals`).
 
-- [ ] **Step 5: Implement the module**
+- [x] **Step 5: Implement the module**
 
 `setMeal` runs in one `db.transaction`: load the meeting (`"not-found"` if absent) → check membership of its group with `requireMembership` from `@/lib/membership` (`"forbidden"`) → load the recipe and confirm it belongs to the **same group** (`"not-found"` otherwise — this stops another group's recipe being planted in your meeting) → `delete` any existing `mealPlanItems` for the meeting (claims cascade) → upsert the `mealPlans` row with the new `recipeId`/`setBy` → insert the recipe's items as copies with `source: "recipe"`, preserving `position`. `addAdhocItem` appends with `position` = current max + 1 and `source: "adhoc"`. `removeAdhocItem` loads the item, requires `source === "adhoc"`, requires the actor to be its `addedBy` or a group admin, and refuses when a claim exists. `getMealPlan` left-joins `itemClaims` and `user` (twice: adder and claimer) to return display names, ordered by `position`.
 
-- [ ] **Step 6: Run the tests to verify they pass** — `mise run test` → PASS.
+- [x] **Step 6: Run the tests to verify they pass** — `mise run test` → PASS.
 
-- [ ] **Step 7: Full checks, branch, commit, PR** — branch `feat/meal-plan-domain`; title "Add meal plan schema and domain module". Stop at PR-ready.
+- [x] **Step 7: Full checks, branch, commit, PR** — branch `feat/meal-plan-domain`; title "Add meal plan schema and domain module". Stop at PR-ready.
 
 ---
 
