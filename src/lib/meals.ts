@@ -1,4 +1,4 @@
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { db } from "@/db/client";
 import { user } from "@/db/auth-schema";
@@ -189,4 +189,49 @@ export async function removeAdhocItem(userId: string, itemId: string): Promise<v
   if (claimed) throw new Error("forbidden");
 
   await db.delete(mealPlanItems).where(eq(mealPlanItems.id, itemId));
+}
+
+// Postgres raises 23505 (unique_violation) when two people claim the same
+// item. Drizzle may hand that back wrapped, so walk the cause chain rather
+// than trusting the shape of the top-level error.
+function isUniqueViolation(err: unknown): boolean {
+  let current: unknown = err;
+  while (current && typeof current === "object") {
+    if ((current as { code?: string }).code === "23505") return true;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
+}
+
+// Claiming is a plain insert whose failure mode is the primary key on
+// item_claims. There is deliberately no "is it already claimed?" SELECT first:
+// that check and the insert could not be atomic, so two members tapping Claim
+// at the same moment would both pass it. Letting the insert fail is what makes
+// exactly one of them win.
+export async function claimItem(userId: string, itemId: string): Promise<void> {
+  const [item] = await db
+    .select({ id: mealPlanItems.id, meetingId: mealPlanItems.meetingId })
+    .from(mealPlanItems)
+    .where(eq(mealPlanItems.id, itemId));
+  if (!item) throw new Error("not-found");
+
+  await requireMeetingMember(userId, item.meetingId);
+
+  try {
+    await db.insert(itemClaims).values({ itemId, userId, claimedAt: new Date() });
+  } catch (err) {
+    if (isUniqueViolation(err)) throw new Error("already-claimed");
+    throw err;
+  }
+}
+
+// Scoped to the actor's own claim, so "nobody claimed it" and "somebody else
+// claimed it" collapse into one atomic statement — and a member can never
+// release a commitment that isn't theirs.
+export async function releaseItem(userId: string, itemId: string): Promise<void> {
+  const released = await db
+    .delete(itemClaims)
+    .where(and(eq(itemClaims.itemId, itemId), eq(itemClaims.userId, userId)))
+    .returning({ itemId: itemClaims.itemId });
+  if (released.length === 0) throw new Error("not-claimed");
 }
