@@ -38,6 +38,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         meetingId={meeting.id}
         groupId={meeting.groupId}
         currentUserId={user.id}
+        isAdmin={role === "admin"}
       />
     </main>
   );

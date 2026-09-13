@@ -743,17 +743,17 @@ it("only the claimer can release; releasing a free item throws", async () => {
 
 **Steps:**
 
-- [ ] **Step 1: Actions** — `addAdhocItemAction(meetingId, prevState, formData)` validates a non-empty trimmed `label` (else "Add a name for the item.") and calls the domain; `removeAdhocItemAction(meetingId, itemId, ...)` maps `"forbidden"` → `"Only the person who added it, or an admin, can remove it."`.
+- [x] **Step 1: Actions** — `addAdhocItemAction(meetingId, prevState, formData)` validates a non-empty trimmed `label` (else "Add a name for the item.") and calls the domain; `removeAdhocItemAction(meetingId, itemId, ...)` maps `"forbidden"` → `"Only the person who added it, or an admin, can remove it."`.
 
-- [ ] **Step 2: `AddAdhocItem`** — client component: a single labelled input (Input recipe, `enterKeyHint="done"`) plus an "Add item" button, appended below the slot list. On success the input clears. The row it creates is claimable like any other and notes "added by \<name\>".
+- [x] **Step 2: `AddAdhocItem`** — client component: a single labelled input (Input recipe, `enterKeyHint="done"`) plus an "Add item" button, appended below the slot list. On success the input clears. The row it creates is claimable like any other and notes "added by \<name\>".
 
-- [ ] **Step 3: Remove control** — on ad-hoc rows only, visible to the adder or an admin, and only while the item is unclaimed (the domain enforces this regardless of what the UI shows).
+- [x] **Step 3: Remove control** — on ad-hoc rows only, visible to the adder or an admin, and only while the item is unclaimed (the domain enforces this regardless of what the UI shows).
 
-- [ ] **Step 4: `ChangeMealDialog`** — a "Change recipe" control on the meal header opening a confirm Dialog. When the plan has at least one claim, the body must warn before proceeding: "This clears the current items and everyone's claims." Confirming calls `setMealAction` with the newly chosen recipe. Same mobile tap-safety rule as Task 3's destructive confirm.
+- [x] **Step 4: `ChangeMealDialog`** — a "Change recipe" control on the meal header opening a confirm Dialog. When the plan has at least one claim, the body must warn before proceeding: "This clears the current items and everyone's claims." Confirming calls `setMealAction` with the newly chosen recipe. Same mobile tap-safety rule as Task 3's destructive confirm.
 
-- [ ] **Step 5: Verify at a phone viewport** — at **390×844**: add "brownies", claim it, confirm the adder cannot remove it while claimed, release and remove it; change the recipe on a plan with claims and confirm the warning appears and the slots reset. Report what was verified.
+- [x] **Step 5: Verify at a phone viewport** — at **390×844**: add "brownies", claim it, confirm the adder cannot remove it while claimed, release and remove it; change the recipe on a plan with claims and confirm the warning appears and the slots reset. Report what was verified.
 
-- [ ] **Step 6: Full checks, branch, commit, PR** — branch `feat/adhoc-items`; title "Add ad-hoc meal items and recipe changing". Stop at PR-ready.
+- [x] **Step 6: Full checks, branch, commit, PR** — branch `feat/adhoc-items`; title "Add ad-hoc meal items and recipe changing". Stop at PR-ready.
 
 ---
 
