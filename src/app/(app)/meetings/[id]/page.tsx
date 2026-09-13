@@ -3,6 +3,7 @@ import { requireMember, requireUser } from "@/lib/dal";
 import { getMeeting } from "@/lib/meetings";
 import { formatMeetingDate } from "@/lib/utils";
 import { MeetingActionsMenu } from "@/components/meeting-actions-menu";
+import { MealSection } from "@/components/meal-section";
 
 export default async function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,7 +34,11 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         </div>
         {canManage && <MeetingActionsMenu meeting={meeting} />}
       </div>
-      {/* Task 8 mounts the meal section here. */}
+      <MealSection
+        meetingId={meeting.id}
+        groupId={meeting.groupId}
+        currentUserId={user.id}
+      />
     </main>
   );
 }
