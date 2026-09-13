@@ -1,4 +1,4 @@
-import { readFileSync, rmSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
 const MAIL = ".e2e-mail.jsonl";
@@ -16,8 +16,17 @@ async function signIn(page: Page, email: string, name: string) {
   await page.getByLabel("Email address").fill(email);
   await page.getByRole("button", { name: "Send magic link" }).click();
   await expectApp(page.getByText("Check your email")).toBeVisible();
-  const lines = readFileSync(MAIL, "utf8").trim().split("\n");
-  const { url } = JSON.parse(lines[lines.length - 1]);
+  // Pick the newest link addressed to *this* email, not simply the last line.
+  // Spec files run in parallel and share one mailbox file, so "the last line"
+  // is whichever worker wrote most recently — which silently signs this page
+  // in as somebody else's user.
+  const link = readFileSync(MAIL, "utf8")
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as { to: string; url: string })
+    .findLast((mail) => mail.to === email);
+  if (!link) throw new Error(`no magic link for ${email} in ${MAIL}`);
+  const { url } = link;
   await page.goto(url);
   if (page.url().includes("/welcome")) {
     await page.getByLabel("Display name").fill(name);
@@ -26,7 +35,6 @@ async function signIn(page: Page, email: string, name: string) {
 }
 
 test("two users: create group, invite, approve, member arrives", async ({ browser }) => {
-  rmSync(MAIL, { force: true });
   const run = Date.now();
 
   const alice = await (await browser.newContext()).newPage();

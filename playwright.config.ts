@@ -19,6 +19,15 @@ export default defineConfig({
     command: "pnpm next start",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    env: { AUTH_EMAIL_FILE: ".e2e-mail.jsonl" },
+    env: {
+      AUTH_EMAIL_FILE: ".e2e-mail.jsonl",
+      // Pin the auth origin to the port this suite actually serves. Better
+      // Auth rejects a sign-in POST whose origin doesn't match its baseURL,
+      // and baseURL comes from BETTER_AUTH_URL — which a developer's
+      // .env.local may point somewhere else entirely (3200 for the
+      // `web-start` preview, say). Variables set here win over .env files, so
+      // e2e stops depending on whatever the local env happens to say.
+      BETTER_AUTH_URL: "http://localhost:3000",
+    },
   },
 });
