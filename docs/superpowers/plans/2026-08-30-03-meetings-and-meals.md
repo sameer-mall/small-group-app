@@ -644,7 +644,7 @@ mise run db:generate && mise run db:migrate
 **Interfaces:**
 - Produces: `claimItem(userId: string, itemId: string): Promise<void>` — throws `"already-claimed"` if taken; `releaseItem(userId: string, itemId: string): Promise<void>` — throws `"not-claimed"` if the actor does not hold it.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `tests/integration/meals.test.ts`:
 
@@ -691,15 +691,15 @@ it("only the claimer can release; releasing a free item throws", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail** — `mise run test` → FAIL (`claimItem` is not exported).
+- [x] **Step 2: Run the tests to verify they fail** — `mise run test` → FAIL (`claimItem` is not exported).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `claimItem`: load the item joined to its meeting (`"not-found"` if absent), check membership of that meeting's group (`"forbidden"`), then `insert` into `itemClaims`. **Catch the Postgres unique-violation (code `23505`) and rethrow as `new Error("already-claimed")`** — do not pre-check with a SELECT, which would reintroduce the race the primary key exists to close. `releaseItem`: `delete` from `itemClaims` `where itemId = ... and userId = ...` with `.returning({ itemId })`; if nothing came back, throw `"not-claimed"` (this covers both "not claimed at all" and "claimed by someone else" in one atomic statement).
 
-- [ ] **Step 4: Run the tests to verify they pass** — `mise run test` → PASS, including the concurrency test.
+- [x] **Step 4: Run the tests to verify they pass** — `mise run test` → PASS, including the concurrency test.
 
-- [ ] **Step 5: Full checks, branch, commit, PR** — branch `feat/meal-claims`; title "Add meal item claim and release". Stop at PR-ready.
+- [x] **Step 5: Full checks, branch, commit, PR** — branch `feat/meal-claims`; title "Add meal item claim and release". Stop at PR-ready.
 
 ---
 
