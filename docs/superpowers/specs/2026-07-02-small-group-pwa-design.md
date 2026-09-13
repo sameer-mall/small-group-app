@@ -1,7 +1,7 @@
 # Small Group PWA — Design Spec
 
 **Date:** 2026-07-02
-**Status:** Plans 1–2 implemented
+**Status:** Plans 1–3 implemented
 
 ## Purpose
 

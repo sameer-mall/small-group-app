@@ -767,11 +767,11 @@ it("only the claimer can release; releasing a free item throws", async () => {
 - Consumes: everything above; the existing `signIn` helper pattern in `e2e/auth-groups.spec.ts` (file email transport via `AUTH_EMAIL_FILE`).
 - Produces: the spec's required Playwright smoke — "set a meal & claim items".
 
-- [ ] **Step 1: Write the spec**
+- [x] **Step 1: Write the spec**
 
 `e2e/meals.spec.ts`. Copy the `signIn` helper and the `expectApp` configured expect from `e2e/auth-groups.spec.ts` (do not import across spec files). One test: sign in → create a group → create a recipe with two items → create a meeting → open it → set the meal from that recipe → claim the first item and assert it shows as yours → release it and assert the Claim pill returns. Use unique per-run values (`Date.now()`) so re-runs never collide.
 
-- [ ] **Step 2: Run the full suite**
+- [x] **Step 2: Run the full suite**
 
 ```bash
 mise run db:up && mise run build && mise run e2e
@@ -779,11 +779,11 @@ mise run db:up && mise run build && mise run e2e
 
 Expected: all three specs pass (`home`, `auth-groups`, `meals`). If the new test pushes the run near the per-test budget, note it — `playwright.config.ts` already allows 90s per test and retains a trace on failure.
 
-- [ ] **Step 3: Update the spec status**
+- [x] **Step 3: Update the spec status**
 
 Change the parent spec's status line to reflect that plans 1–3 are implemented.
 
-- [ ] **Step 4: Full checks, branch, commit, PR** — `lint`, `typecheck`, `test`, `build`, `e2e`; branch `feat/meals-e2e`; title "Add meal sign-up e2e smoke". Stop at PR-ready.
+- [x] **Step 4: Full checks, branch, commit, PR** — `lint`, `typecheck`, `test`, `build`, `e2e`; branch `feat/meals-e2e`; title "Add meal sign-up e2e smoke". Stop at PR-ready.
 
 ---
 
