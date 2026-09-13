@@ -1,0 +1,39 @@
+import { notFound } from "next/navigation";
+import { requireMember, requireUser } from "@/lib/dal";
+import { getMeeting } from "@/lib/meetings";
+import { formatMeetingDate } from "@/lib/utils";
+import { MeetingActionsMenu } from "@/components/meeting-actions-menu";
+
+export default async function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const user = await requireUser(`/meetings/${id}`);
+
+  const meeting = await getMeeting(id);
+  if (!meeting) notFound();
+
+  // getMeeting does no authorization — this is the group scoping guard, so a
+  // member of some other group gets "forbidden" rather than a peek at the
+  // title. It also gives us the role the manage check needs.
+  const { role } = await requireMember(meeting.groupId);
+  const canManage = meeting.createdBy === user.id || role === "admin";
+
+  return (
+    <main className="flex flex-col gap-6 p-6">
+      <div className="flex items-start gap-2">
+        <div className="flex flex-1 flex-col gap-1">
+          <h1 className="font-serif text-2xl font-semibold">{meeting.title}</h1>
+          <p className="text-muted-foreground text-sm">
+            {formatMeetingDate(meeting.date, {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+        </div>
+        {canManage && <MeetingActionsMenu meeting={meeting} />}
+      </div>
+      {/* Task 8 mounts the meal section here. */}
+    </main>
+  );
+}

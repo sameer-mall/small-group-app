@@ -54,7 +54,7 @@
   - `type Meeting = { id: string; groupId: string; title: string; date: string; createdBy: string }`
   - `date` is a date-only `YYYY-MM-DD` string (no time-of-day), matching `<input type="date">`.
 
-- [ ] **Step 1: Append the meetings table to `src/db/schema.ts`**
+- [x] **Step 1: Append the meetings table to `src/db/schema.ts`**
 
 Add `date` to the existing `drizzle-orm/pg-core` import, then append:
 
@@ -72,7 +72,7 @@ export const meetings = pgTable("meetings", {
 });
 ```
 
-- [ ] **Step 2: Generate and apply the migration**
+- [x] **Step 2: Generate and apply the migration**
 
 ```bash
 mise run db:up
@@ -82,7 +82,7 @@ mise run db:migrate
 
 Expected: a new `drizzle/00XX_*.sql` creating `meetings`. Do not hand-edit it.
 
-- [ ] **Step 3: Write the failing tests**
+- [x] **Step 3: Write the failing tests**
 
 `tests/integration/meetings.test.ts`:
 
@@ -177,12 +177,12 @@ describe("meetings domain", () => {
 });
 ```
 
-- [ ] **Step 4: Run the tests to verify they fail**
+- [x] **Step 4: Run the tests to verify they fail**
 
 Run: `mise run test`
 Expected: FAIL — cannot resolve `@/lib/meetings`.
 
-- [ ] **Step 5: Implement `src/lib/meetings.ts`**
+- [x] **Step 5: Implement `src/lib/meetings.ts`**
 
 ```ts
 import { asc, eq } from "drizzle-orm";
@@ -282,12 +282,12 @@ export async function deleteMeeting(userId: string, meetingId: string): Promise<
 }
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `mise run test`
 Expected: PASS — all prior suites plus the four new tests.
 
-- [ ] **Step 7: Full checks, branch, commit, PR**
+- [x] **Step 7: Full checks, branch, commit, PR**
 
 ```bash
 mise run lint && mise run typecheck && mise run test
@@ -313,15 +313,15 @@ Stop at PR-ready. Do not merge.
 
 **Steps:**
 
-- [ ] **Step 1: Server action**
+- [x] **Step 1: Server action**
 
 `src/app/(app)/meetings/actions.ts` — `"use server"`. Define `export type ActionState = { error: string | null; success: boolean }` (same shape as `src/app/(app)/group/actions.ts`, which is the established convention) and a `mapError` mapping `"forbidden"` → `"Only group members can do that."` and `"not-found"` → `"That didn't work — try refreshing the page."`, rethrowing anything else. `createMeetingAction(groupId, _prevState, formData)`: `requireUser()` → read and trim `title` and `date` → if either is empty return `{ error: "Add a title and a date.", success: false }` → **validate `date` against `/^\d{4}-\d{2}-\d{2}$/`** and return `{ error: "Enter a valid date.", success: false }` if it fails (a hand-crafted POST can send anything, and without this Postgres raises an invalid-input error the user sees as a 500 rather than a message) → `createMeeting(user.id, groupId, { title, date })` in try/catch → `revalidatePath("/")` → `{ error: null, success: true }`.
 
-- [ ] **Step 2: `MeetingRow` (part of screen 3d)**
+- [x] **Step 2: `MeetingRow` (part of screen 3d)**
 
 Server component. A `Link` to `/meetings/<id>` styled as a card row: serif title (`font-serif text-lg font-semibold`), the date below in `text-muted-foreground text-sm`, formatted long-form (e.g. "Thursday, September 10"). **Long titles wrap** (no `truncate`). Row is `min-h-tap`.
 
-- [ ] **Step 3: `NewMeetingSheet` (screen 3f)**
+- [x] **Step 3: `NewMeetingSheet` (screen 3f)**
 
 Client component. A trigger button ("Plan a meeting", primary recipe, `min-h-tap`) opening the existing shadcn `Dialog` styled as a bottom sheet (`rounded-sheet`, anchored bottom). Inside, a `<form action={formAction}>` driven by `useActionState(createMeetingAction.bind(null, groupId), initialState)` with:
 - `<input name="title" required>` using the Input recipe, `enterKeyHint="next"`.
@@ -329,7 +329,7 @@ Client component. A trigger button ("Plan a meeting", primary recipe, `min-h-tap
 - Submit button "Create meeting"; `state.error` rendered inline in `text-destructive text-xs`.
 Close the sheet on `state.success` by adjusting state during render (the `handledState` pattern already used in `src/components/group-name-header.tsx`), not in an effect.
 
-- [ ] **Step 4: `MeetingList` — split upcoming from past in the viewer's timezone**
+- [x] **Step 4: `MeetingList` — split upcoming from past in the viewer's timezone**
 
 Client component taking `{ meetings, serverToday }`, where `meetings` is the date-ascending list from the domain. It renders an **Upcoming** group (soonest first) and a **Past** group (most recent first), each under an uppercase `tracking-label` heading, omitting an empty group. The cutoff lives in state:
 
@@ -347,15 +347,15 @@ const today = useSyncExternalStore(subscribeToNothing, getLocalToday, () => serv
 
 Do **not** compute the cutoff on the server: the host runs UTC, so a meeting would move to "past" hours early for members in the Americas.
 
-- [ ] **Step 5: Wire the home page**
+- [x] **Step 5: Wire the home page**
 
 In `src/app/(app)/page.tsx`, after resolving `activeGroup`, call `listMeetings(activeGroup.id)`. If the list is empty render the existing `<MeetingsEmpty />`; otherwise render `<MeetingList meetings={meetings} serverToday={new Date().toISOString().slice(0, 10)} />`. Render `<NewMeetingSheet groupId={activeGroup.id} />` in both cases. Keep the pending-request cards exactly as they are.
 
-- [ ] **Step 6: Verify at a phone viewport**
+- [x] **Step 6: Verify at a phone viewport**
 
 Run `mise run dev`; drive the browser at **390×844**. Confirm: the sheet opens; the date field opens the OS picker; creating a meeting closes the sheet and shows the row; a long title wraps; **a meeting dated today appears under Upcoming, not Past**; the empty state still renders for a group with no meetings; no console errors and no hydration warning. Report exactly what was verified.
 
-- [ ] **Step 7: Full checks, branch, commit, PR** — `mise run lint && typecheck && test && build`; branch `feat/meetings-list`; title "Add meetings list and new-meeting sheet". Stop at PR-ready.
+- [x] **Step 7: Full checks, branch, commit, PR** — `mise run lint && typecheck && test && build`; branch `feat/meetings-list`; title "Add meetings list and new-meeting sheet". Stop at PR-ready.
 
 ---
 
@@ -371,23 +371,23 @@ Run `mise run dev`; drive the browser at **390×844**. Confirm: the sheet opens;
 
 **Steps:**
 
-- [ ] **Step 1: Actions**
+- [x] **Step 1: Actions**
 
 Append to `src/app/(app)/meetings/actions.ts`. `updateMeetingAction`: `requireUser()` → validate title/date non-empty → `updateMeeting` in try/catch → `revalidatePath("/meetings/" + meetingId)` and `revalidatePath("/")`. `deleteMeetingAction`: `requireUser()` → `deleteMeeting` in try/catch → `revalidatePath("/")` → `redirect("/")` on success (outside the try, so the redirect's control-flow throw is not caught).
 
-- [ ] **Step 2: The page**
+- [x] **Step 2: The page**
 
 Server component. `const user = await requireUser()` → `const meeting = await getMeeting(id)` → if `!meeting` call `notFound()` → `const { role } = await requireMember(meeting.groupId)` (this is the group-scoping guard: a member of another group gets `forbidden`) → `const canManage = meeting.createdBy === user.id || role === "admin"`. Render the serif title, the long-form date, and — when `canManage` — `<MeetingActionsMenu>`. Leave a clearly marked slot where Task 8 mounts the meal section.
 
-- [ ] **Step 3: `MeetingActionsMenu`**
+- [x] **Step 3: `MeetingActionsMenu`**
 
 Client component using the existing shadcn `DropdownMenu` (⋯ trigger, `min-h-tap`, `aria-label="Meeting actions"`) with **Edit** and **Delete meeting** (`variant="destructive"`). Edit opens a Dialog containing the same title/date form as the sheet (prefilled). Delete opens a confirm Dialog: title "Delete this meeting?", body "Its meal plan and claims are deleted with it." — copy required by the spec's "deletion warns that its content goes with it". **Mobile:** in the confirm dialog, Cancel is the leftmost/default-focused control and the destructive button sits at the opposite end, away from where the menu item was tapped. Dispatch `useActionState` actions from `onClick` inside `startTransition(...)` (required — the codebase hit a React 19 error doing otherwise).
 
-- [ ] **Step 4: Verify at a phone viewport**
+- [x] **Step 4: Verify at a phone viewport**
 
 At **390×844**: open a meeting from the list; edit the title and see it update; confirm a non-creator/non-admin member sees no ⋯ menu; delete a meeting and land back on the list without it. Report what was verified.
 
-- [ ] **Step 5: Full checks, branch, commit, PR** — branch `feat/meeting-detail`; title "Add meeting detail page with edit and delete". Stop at PR-ready.
+- [x] **Step 5: Full checks, branch, commit, PR** — branch `feat/meeting-detail`; title "Add meeting detail page with edit and delete". Stop at PR-ready. *(Shipped together with Tasks 4 and 5 in one PR, at the user's request.)*
 
 ---
 
@@ -406,7 +406,7 @@ At **390×844**: open a meeting from the list; edit the title and see it update;
   - `updateRecipe(userId: string, recipeId: string, input: { name: string; items: string[] }): Promise<void>` — replaces the item list wholesale
   - `deleteRecipe(userId: string, recipeId: string): Promise<void>`
 
-- [ ] **Step 1: Append the tables**
+- [x] **Step 1: Append the tables**
 
 Add `integer` to the `drizzle-orm/pg-core` import, then append:
 
@@ -427,13 +427,13 @@ export const recipeItems = pgTable("recipe_items", {
 });
 ```
 
-- [ ] **Step 2: Generate and apply the migration**
+- [x] **Step 2: Generate and apply the migration**
 
 ```bash
 mise run db:generate && mise run db:migrate
 ```
 
-- [ ] **Step 3: Write the failing tests**
+- [x] **Step 3: Write the failing tests**
 
 `tests/integration/recipes.test.ts` — reuse the `mkUser` helper shape from `tests/integration/meetings.test.ts` (repeated here because tasks may be read out of order):
 
@@ -523,19 +523,19 @@ describe("recipes domain", () => {
 });
 ```
 
-- [ ] **Step 4: Run the tests to verify they fail**
+- [x] **Step 4: Run the tests to verify they fail**
 
 Run: `mise run test` → FAIL (cannot resolve `@/lib/recipes`).
 
-- [ ] **Step 5: Implement `src/lib/recipes.ts`**
+- [x] **Step 5: Implement `src/lib/recipes.ts`**
 
 Mirror `meetings.ts`: import `requireMembership` from `@/lib/membership` (do not write another copy), and add a private `requireRecipeMember(userId, recipeId)` that loads the recipe (throwing `"not-found"` when absent) and then checks membership of *its* group — this is what stops a member of group A editing group B's recipe. `createRecipe` and `updateRecipe` write the recipe row and its items **in one `db.transaction`**; `updateRecipe` deletes existing `recipeItems` for the recipe and re-inserts the new list with `position` = array index. `listRecipes` left-joins `recipeItems` with `count(...)::int` grouped by recipe, ordered by `asc(recipes.name)`. `getRecipe` returns `null` when missing and orders items by `asc(recipeItems.position)`.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `mise run test` → PASS.
 
-- [ ] **Step 7: Full checks, branch, commit, PR** — branch `feat/recipes-domain`; title "Add recipes schema and domain module". Stop at PR-ready.
+- [x] **Step 7: Full checks, branch, commit, PR** — branch `feat/recipes-domain`; title "Add recipes schema and domain module". Stop at PR-ready. *(Shipped in the Task 3 PR.)*
 
 ---
 
@@ -551,17 +551,17 @@ Run: `mise run test` → PASS.
 
 **Steps:**
 
-- [ ] **Step 1: Actions** — same skeleton as Task 2's: `requireUser()` → parse `name` plus the repeated `item` fields via `formData.getAll("item")`, trimming and dropping empties → validate name non-empty and at least one item, else return an inline error → domain call in try/catch → `revalidatePath("/recipes")` → for create/delete, `redirect` to `/recipes` (outside the try).
+- [x] **Step 1: Actions** — same skeleton as Task 2's: `requireUser()` → parse `name` plus the repeated `item` fields via `formData.getAll("item")`, trimming and dropping empties → validate name non-empty and at least one item, else return an inline error → domain call in try/catch → `revalidatePath("/recipes")` → for create/delete, `redirect` to `/recipes` (outside the try).
 
-- [ ] **Step 2: `RecipeForm` (screen 3k)** — client component taking `{ groupId, recipe? }`. Name input plus a dynamic list of item inputs (all named `item`), an "Add item" button appending a row, and a remove control per row. **Mobile:** every item input sets `enterKeyHint="next"`; the form's container has bottom padding clearing the fixed tab bar so the last field is never hidden behind it or the on-screen keyboard; inputs use the 16px Input recipe. Submit label is "Save recipe".
+- [x] **Step 2: `RecipeForm` (screen 3k)** — client component taking `{ groupId, recipe? }`. Name input plus a dynamic list of item inputs (all named `item`), an "Add item" button appending a row, and a remove control per row. **Mobile:** every item input sets `enterKeyHint="next"`; the form's container has bottom padding clearing the fixed tab bar so the last field is never hidden behind it or the on-screen keyboard; inputs use the 16px Input recipe. Submit label is "Save recipe".
 
-- [ ] **Step 3: Library (3i)** — replace the placeholder in `src/app/(app)/recipes/page.tsx`: resolve the active group the same way `/group` does (`resolveActiveGroup`), `requireMember`, then `listRecipes`. Render a card list of name + "N items", each linking to `/recipes/<id>`, plus a primary "Add a recipe" link to `/recipes/new`. Empty state: serif "No recipes yet" and "Save a meal your group makes often, then use it to plan a week."
+- [x] **Step 3: Library (3i)** — replace the placeholder in `src/app/(app)/recipes/page.tsx`: resolve the active group the same way `/group` does (`resolveActiveGroup`), `requireMember`, then `listRecipes`. Render a card list of name + "N items", each linking to `/recipes/<id>`, plus a primary "Add a recipe" link to `/recipes/new`. Empty state: serif "No recipes yet" and "Save a meal your group makes often, then use it to plan a week."
 
-- [ ] **Step 4: Detail (3j)** — `/recipes/[id]`: load with `getRecipe`, `notFound()` when null, `requireMember(recipe.groupId)` to scope it, then show the serif name, the ordered items, and edit/delete controls (delete behind a confirm Dialog with the same mobile tap-safety rule as Task 3).
+- [x] **Step 4: Detail (3j)** — `/recipes/[id]`: load with `getRecipe`, `notFound()` when null, `requireMember(recipe.groupId)` to scope it, then show the serif name, the ordered items, and edit/delete controls (delete behind a confirm Dialog with the same mobile tap-safety rule as Task 3).
 
-- [ ] **Step 5: Verify at a phone viewport** — at **390×844**: create a recipe with three items, see it in the library, edit it to add a fourth, delete it. Confirm the keyboard does not hide the active item field. Report what was verified.
+- [x] **Step 5: Verify at a phone viewport** — at **390×844**: create a recipe with three items, see it in the library, edit it to add a fourth, delete it. Confirm the keyboard does not hide the active item field. Report what was verified.
 
-- [ ] **Step 6: Full checks, branch, commit, PR** — branch `feat/recipes-ui`; title "Add recipe library, detail, and form". Stop at PR-ready.
+- [x] **Step 6: Full checks, branch, commit, PR** — branch `feat/recipes-ui`; title "Add recipe library, detail, and form". Stop at PR-ready. *(Shipped in the Task 3 PR.)*
 
 ---
 

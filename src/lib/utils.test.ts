@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cn, initials, safeNextPath } from "./utils";
+import { cn, formatMeetingDate, initials, safeNextPath } from "./utils";
 
 describe("cn", () => {
   it("merges conflicting tailwind classes, last wins", () => {
@@ -53,5 +53,22 @@ describe("safeNextPath", () => {
     expect(safeNextPath(null)).toBe("/");
     expect(safeNextPath("")).toBe("/");
     expect(safeNextPath("evil.com")).toBe("/");
+  });
+});
+
+describe("formatMeetingDate", () => {
+  it("formats a date-only string in long form", () => {
+    expect(formatMeetingDate("2026-09-03")).toBe("Thursday, September 3");
+  });
+
+  it("accepts extra Intl options, e.g. the year the detail page shows", () => {
+    expect(
+      formatMeetingDate("2026-09-03", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      }),
+    ).toBe("Thursday, September 3, 2026");
   });
 });

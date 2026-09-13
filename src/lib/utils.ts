@@ -24,3 +24,19 @@ export function safeNextPath(next: string | null | undefined): string {
   if (next[1] === "/" || next[1] === "\\") return "/";
   return next;
 }
+
+// Meetings are stored as plain YYYY-MM-DD strings (see src/lib/meetings.ts),
+// with no time-of-day or timezone attached. Formatting via Date requires
+// pinning a UTC time-of-day and timezone — otherwise the browser's own
+// timezone would shift the date by a day for anyone west of UTC, and it
+// would render differently on the server (UTC) than in the browser,
+// tripping a hydration mismatch.
+export function formatMeetingDate(
+  date: string,
+  options: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric" },
+): string {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
+    ...options,
+    timeZone: "UTC",
+  });
+}
