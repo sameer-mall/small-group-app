@@ -31,7 +31,7 @@ Everything lives in `theme.css` as CSS custom properties:
   tab bar, and toggle specs.
 
 ## Screens (see `Small Group PWA.dc.html`, ids 3a–3n + 2a)
-- **3a** Sign in — email magic link + Google button
+- **3a** Sign in — emailed 6-digit code + Google button (the HTML reference shows the original magic-link version; the code step reuses its input/button recipes)
 - **3b** Joined via invite — waiting for admin approval
 - **3c** Create a group
 - **3d** Home — upcoming/past meetings; **3e** empty state; **3f** new-meeting bottom sheet

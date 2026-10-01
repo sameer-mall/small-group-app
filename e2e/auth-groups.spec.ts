@@ -14,20 +14,25 @@ const expectApp = expect.configure({ timeout: 10_000 });
 async function signIn(page: Page, email: string, name: string) {
   await page.goto("/sign-in");
   await page.getByLabel("Email address").fill(email);
-  await page.getByRole("button", { name: "Send magic link" }).click();
-  await expectApp(page.getByText("Check your email")).toBeVisible();
-  // Pick the newest link addressed to *this* email, not simply the last line.
+  await page.getByRole("button", { name: "Email me a code" }).click();
+  // The code step only renders after the send call returns, and the file
+  // transport writes before it does — so the code is on disk by now.
+  await expectApp(page.getByLabel("Sign-in code")).toBeVisible();
+  // Pick the newest code addressed to *this* email, not simply the last line.
   // Spec files run in parallel and share one mailbox file, so "the last line"
   // is whichever worker wrote most recently — which silently signs this page
   // in as somebody else's user.
-  const link = readFileSync(MAIL, "utf8")
+  const mail = readFileSync(MAIL, "utf8")
     .trim()
     .split("\n")
-    .map((line) => JSON.parse(line) as { to: string; url: string })
-    .findLast((mail) => mail.to === email);
-  if (!link) throw new Error(`no magic link for ${email} in ${MAIL}`);
-  const { url } = link;
-  await page.goto(url);
+    .map((line) => JSON.parse(line) as { to: string; otp?: string })
+    .findLast((mail) => mail.to === email && mail.otp);
+  if (!mail?.otp) throw new Error(`no sign-in code for ${email} in ${MAIL}`);
+  await page.getByLabel("Sign-in code").fill(mail.otp);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  // Sign-in navigates client-side; wait until it has left /sign-in before
+  // deciding whether this is a first-time user landing on /welcome.
+  await page.waitForURL((url) => url.pathname !== "/sign-in");
   if (page.url().includes("/welcome")) {
     await page.getByLabel("Display name").fill(name);
     await page.getByRole("button", { name: "Continue" }).click();

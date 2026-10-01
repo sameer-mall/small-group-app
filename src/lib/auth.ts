@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { magicLink, organization } from "better-auth/plugins";
+import { emailOTP, organization } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
@@ -9,7 +9,7 @@ import { sendAuthEmail } from "@/lib/auth-email";
 // Vercel preview deployments get a fresh *.vercel.app URL per deploy, so a
 // single pinned BETTER_AUTH_URL can't match them. On preview, point baseURL at
 // Vercel's stable per-branch alias (VERCEL_BRANCH_URL, injected at build/run)
-// so magic-link URLs resolve to the preview being tested, and trust any
+// so auth-built URLs resolve to the preview being tested, and trust any
 // vercel.app origin so the sign-in POST from the exact preview URL isn't
 // rejected as cross-origin. Production and local dev keep their fixed
 // BETTER_AUTH_URL and its single implicit trusted origin.
@@ -42,9 +42,22 @@ export const auth = betterAuth({
       creatorRole: "admin",
       allowUserToCreateOrganization: true,
     }),
-    magicLink({
-      sendMagicLink: async ({ email, url }) => {
-        await sendAuthEmail({ to: email, url });
+    // Emailed 6-digit codes, not magic links: a link opens in the phone's
+    // browser, whose cookie jar is separate from the installed PWA's on iOS, so
+    // the session landed in the browser and the home-screen app stayed signed
+    // out. A code is typed into whichever app asked for it. New emails sign up
+    // on first verify (no name yet — /welcome collects it).
+    emailOTP({
+      otpLength: 6,
+      expiresIn: 300, // the email copy promises 5 minutes
+      storeOTP: "hashed",
+      // Per IP, per endpoint (send code / verify code). The plugin default of
+      // 3/min would refuse the 4th member signing in on the same church Wi-Fi
+      // at once. Guessing stays bounded by the code itself: 3 wrong tries (the
+      // plugin's allowedAttempts default) or 5 minutes and it's dead.
+      rateLimit: { window: 60, max: 10 },
+      sendVerificationOTP: async ({ email, otp }) => {
+        await sendAuthEmail({ to: email, otp });
       },
     }),
     nextCookies(), // must stay last in this array (Better Auth docs)
