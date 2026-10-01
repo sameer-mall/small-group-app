@@ -7,7 +7,7 @@ import { WelcomeForm } from "./welcome-form";
 export default async function WelcomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string | string[] }>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
   const { next } = await searchParams;

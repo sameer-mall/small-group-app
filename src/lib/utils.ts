@@ -17,10 +17,11 @@ export function initials(name: string): string {
 // Open-redirect guard for the `?next=` param: only allow same-origin,
 // absolute-path targets. Rejects absolute URLs (https://evil.com) and
 // protocol-relative forms (//evil.com, /\evil.com, which browsers navigate
-// off-origin), falling back to "/". Apply wherever an attacker-controllable
-// `next` reaches redirect()/router.push().
-export function safeNextPath(next: string | null | undefined): string {
-  if (!next || next[0] !== "/") return "/";
+// off-origin), falling back to "/". A repeated `?next=` arrives as an array,
+// which falls back too. Apply wherever an attacker-controllable `next` reaches
+// redirect()/router.push().
+export function safeNextPath(next: string | string[] | null | undefined): string {
+  if (typeof next !== "string" || next[0] !== "/") return "/";
   if (next[1] === "/" || next[1] === "\\") return "/";
   return next;
 }
