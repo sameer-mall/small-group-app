@@ -7,6 +7,7 @@ import {
   drawPrayerBowl,
   getPrayerBowl,
   joinPrayerBowl,
+  listMyDrawnPrayers,
   submitPrayerRequest,
   withdrawPrayerRequest,
 } from "@/lib/prayers";
@@ -334,5 +335,54 @@ describe("prayer bowl: the draw", () => {
       `)).rows as { requests: number; assigned: number }[];
       expect(counts.assigned).toBe(counts.requests);
     }
+  });
+});
+
+describe("my prayers", () => {
+  let alice: string, bob: string, outsider: string;
+  beforeAll(async () => {
+    alice = await mkUser(`u_pm_alice_${crypto.randomUUID()}`, "Alice");
+    bob = await mkUser(`u_pm_bob_${crypto.randomUUID()}`, "Bob");
+    outsider = await mkUser(`u_pm_out_${crypto.randomUUID()}`, "Outsider");
+  });
+
+  // Two writers always swap, so who draws what is known in advance.
+  async function drawnMeeting(groupId: string, title: string, date: string, bobSigns: boolean) {
+    const { meetingId } = await createMeeting(alice, groupId, { title, date });
+    await submitPrayerRequest(alice, meetingId, { body: `Alice, ${title}`, includeName: false });
+    await submitPrayerRequest(bob, meetingId, { body: `Bob, ${title}`, includeName: bobSigns });
+    await drawPrayerBowl(alice, meetingId);
+    return meetingId;
+  }
+
+  it("lists what you drew, newest meeting first, with its meeting", async () => {
+    const { groupId } = await createGroup(alice, "Week by week");
+    await addMember(alice, groupId, bob);
+    await drawnMeeting(groupId, "Week 1", "2026-10-01", true);
+    await drawnMeeting(groupId, "Week 2", "2026-10-08", false);
+
+    expect(await listMyDrawnPrayers(alice, groupId)).toEqual([
+      expect.objectContaining({ meetingTitle: "Week 2", meetingDate: "2026-10-08", body: "Bob, Week 2", authorName: null }),
+      expect.objectContaining({ meetingTitle: "Week 1", meetingDate: "2026-10-01", body: "Bob, Week 1", authorName: "Bob" }),
+    ]);
+  });
+
+  it("lists only your own draws, from this group only", async () => {
+    const { groupId } = await createGroup(alice, "Mine only");
+    await addMember(alice, groupId, bob);
+    await drawnMeeting(groupId, "Here", "2026-10-01", false);
+
+    const { groupId: elsewhere } = await createGroup(alice, "Elsewhere");
+    await addMember(alice, elsewhere, bob);
+    await drawnMeeting(elsewhere, "There", "2026-10-01", false);
+
+    const bodies = (await listMyDrawnPrayers(alice, groupId)).map((p) => p.body);
+    expect(bodies).toEqual(["Bob, Here"]);
+  });
+
+  it("is empty before any draw, and refuses non-members", async () => {
+    const { groupId } = await createGroup(alice, "Nothing yet");
+    expect(await listMyDrawnPrayers(alice, groupId)).toEqual([]);
+    await expect(listMyDrawnPrayers(outsider, groupId)).rejects.toThrow("forbidden");
   });
 });

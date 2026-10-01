@@ -1,4 +1,4 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
 import { member, user } from "@/db/auth-schema";
 import {
@@ -250,4 +250,40 @@ export async function getPrayerBowl(viewerId: string, meetingId: string): Promis
     viewer: { joined: joined.has(viewerId), request: own[0] ?? null },
     drawn,
   };
+}
+
+export type DrawnPrayer = {
+  meetingId: string;
+  meetingTitle: string;
+  meetingDate: string;
+  body: string;
+  authorName: string | null;
+};
+
+// Every request this member has drawn in this group, newest meeting first, so
+// past weeks stay prayable. The assignee filter is the whole privacy story:
+// this can only ever return requests drawn *by* the caller.
+export async function listMyDrawnPrayers(userId: string, groupId: string): Promise<DrawnPrayer[]> {
+  await requireMembership(userId, groupId);
+  const rows = await db
+    .select({
+      meetingId: meetings.id,
+      meetingTitle: meetings.title,
+      meetingDate: meetings.date,
+      body: prayerRequests.body,
+      includeName: prayerRequests.includeName,
+      authorName: user.name,
+    })
+    .from(prayerAssignments)
+    .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
+    .innerJoin(meetings, eq(meetings.id, prayerAssignments.meetingId))
+    .innerJoin(user, eq(user.id, prayerRequests.authorId))
+    .where(and(eq(prayerAssignments.assigneeId, userId), eq(meetings.groupId, groupId)))
+    .orderBy(desc(meetings.date));
+
+  // Same rule as the meeting page: a name leaves the server only if signed.
+  return rows.map(({ includeName, authorName, ...prayer }) => ({
+    ...prayer,
+    authorName: includeName ? authorName : null,
+  }));
 }
