@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
-  // e2e/auth-groups.spec.ts drives two complete magic-link sign-ins and five
+  // e2e/auth-groups.spec.ts drives two complete email-code sign-ins and five
   // post-server-action assertions that may each wait up to 10s — roughly twenty
   // sequential round trips against a cold `next start` and an empty database.
   // Playwright's 30s default budget covers the whole test, so on a loaded CI

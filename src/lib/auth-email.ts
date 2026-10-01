@@ -14,10 +14,20 @@ export function pickTransport(env: Env): "file" | "resend" | "console" {
   return "console";
 }
 
-export async function sendAuthEmail({ to, url }: { to: string; url: string }) {
+// The code leads the subject so it reads straight off a lock-screen
+// notification, and sits alone in the body so iOS can offer it as one-time-code
+// autofill above the keyboard in the installed app.
+export function signInEmail(otp: string) {
+  return {
+    subject: `${otp} is your Small Group sign-in code`,
+    text: `Your Small Group sign-in code is:\n\n${otp}\n\nIt expires in 5 minutes. If you didn't request it, ignore this email.`,
+  };
+}
+
+export async function sendAuthEmail({ to, otp }: { to: string; otp: string }) {
   const mode = pickTransport(process.env);
   if (mode === "file") {
-    appendFileSync(process.env.AUTH_EMAIL_FILE!, JSON.stringify({ to, url }) + "\n");
+    appendFileSync(process.env.AUTH_EMAIL_FILE!, JSON.stringify({ to, otp }) + "\n");
     return;
   }
   if (mode === "resend") {
@@ -27,10 +37,9 @@ export async function sendAuthEmail({ to, url }: { to: string; url: string }) {
     await resend.emails.send({
       from: process.env.AUTH_EMAIL_FROM ?? "Small Group <onboarding@resend.dev>",
       to,
-      subject: "Your sign-in link",
-      text: `Sign in to Small Group: ${url}\n\nThis link expires in 5 minutes. If you didn't request it, ignore this email.`,
+      ...signInEmail(otp),
     });
     return;
   }
-  console.log(`\n[auth email] magic link for ${to}:\n${url}\n`);
+  console.log(`\n[auth email] sign-in code for ${to}: ${otp}\n`);
 }

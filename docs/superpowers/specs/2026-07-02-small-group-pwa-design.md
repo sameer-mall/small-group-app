@@ -22,7 +22,7 @@ The app is multi-group from day one so other groups in the church can adopt it.
 | Database (local) | Postgres in Docker with a named volume (`docker-compose.yml` in repo) |
 | ORM / migrations | Drizzle |
 | Auth | Better Auth with the organization plugin |
-| Transactional email | Resend (magic-link sign-in emails; free tier) |
+| Transactional email | Resend (sign-in code emails; free tier) |
 | UI | Tailwind CSS + shadcn/ui, mobile-first |
 | PWA | Serwist via `@serwist/turbopack` (manifest, service worker, app-shell caching) |
 | Tooling | mise (`mise.toml` pins Node + pnpm, defines tasks); pnpm for JS dependencies |
@@ -59,7 +59,7 @@ Deferred for v1: offline write queueing (the service worker caches reads; syncin
 
 ## Auth, groups & membership
 
-- Sign-in: **email magic link** and **Google**. No passwords.
+- Sign-in: **emailed 6-digit code** and **Google**. No passwords. (Originally magic links; switched because a link opens in the phone's browser, whose cookies on iOS are separate from the installed PWA's, so the home-screen app stayed signed out. A code is typed into whichever app asked.)
 - Every user has a **display name**, required on first sign-in (prefilled from Google when available) — the UI runs on names everywhere: claims, prayer buckets, avatar initials.
 - Better Auth organizations = groups. Roles: `admin`, `member`. A group can have multiple admins.
 - **Open sign-up:** anyone can create an account, invite or not. After sign-in, a user with group memberships lands in their group (last active group if several); a user with none lands on a no-group home with a **create a group** button (creator becomes admin) and a note that joining an existing group happens via an invite link from its admin.
@@ -149,9 +149,9 @@ One private note per member per meeting. Freeform text, autosaved. A "my notes" 
 | Neon | No separate account — provisioned via Vercel Marketplace | Plan 2 (first prod DB use) | `DATABASE_URL` auto-injected into Vercel env |
 | Better Auth | **No account — it's a library** | Plan 2 | `BETTER_AUTH_SECRET`, generated locally |
 | Google Cloud | Yes — free; OAuth client for "Sign in with Google" | Plan 2 | `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` |
-| Resend | Yes — free tier (100 emails/day) | Plan 2 (magic-link emails) | `RESEND_API_KEY` |
+| Resend | Yes — free tier (100 emails/day) | Plan 2 (sign-in emails) | `RESEND_API_KEY` |
 
-**Resend domain requirement:** sending magic links to real members in production requires a **verified sending domain** in Resend (test mode only delivers to the account owner's inbox). Resolved: the owner's existing domain `sameermall.com` is used, sending from the subdomain `send.sameermall.com` (isolates the app's email reputation; from-address is the `AUTH_EMAIL_FROM` env var, so swapping domains later is config-only). A custom domain for the app itself remains optional/later.
+**Resend domain requirement:** sending sign-in emails to real members in production requires a **verified sending domain** in Resend (test mode only delivers to the account owner's inbox). Resolved: the owner's existing domain `sameermall.com` is used, sending from the subdomain `send.sameermall.com` (isolates the app's email reputation; from-address is the `AUTH_EMAIL_FROM` env var, so swapping domains later is config-only). A custom domain for the app itself remains optional/later.
 
 **Secrets handling rule:** credentials go from the provider's dashboard directly into `.env` (gitignored) locally and into Vercel's environment settings for deploys — entered by the account owner. They are never committed, and never pasted into chat sessions.
 
