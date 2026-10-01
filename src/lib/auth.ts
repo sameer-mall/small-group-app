@@ -31,6 +31,14 @@ export const auth = betterAuth({
   baseURL: authBaseURL,
   trustedOrigins: isPreview ? ["https://*.vercel.app"] : undefined,
   secret: process.env.BETTER_AUTH_SECRET,
+  // Better Auth turns rate limiting on whenever NODE_ENV is "production" —
+  // which `next start` always is, including under the Playwright suite. The
+  // magic-link endpoint's own limit (5 sign-ins per 60s, keyed by IP) easily
+  // covers real traffic, but every e2e spec signs in from the same localhost
+  // IP, so the whole suite's sign-ins share one bucket and the count now
+  // exceeds it. Disabled only via the e2e-only env var set in
+  // playwright.config.ts's webServer.env; production keeps rate limiting on.
+  rateLimit: process.env.E2E_DISABLE_AUTH_RATE_LIMIT ? { enabled: false } : undefined,
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,
