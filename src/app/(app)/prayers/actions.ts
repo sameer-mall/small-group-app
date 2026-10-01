@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import {
   drawPrayerBowl,
@@ -11,7 +12,16 @@ import {
 
 export type ActionState = { error: string | null; success: boolean };
 
-const MAX_REQUEST_LENGTH = 1000;
+const prayerRequestForm = z.object({
+  body: z
+    .string({ error: "Write your request first." })
+    .overwrite((body) => body.replace(/\r\n?/g, "\n"))
+    .trim()
+    .min(1, "Write your request first.")
+    .max(1000, "Keep it under 1,000 characters."),
+  // The switch posts a hidden "on" only while it is switched on.
+  includeName: z.stringbool().default(false),
+});
 
 // Domain functions throw plain Error("forbidden" | "not-found" |
 // "session-closed" | "too-few-requests") — see src/lib/prayers.ts.
@@ -30,7 +40,7 @@ function mapError(err: unknown): string {
 // A refused write revalidates too. The parent spec asks for "a plain-language
 // message and refreshed data" on rejection — and the commonest rejection here
 // is a bowl that was drawn a moment ago, which the refreshed page then shows.
-async function refused(err: unknown, meetingId: string): Promise<ActionState> {
+function refused(err: unknown, meetingId: string): ActionState {
   const error = mapError(err);
   revalidatePath(`/meetings/${meetingId}`);
   return { error, success: false };
@@ -57,17 +67,10 @@ export async function submitPrayerRequestAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
-  const body = String(formData.get("body") ?? "")
-    .replace(/\r\n?/g, "\n")
-    .trim();
-  // The switch posts a hidden "on" only while it is switched on.
-  const includeName = formData.get("includeName") === "on";
-  if (!body) return { error: "Write your request first.", success: false };
-  if (body.length > MAX_REQUEST_LENGTH) {
-    return { error: "Keep it under 1,000 characters.", success: false };
-  }
+  const form = prayerRequestForm.safeParse(Object.fromEntries(formData));
+  if (!form.success) return { error: form.error.issues[0].message, success: false };
   try {
-    await submitPrayerRequest(user.id, meetingId, { body, includeName });
+    await submitPrayerRequest(user.id, meetingId, form.data);
   } catch (err) {
     return refused(err, meetingId);
   }
