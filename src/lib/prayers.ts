@@ -1,6 +1,14 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { meetings, prayerParticipants, prayerRequests, prayerSessions } from "@/db/schema";
+import { member, user } from "@/db/auth-schema";
+import {
+  meetings,
+  prayerAssignments,
+  prayerParticipants,
+  prayerRequests,
+  prayerSessions,
+} from "@/db/schema";
+import { derangement } from "@/lib/derangement";
 import { listMembers } from "@/lib/groups";
 import { requireMembership } from "@/lib/membership";
 
@@ -49,10 +57,32 @@ async function ensureParticipant(tx: Tx, meetingId: string, userId: string) {
   await tx.insert(prayerParticipants).values({ meetingId, userId }).onConflictDoNothing();
 }
 
+// Locks the bowl's row until this transaction ends and confirms it is still
+// open. FOR SHARE conflicts with the draw's UPDATE, so a write and a draw can
+// never interleave: either the write commits first and the draw includes it,
+// or the draw commits first and the write is refused. Without the lock, a
+// request can land after the draw has read the requests and before it
+// commits — stranded, in a drawn bowl, assigned to nobody.
+//
+// It must be FOR SHARE, not the weaker FOR KEY SHARE. An UPDATE that touches
+// no key column (status, drawn_by, drawn_at) takes FOR NO KEY UPDATE, which
+// does not conflict with FOR KEY SHARE — the very lock the foreign-key checks
+// on these inserts already take. That is why the FK checks alone don't keep
+// a write out of a draw, and why this explicit lock exists.
+async function lockOpenBowl(tx: Tx, meetingId: string) {
+  const [bowl] = await tx
+    .select({ status: prayerSessions.status })
+    .from(prayerSessions)
+    .where(eq(prayerSessions.meetingId, meetingId))
+    .for("share");
+  if (bowl?.status === "drawn") throw new Error("session-closed");
+}
+
 export async function joinPrayerBowl(userId: string, meetingId: string): Promise<void> {
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
     await ensureBowl(tx, meetingId, userId);
+    await lockOpenBowl(tx, meetingId);
     await ensureParticipant(tx, meetingId, userId);
   });
 }
@@ -67,6 +97,7 @@ export async function submitPrayerRequest(
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
     await ensureBowl(tx, meetingId, userId);
+    await lockOpenBowl(tx, meetingId);
     await ensureParticipant(tx, meetingId, userId);
     await tx
       .insert(prayerRequests)
@@ -82,9 +113,71 @@ export async function submitPrayerRequest(
 // a request any more — and doing it twice is harmless.
 export async function withdrawPrayerRequest(userId: string, meetingId: string): Promise<void> {
   await requireMeetingMember(userId, meetingId);
-  await db
-    .delete(prayerRequests)
-    .where(and(eq(prayerRequests.meetingId, meetingId), eq(prayerRequests.authorId, userId)));
+  await db.transaction(async (tx) => {
+    // No bowl means nothing to withdraw; lockOpenBowl lets that through.
+    await lockOpenBowl(tx, meetingId);
+    await tx
+      .delete(prayerRequests)
+      .where(and(eq(prayerRequests.meetingId, meetingId), eq(prayerRequests.authorId, userId)));
+  });
+}
+
+export async function drawPrayerBowl(
+  userId: string,
+  meetingId: string,
+): Promise<{ drew: boolean }> {
+  const meeting = await requireMeetingMember(userId, meetingId);
+
+  return db.transaction(async (tx) => {
+    // The guarded transition. The UPDATE takes the row lock, so of any number
+    // of simultaneous draws exactly one flips open → drawn; the rest wait,
+    // re-check the WHERE once it commits, match nothing, and fall through.
+    const [flipped] = await tx
+      .update(prayerSessions)
+      .set({ status: "drawn", drawnBy: userId, drawnAt: new Date() })
+      .where(and(eq(prayerSessions.meetingId, meetingId), eq(prayerSessions.status, "open")))
+      .returning({ meetingId: prayerSessions.meetingId });
+
+    if (!flipped) {
+      const [bowl] = await tx
+        .select({ status: prayerSessions.status })
+        .from(prayerSessions)
+        .where(eq(prayerSessions.meetingId, meetingId));
+      // Already drawn — by someone else, a moment ago. What the tap asked for
+      // has happened, so this is a no-op rather than an error.
+      if (bowl?.status === "drawn") return { drew: false };
+      // No bowl at all: nobody has joined, so there is nothing to draw.
+      throw new Error("too-few-requests");
+    }
+
+    // Only requests from people still in the group. Someone removed after
+    // writing would draw a request they can never open, and theirs would
+    // reach someone else unread, so they are left out entirely.
+    const requests = await tx
+      .select({ id: prayerRequests.id, authorId: prayerRequests.authorId })
+      .from(prayerRequests)
+      .innerJoin(
+        member,
+        and(eq(member.userId, prayerRequests.authorId), eq(member.organizationId, meeting.groupId)),
+      )
+      .where(eq(prayerRequests.meetingId, meetingId))
+      .orderBy(asc(prayerRequests.id));
+
+    // Throwing rolls the transition back, so the bowl stays open for more.
+    if (requests.length < 2) throw new Error("too-few-requests");
+
+    // Request i goes to the author of request p[i]. p has no fixed points and
+    // each author wrote exactly one request, so nobody draws their own.
+    const p = derangement(requests.length);
+    await tx.insert(prayerAssignments).values(
+      requests.map((request, i) => ({
+        requestId: request.id,
+        meetingId,
+        assigneeId: requests[p[i]].authorId,
+      })),
+    );
+    return { drew: true };
+  });
 }
 
 // The read model behind the meeting page's prayer section. It reveals who is
@@ -124,6 +217,30 @@ export async function getPrayerBowl(viewerId: string, meetingId: string): Promis
     .map((m) => ({ userId: m.userId, name: m.name }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  let drawn: PrayerBowl["drawn"] = null;
+  if (session?.status === "drawn") {
+    const [assigned] = await db
+      .select({
+        body: prayerRequests.body,
+        includeName: prayerRequests.includeName,
+        authorName: user.name,
+      })
+      .from(prayerAssignments)
+      .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
+      .innerJoin(user, eq(user.id, prayerRequests.authorId))
+      .where(
+        and(eq(prayerAssignments.meetingId, meetingId), eq(prayerAssignments.assigneeId, viewerId)),
+      );
+    if (assigned) {
+      // The writer's name leaves the server only if they signed it — and no
+      // author id is returned at all, signed or not.
+      drawn = {
+        body: assigned.body,
+        authorName: assigned.includeName ? assigned.authorName : null,
+      };
+    }
+  }
+
   return {
     meetingId,
     status: session?.status ?? "open",
@@ -131,6 +248,6 @@ export async function getPrayerBowl(viewerId: string, meetingId: string): Promis
     waiting: people.filter((p) => joined.has(p.userId) && !wrote.has(p.userId)),
     notJoined: people.filter((p) => !joined.has(p.userId)),
     viewer: { joined: joined.has(viewerId), request: own[0] ?? null },
-    drawn: null,
+    drawn,
   };
 }

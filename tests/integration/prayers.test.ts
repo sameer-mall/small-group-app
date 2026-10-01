@@ -1,9 +1,10 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { approveRequest, createGroup, getInviteCode, requestToJoin } from "@/lib/groups";
+import { approveRequest, createGroup, getInviteCode, removeMember, requestToJoin } from "@/lib/groups";
 import { createMeeting } from "@/lib/meetings";
 import {
+  drawPrayerBowl,
   getPrayerBowl,
   joinPrayerBowl,
   submitPrayerRequest,
@@ -148,5 +149,163 @@ describe("prayer bowl: presence and requests", () => {
 
   it("a meeting that does not exist is not-found", async () => {
     await expect(getPrayerBowl(alice, crypto.randomUUID())).rejects.toThrow("not-found");
+  });
+});
+
+describe("prayer bowl: the draw", () => {
+  let alice: string, bob: string, carol: string, dave: string;
+  beforeAll(async () => {
+    alice = await mkUser(`u_pd_alice_${crypto.randomUUID()}`, "Alice");
+    bob = await mkUser(`u_pd_bob_${crypto.randomUUID()}`, "Bob");
+    carol = await mkUser(`u_pd_carol_${crypto.randomUUID()}`, "Carol");
+    dave = await mkUser(`u_pd_dave_${crypto.randomUUID()}`, "Dave");
+  });
+
+  // Alice (admin) with Bob, Carol, and Dave as members, one meeting, and a
+  // request from each of `writers`. Bodies are neutral ("prayer 1", …) so a
+  // test can assert that an unsigned writer's name and id appear nowhere.
+  async function seedBowl(name: string, writers: string[], signed: string[] = []) {
+    const { groupId } = await createGroup(alice, name);
+    for (const member of [bob, carol, dave]) await addMember(alice, groupId, member);
+    const { meetingId } = await createMeeting(alice, groupId, { title: name, date: "2026-10-08" });
+    const bodies = new Map(writers.map((writer, i) => [writer, `prayer ${i + 1}`]));
+    for (const writer of writers) {
+      await submitPrayerRequest(writer, meetingId, {
+        body: bodies.get(writer)!,
+        includeName: signed.includes(writer),
+      });
+    }
+    return { groupId, meetingId, bodyOf: (writer: string) => bodies.get(writer)! };
+  }
+
+  async function countAssignments(meetingId: string) {
+    const [row] = (await db.execute(
+      sql`select count(*)::int as n from prayer_assignments where meeting_id = ${meetingId}`,
+    )).rows as { n: number }[];
+    return row.n;
+  }
+
+  it("everyone who wrote draws exactly one request, never their own", async () => {
+    const writers = [alice, bob, carol];
+    const { meetingId, bodyOf } = await seedBowl("Three writers", writers);
+    expect(await drawPrayerBowl(alice, meetingId)).toEqual({ drew: true });
+
+    const drawn: string[] = [];
+    for (const writer of writers) {
+      const bowl = await getPrayerBowl(writer, meetingId);
+      expect(bowl.status).toBe("drawn");
+      expect(bowl.drawn!.body).not.toBe(bodyOf(writer));
+      drawn.push(bowl.drawn!.body);
+    }
+    expect(drawn.sort()).toEqual(writers.map(bodyOf).sort());
+  });
+
+  it("an unsigned request reaches its drawer without the writer's name or id", async () => {
+    // Two writers always swap: Alice draws Bob's, Bob draws Alice's.
+    const { meetingId, bodyOf } = await seedBowl("Signing", [alice, bob], [alice]);
+    await drawPrayerBowl(bob, meetingId);
+
+    const aliceView = await getPrayerBowl(alice, meetingId);
+    // toEqual also fails on any extra key, so an authorId tagging along fails here.
+    expect(aliceView.drawn).toEqual({ body: bodyOf(bob), authorName: null });
+    expect(JSON.stringify(aliceView.drawn)).not.toContain(bob);
+    expect(JSON.stringify(aliceView.drawn)).not.toContain("Bob");
+
+    const bobView = await getPrayerBowl(bob, meetingId);
+    expect(bobView.drawn).toEqual({ body: bodyOf(alice), authorName: "Alice" });
+  });
+
+  it("drawing with fewer than two requests is refused, and the bowl stays open", async () => {
+    const { meetingId } = await seedBowl("Lonely", [alice]);
+    await expect(drawPrayerBowl(alice, meetingId)).rejects.toThrow("too-few-requests");
+
+    // The refusal rolled the transition back: the bowl still takes requests.
+    expect((await getPrayerBowl(alice, meetingId)).status).toBe("open");
+    await submitPrayerRequest(bob, meetingId, { body: "a second request", includeName: false });
+    expect(await drawPrayerBowl(alice, meetingId)).toEqual({ drew: true });
+  });
+
+  it("drawing a bowl nobody has touched is refused", async () => {
+    const { meetingId } = await seedBowl("Untouched draw", []);
+    await expect(drawPrayerBowl(alice, meetingId)).rejects.toThrow("too-few-requests");
+  });
+
+  it("people who joined but never wrote are left out of the draw", async () => {
+    const { meetingId } = await seedBowl("Quiet one", [alice, bob]);
+    await joinPrayerBowl(carol, meetingId);
+    await drawPrayerBowl(alice, meetingId);
+
+    expect(await countAssignments(meetingId)).toBe(2);
+    expect((await getPrayerBowl(carol, meetingId)).drawn).toBeNull();
+  });
+
+  it("someone removed from the group after writing is left out of the draw", async () => {
+    const { groupId, meetingId } = await seedBowl("Removed", [alice, bob, carol]);
+    await removeMember(alice, groupId, carol);
+    await drawPrayerBowl(alice, meetingId);
+
+    const assignees = (await db.execute(
+      sql`select assignee_id from prayer_assignments where meeting_id = ${meetingId}`,
+    )).rows as { assignee_id: string }[];
+    expect(assignees.map((row) => row.assignee_id).sort()).toEqual([alice, bob].sort());
+  });
+
+  it("nothing can be joined, written, edited, or withdrawn once drawn", async () => {
+    const { meetingId } = await seedBowl("Sealed shut", [alice, bob]);
+    await drawPrayerBowl(alice, meetingId);
+
+    await expect(joinPrayerBowl(carol, meetingId)).rejects.toThrow("session-closed");
+    await expect(
+      submitPrayerRequest(carol, meetingId, { body: "late", includeName: false }),
+    ).rejects.toThrow("session-closed");
+    await expect(
+      submitPrayerRequest(bob, meetingId, { body: "edited", includeName: false }),
+    ).rejects.toThrow("session-closed");
+    await expect(withdrawPrayerRequest(bob, meetingId)).rejects.toThrow("session-closed");
+  });
+
+  it("a second draw is a no-op, not an error", async () => {
+    const { meetingId } = await seedBowl("Twice", [alice, bob]);
+    expect(await drawPrayerBowl(alice, meetingId)).toEqual({ drew: true });
+    expect(await drawPrayerBowl(bob, meetingId)).toEqual({ drew: false });
+    expect(await countAssignments(meetingId)).toBe(2);
+  });
+
+  it("of many simultaneous draws, exactly one happens", async () => {
+    const { meetingId } = await seedBowl("Stampede", [alice, bob, carol, dave]);
+    // Six at once. A read-then-update implementation lets several past the
+    // "still open?" check; the losers then hit the unique index on
+    // assignments and reject — which this test sees.
+    const results = await Promise.allSettled(
+      [alice, bob, carol, dave, alice, bob].map((who) => drawPrayerBowl(who, meetingId)),
+    );
+    expect(results.filter((r) => r.status === "rejected")).toEqual([]);
+    const drew = results.map((r) => (r as PromiseFulfilledResult<{ drew: boolean }>).value.drew);
+    expect(drew.filter(Boolean)).toHaveLength(1);
+    expect(await countAssignments(meetingId)).toBe(4);
+  });
+
+  it("a request written during a draw is either drawn or refused — never stranded", async () => {
+    // Each round races one draw against two late writers. Whatever the
+    // interleaving, every request in a drawn bowl must have been drawn.
+    for (let round = 0; round < 15; round++) {
+      const { meetingId } = await seedBowl(`Race ${round}`, [alice, bob]);
+      const [, carolResult, daveResult] = await Promise.allSettled([
+        drawPrayerBowl(alice, meetingId),
+        submitPrayerRequest(carol, meetingId, { body: "late from Carol", includeName: false }),
+        submitPrayerRequest(dave, meetingId, { body: "late from Dave", includeName: false }),
+      ]);
+      for (const result of [carolResult, daveResult]) {
+        if (result.status === "rejected") {
+          expect((result.reason as Error).message).toBe("session-closed");
+        }
+      }
+      const [counts] = (await db.execute(sql`
+        select
+          (select count(*)::int from prayer_requests where meeting_id = ${meetingId}) as requests,
+          (select count(*)::int from prayer_assignments where meeting_id = ${meetingId}) as assigned
+      `)).rows as { requests: number; assigned: number }[];
+      expect(counts.assigned).toBe(counts.requests);
+    }
   });
 });
