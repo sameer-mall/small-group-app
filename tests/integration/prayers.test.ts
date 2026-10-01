@@ -271,18 +271,45 @@ describe("prayer bowl: the draw", () => {
     expect(await countAssignments(meetingId)).toBe(2);
   });
 
+  // Writers for this test only — a dedicated helper, not seedBowl, so no
+  // other test in the file gains members. Real join flow (mkUser +
+  // addMember), fresh ids each run.
+  async function seedStampedeBowl(count: number) {
+    const { groupId } = await createGroup(alice, `Stampede ${crypto.randomUUID()}`);
+    const writers: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const writer = await mkUser(`u_pd_stampede_${i}_${crypto.randomUUID()}`, `Stampede${i}`);
+      writers.push(writer);
+      await addMember(alice, groupId, writer);
+    }
+    const { meetingId } = await createMeeting(alice, groupId, {
+      title: "Stampede",
+      date: "2026-10-08",
+    });
+    for (const writer of writers) {
+      await submitPrayerRequest(writer, meetingId, {
+        body: `prayer from ${writer}`,
+        includeName: false,
+      });
+    }
+    return { meetingId, writers };
+  }
+
   it("of many simultaneous draws, exactly one happens", async () => {
-    const { meetingId } = await seedBowl("Stampede", [alice, bob, carol, dave]);
-    // Six at once. A read-then-update implementation lets several past the
-    // "still open?" check; the losers then hit the unique index on
-    // assignments and reject — which this test sees.
-    const results = await Promise.allSettled(
-      [alice, bob, carol, dave, alice, bob].map((who) => drawPrayerBowl(who, meetingId)),
-    );
+    // Width matters here. At 6 callers a check-then-act draw passes this
+    // test 55 times in 55 — the winner's own transaction (update,
+    // join-select, insert, commit) finishes before a straggler even opens
+    // its own. At 15 callers / 15 writers it fails 10 of 10.
+    const CALLERS = 15;
+    const { meetingId, writers } = await seedStampedeBowl(CALLERS);
+    // A read-then-update implementation lets several past the "still open?"
+    // check; the losers then hit the unique index on assignments and
+    // reject — which this test sees.
+    const results = await Promise.allSettled(writers.map((who) => drawPrayerBowl(who, meetingId)));
     expect(results.filter((r) => r.status === "rejected")).toEqual([]);
     const drew = results.map((r) => (r as PromiseFulfilledResult<{ drew: boolean }>).value.drew);
     expect(drew.filter(Boolean)).toHaveLength(1);
-    expect(await countAssignments(meetingId)).toBe(4);
+    expect(await countAssignments(meetingId)).toBe(CALLERS);
   });
 
   it("a request written during a draw is either drawn or refused — never stranded", async () => {
