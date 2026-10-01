@@ -1,7 +1,8 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
+import { env } from "@/lib/env";
 
-const url = process.env.DATABASE_URL!;
+const url = env.DATABASE_URL;
 const isLocal = /localhost|127\.0\.0\.1/.test(url);
 
 // Neon (prod) requires TLS; local Docker Postgres doesn't speak it.
