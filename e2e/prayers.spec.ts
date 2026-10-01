@@ -94,6 +94,9 @@ test("two members fill the bowl, draw it, and each gets the other's request", as
   // Alice's page picks Bob up by polling — and never shows his words.
   await expectApp(alice.getByRole("button", { name: "Draw the bowl" })).toBeVisible();
   await expect(alice.getByText(bobRequest)).toHaveCount(0);
+  // Not just the rendered DOM — the inline RSC payload embedded in the page's
+  // HTML can carry a value the visible tree never shows.
+  expect(await alice.content()).not.toContain(bobRequest);
   // Regression guard: the compiler once dropped the space after the number,
   // rendering "2people in" instead of "2 people in".
   await expect(alice.getByText("2 people in · you'll each draw one request")).toBeVisible();

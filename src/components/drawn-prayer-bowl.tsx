@@ -24,7 +24,7 @@ export function DrawnPrayerBowl({ drawn }: { drawn: PrayerBowl["drawn"] }) {
         You drew
       </p>
       {/* The request is the whole point of the screen: it wraps, never truncates. */}
-      <blockquote className="text-prayer px-1.5 text-center font-serif text-[20px] leading-[1.6] break-words">
+      <blockquote className="text-prayer px-1.5 text-center font-serif text-[20px] leading-[1.6] break-words whitespace-pre-line">
         &quot;{drawn.body}&quot;
       </blockquote>
       {drawn.authorName ? (

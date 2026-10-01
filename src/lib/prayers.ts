@@ -57,6 +57,13 @@ async function ensureParticipant(tx: Tx, meetingId: string, userId: string) {
   await tx.insert(prayerParticipants).values({ meetingId, userId }).onConflictDoNothing();
 }
 
+// A cryptographically random source for the draw, rather than Math.random —
+// the assignment decides who reads whose private words, so it should not
+// rest on a PRNG that is predictable from its outputs.
+function cryptoRandom(): number {
+  return crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+}
+
 // Locks the bowl's row until this transaction ends and confirms it is still
 // open. FOR SHARE conflicts with the draw's UPDATE, so a write and a draw can
 // never interleave: either the write commits first and the draw includes it,
@@ -168,7 +175,7 @@ export async function drawPrayerBowl(
 
     // Request i goes to the author of request p[i]. p has no fixed points and
     // each author wrote exactly one request, so nobody draws their own.
-    const p = derangement(requests.length);
+    const p = derangement(requests.length, cryptoRandom);
     await tx.insert(prayerAssignments).values(
       requests.map((request, i) => ({
         requestId: request.id,
@@ -279,7 +286,7 @@ export async function listMyDrawnPrayers(userId: string, groupId: string): Promi
     .innerJoin(meetings, eq(meetings.id, prayerAssignments.meetingId))
     .innerJoin(user, eq(user.id, prayerRequests.authorId))
     .where(and(eq(prayerAssignments.assigneeId, userId), eq(meetings.groupId, groupId)))
-    .orderBy(desc(meetings.date));
+    .orderBy(desc(meetings.date), desc(meetings.createdAt));
 
   // Same rule as the meeting page: a name leaves the server only if signed.
   return rows.map(({ includeName, authorName, ...prayer }) => ({

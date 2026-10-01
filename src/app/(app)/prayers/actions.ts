@@ -57,7 +57,9 @@ export async function submitPrayerRequestAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
-  const body = String(formData.get("body") ?? "").trim();
+  const body = String(formData.get("body") ?? "")
+    .replace(/\r\n?/g, "\n")
+    .trim();
   // The switch posts a hidden "on" only while it is switched on.
   const includeName = formData.get("includeName") === "on";
   if (!body) return { error: "Write your request first.", success: false };

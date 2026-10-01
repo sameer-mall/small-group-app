@@ -60,11 +60,18 @@ export function OpenPrayerBowl({
   const [editing, setEditing] = useState(false);
 
   // Leave edit mode once an update or withdrawal lands — adjusted during
-  // render rather than in an effect, as in new-meeting-sheet.tsx.
+  // render rather than in an effect, as in new-meeting-sheet.tsx. Each state
+  // is checked only when *it* just changed: a refused submit must not be
+  // masked by a stale withdrawState.success (or vice versa), which would
+  // close edit mode and hide the error shown inside the compose form.
   const [handled, setHandled] = useState({ submitState, withdrawState });
   if (submitState !== handled.submitState || withdrawState !== handled.withdrawState) {
+    const submitChanged = submitState !== handled.submitState;
+    const withdrawChanged = withdrawState !== handled.withdrawState;
     setHandled({ submitState, withdrawState });
-    if (submitState.success || withdrawState.success) setEditing(false);
+    if ((submitChanged && submitState.success) || (withdrawChanged && withdrawState.success)) {
+      setEditing(false);
+    }
   }
 
   if (stage === "composing" || editing) {

@@ -45,7 +45,7 @@ export function DrawnPrayerList({
               {label}
             </p>
             <article className="bg-card rounded-card shadow-card flex flex-col gap-2.5 p-5">
-              <p className="text-prayer font-serif text-lg leading-[1.6] break-words">
+              <p className="text-prayer font-serif text-lg leading-[1.6] break-words whitespace-pre-line">
                 &quot;{prayer.body}&quot;
               </p>
               <div className="flex justify-between gap-3 text-[13.5px]">

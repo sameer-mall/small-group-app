@@ -30,7 +30,12 @@ export async function PrayerSection({
         drawn ? "gap-[18px] px-[22px] pt-[26px] pb-[22px]" : "gap-3.5 p-[18px]",
       )}
     >
-      {!drawn && <RefreshWhileOpen />}
+      {!drawn && (
+        <RefreshWhileOpen
+          meetingDate={meetingDate}
+          serverToday={new Date().toISOString().slice(0, 10)}
+        />
+      )}
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-serif text-[19px] font-semibold">Prayer bowl</h2>
         <span

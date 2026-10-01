@@ -385,4 +385,14 @@ describe("my prayers", () => {
     expect(await listMyDrawnPrayers(alice, groupId)).toEqual([]);
     await expect(listMyDrawnPrayers(outsider, groupId)).rejects.toThrow("forbidden");
   });
+
+  it("breaks ties on the same meeting date by createdAt, newer meeting first", async () => {
+    const { groupId } = await createGroup(alice, "Same day");
+    await addMember(alice, groupId, bob);
+    await drawnMeeting(groupId, "Morning", "2026-10-01", false);
+    await drawnMeeting(groupId, "Evening", "2026-10-01", false);
+
+    const titles = (await listMyDrawnPrayers(alice, groupId)).map((p) => p.meetingTitle);
+    expect(titles).toEqual(["Evening", "Morning"]);
+  });
 });
