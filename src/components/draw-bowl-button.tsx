@@ -81,8 +81,11 @@ export function DrawBowlButton({
       </Dialog>
       {/* Design doc, conflict 3: the count is the submitters — the people who
           will actually draw — not everyone who has joined. */}
+      {/* One template-literal expression, not JSX text: an HTML entity
+          (&apos;) in JSX text makes the compiler drop the space after the
+          number, so the whole sentence is built as a plain string instead. */}
       <p className="text-muted-foreground -mt-1.5 text-center text-[12.5px]">
-        {submittedCount} people in · you&apos;ll each draw one request
+        {`${submittedCount} people in · you'll each draw one request`}
       </p>
     </>
   );
