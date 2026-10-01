@@ -22,17 +22,22 @@ function stageOf(bowl: PrayerBowl): Stage {
   return bowl.viewer.joined ? "composing" : "not-joined";
 }
 
+const bucketOf = { submitted: "submitted", composing: "waiting", "not-joined": "notJoined" } as const;
+
 // Puts the viewer in the bucket matching their (possibly optimistic) stage,
 // so the lists agree with the screen before the server has answered.
 function placeViewer(bowl: PrayerBowl, stage: Stage, viewerId: string) {
+  const isViewer = (m: BowlMember) => m.userId === viewerId;
+  const isOther = (m: BowlMember) => !isViewer(m);
   const everyone = [...bowl.submitted, ...bowl.waiting, ...bowl.notJoined];
-  const me: BowlMember = everyone.find((m) => m.userId === viewerId) ?? { userId: viewerId, name: "You" };
-  const without = (list: BowlMember[]) => list.filter((m) => m.userId !== viewerId);
-  return {
-    submitted: stage === "submitted" ? [me, ...without(bowl.submitted)] : without(bowl.submitted),
-    waiting: stage === "composing" ? [me, ...without(bowl.waiting)] : without(bowl.waiting),
-    notJoined: stage === "not-joined" ? [me, ...without(bowl.notJoined)] : without(bowl.notJoined),
+  const me = everyone.find(isViewer) ?? { userId: viewerId, name: "You" };
+  const buckets = {
+    submitted: bowl.submitted.filter(isOther),
+    waiting: bowl.waiting.filter(isOther),
+    notJoined: bowl.notJoined.filter(isOther),
   };
+  buckets[bucketOf[stage]].unshift(me);
+  return buckets;
 }
 
 export function OpenPrayerBowl({
