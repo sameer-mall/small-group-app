@@ -43,6 +43,13 @@
       "when": 1790880661920,
       "tag": "0005_supreme_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790898912200,
+      "tag": "0006_massive_scrambler",
+      "breakpoints": true
     }
   ]
 }

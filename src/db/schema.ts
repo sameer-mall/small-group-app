@@ -145,3 +145,32 @@ export const prayerAssignments = pgTable(
   // …and each person draws exactly one.
   (t) => [uniqueIndex("prayer_assignments_one_per_assignee").on(t.meetingId, t.assigneeId)],
 );
+
+// A private note belongs to its author, not to the meeting: it shows on its
+// meeting while that exists, and outlives it — deleting a meeting must never
+// cost anyone their notes (the owner's call; it departs from the parent
+// spec's data model). So the note carries what it needs to stand alone: its
+// own id, its group for scoping, and a snapshot of the meeting's title and
+// date, refreshed on every save.
+export const notes = pgTable(
+  "notes",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    groupId: text("group_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    // Null once the meeting is deleted.
+    meetingId: text("meeting_id").references(() => meetings.id, { onDelete: "set null" }),
+    meetingTitle: text("meeting_title").notNull(),
+    meetingDate: date("meeting_date", { mode: "string" }).notNull(),
+    authorId: text("author_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    // Stored exactly as typed (line endings normalized by the action):
+    // autosave fires mid-sentence, so trimming would eat what's being typed.
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  // One note per member per live meeting. Postgres treats NULLs as distinct,
+  // so any number of notes whose meetings were deleted coexist.
+  (t) => [uniqueIndex("notes_one_per_author").on(t.meetingId, t.authorId)],
+);
