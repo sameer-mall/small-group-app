@@ -7,7 +7,7 @@ import { SignInForm } from "./sign-in-form";
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string | string[] }>;
 }) {
   const session = await auth.api.getSession({ headers: await headers() });
   const { next } = await searchParams;

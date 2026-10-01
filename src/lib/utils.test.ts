@@ -54,6 +54,11 @@ describe("safeNextPath", () => {
     expect(safeNextPath("")).toBe("/");
     expect(safeNextPath("evil.com")).toBe("/");
   });
+
+  it("falls back to / for a repeated next param, which arrives as an array", () => {
+    expect(safeNextPath(["/", "/evil.com"])).toBe("/");
+    expect(safeNextPath(["/group"])).toBe("/");
+  });
 });
 
 describe("formatMeetingDate", () => {
