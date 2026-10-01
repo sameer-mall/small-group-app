@@ -21,7 +21,7 @@ function mapError(err: unknown, forbidden = "Only group members can do that."): 
       return forbidden;
     }
     if (err.message === "not-found") {
-      return "That didn't work — try refreshing the page.";
+      return "That didn't work. Try refreshing the page.";
     }
   }
   throw err;

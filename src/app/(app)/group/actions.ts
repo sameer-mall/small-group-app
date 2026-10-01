@@ -24,7 +24,7 @@ export type ActionState = { error: string | null; success: boolean };
 function mapError(err: unknown): string {
   if (err instanceof Error) {
     if (err.message === "last-admin") {
-      return "Promote another admin first — a group always needs one.";
+      return "Promote another admin first. A group always needs one.";
     }
     if (err.message === "forbidden") {
       return "Only admins can do that.";
@@ -32,7 +32,7 @@ function mapError(err: unknown): string {
     if (err.message === "not-found") {
       // Reachable via a race: someone else approved/denied the same request,
       // or removed the same member, between this page's render and the click.
-      return "That didn't work — try refreshing the page.";
+      return "That didn't work. Try refreshing the page.";
     }
   }
   throw err;

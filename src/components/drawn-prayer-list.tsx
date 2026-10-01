@@ -50,7 +50,7 @@ export function DrawnPrayerList({
               </p>
               <div className="flex justify-between gap-3 text-[13.5px]">
                 {prayer.authorName ? (
-                  <span className="text-muted-foreground">— {prayer.authorName}</span>
+                  <span className="text-muted-foreground">From {prayer.authorName}</span>
                 ) : (
                   <span className="text-tertiary italic">Name not shared</span>
                 )}

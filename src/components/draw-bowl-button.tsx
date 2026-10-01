@@ -52,7 +52,7 @@ export function DrawBowlButton({
           <DialogHeader>
             <DialogTitle>Draw the bowl?</DialogTitle>
             <DialogDescription>
-              {submittedCount} requests are in — each of you will draw one, never your own.
+              {submittedCount} requests are in. Each of you will draw one, never your own.
               {stillWriting.length > 0 &&
                 ` ${listFormat.format(stillWriting.map((m) => m.name))} ${
                   stillWriting.length === 1 ? "is" : "are"
