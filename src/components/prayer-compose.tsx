@@ -25,7 +25,7 @@ export function PrayerCompose({
   return (
     <form action={onSubmit} className="flex flex-col gap-3.5">
       <p className="text-muted-foreground text-[14.5px] leading-normal">
-        The bowl is open. Write a request — it stays sealed until everyone draws.
+        The bowl is open. Write a request. It stays sealed until everyone draws.
       </p>
       <textarea
         name="body"

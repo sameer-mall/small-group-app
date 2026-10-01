@@ -72,7 +72,7 @@ test("two members fill the bowl, draw it, and each gets the other's request", as
 
   await bob.goto(meetingPath);
   await expectApp(bob.getByText(aliceRequest)).toBeVisible();
-  await expectApp(bob.getByText("— Alice")).toBeVisible();
+  await expectApp(bob.getByText("From Alice")).toBeVisible();
 
   // And it stays prayable from My prayers.
   await bob.getByRole("link", { name: "My prayers", exact: true }).click();
