@@ -46,6 +46,9 @@ test("two members fill the bowl, draw it, and each gets the other's request", as
   const run = Date.now();
   const aliceRequest = `For my dad's surgery ${run}`;
   const bobRequest = `For a new job ${run}`;
+  // Today, in the browser's own timezone (the test process shares it): the
+  // bowl only polls within a day of the meeting, which is when groups draw.
+  const today = new Date().toLocaleDateString("en-CA");
 
   const alice = await (await memberContext(browser)).newPage();
   await signIn(alice, `prayer-alice-${run}@example.com`, "Alice");
@@ -70,7 +73,7 @@ test("two members fill the bowl, draw it, and each gets the other's request", as
   await alice.getByRole("link", { name: "Meetings" }).click();
   await alice.getByRole("button", { name: "Plan a meeting" }).click();
   await alice.getByPlaceholder("Meeting title").fill(`Week ${run}`);
-  await alice.locator('input[name="date"]').fill("2026-10-08");
+  await alice.locator('input[name="date"]').fill(today);
   await alice.getByRole("button", { name: "Create meeting" }).click();
   const meetingLink = alice.getByRole("link", { name: new RegExp(`Week ${run}`) });
   await expectApp(meetingLink).toBeVisible();
