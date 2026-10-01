@@ -30,7 +30,7 @@ Also: `mise run lint`, `mise run typecheck`, `mise run db:generate`, `mise run d
 
 ## Auth
 
-Sign-in supports Google OAuth and passwordless email magic links (Better Auth, `src/lib/auth.ts`). In production, magic-link emails are sent via Resend from `signin@send.sameermall.com`. In local dev, no `RESEND_API_KEY` is set, so the email transport falls back to the console — the magic link is printed to the terminal running `mise run dev` instead of being sent.
+Sign-in supports Google OAuth and passwordless emailed 6-digit codes (Better Auth's email-OTP plugin, `src/lib/auth.ts`). Codes, not magic links: a link opens in the phone's browser, which on iOS keeps a separate cookie jar from the installed PWA, so the home-screen app never got the session. In production, code emails are sent via Resend from `signin@send.sameermall.com`. In local dev, no `RESEND_API_KEY` is set, so the email transport falls back to the console — the code is printed to the terminal running `mise run dev` instead of being sent.
 
 ## Workflow
 
