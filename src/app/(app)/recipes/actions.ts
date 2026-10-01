@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import { createRecipe, deleteRecipe, updateRecipe } from "@/lib/recipes";
 
@@ -23,22 +24,23 @@ function mapError(err: unknown): string {
   throw err;
 }
 
-// The form submits one `item` field per row, including rows the user left
-// blank or emptied; blanks are dropped rather than saved as empty items.
-function parseRecipe(formData: FormData) {
-  return {
-    name: String(formData.get("name") ?? "").trim(),
-    items: formData
-      .getAll("item")
-      .map((value) => String(value).trim())
-      .filter(Boolean),
-  };
-}
+const recipeForm = z.object({
+  name: z
+    .string({ error: "Add a name for the recipe." })
+    .trim()
+    .min(1, "Add a name for the recipe."),
+  // The form submits one `item` field per row, including rows the user left
+  // blank or emptied; blanks are dropped rather than saved as empty items.
+  items: z
+    .array(z.string().trim())
+    .overwrite((items) => items.filter(Boolean))
+    .min(1, "Add at least one item."),
+});
 
-function validate({ name, items }: { name: string; items: string[] }): string | null {
-  if (!name) return "Add a name for the recipe.";
-  if (items.length === 0) return "Add at least one item.";
-  return null;
+// Not Object.fromEntries(formData): that keeps only the last of the repeated
+// `item` fields.
+function parseRecipe(formData: FormData) {
+  return recipeForm.safeParse({ name: formData.get("name"), items: formData.getAll("item") });
 }
 
 export async function createRecipeAction(
@@ -47,12 +49,11 @@ export async function createRecipeAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
-  const input = parseRecipe(formData);
-  const invalid = validate(input);
-  if (invalid) return { error: invalid, success: false };
+  const form = parseRecipe(formData);
+  if (!form.success) return { error: form.error.issues[0].message, success: false };
 
   try {
-    await createRecipe(user.id, groupId, input);
+    await createRecipe(user.id, groupId, form.data);
   } catch (err) {
     return { error: mapError(err), success: false };
   }
@@ -68,12 +69,11 @@ export async function updateRecipeAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
-  const input = parseRecipe(formData);
-  const invalid = validate(input);
-  if (invalid) return { error: invalid, success: false };
+  const form = parseRecipe(formData);
+  if (!form.success) return { error: form.error.issues[0].message, success: false };
 
   try {
-    await updateRecipe(user.id, recipeId, input);
+    await updateRecipe(user.id, recipeId, form.data);
   } catch (err) {
     return { error: mapError(err), success: false };
   }

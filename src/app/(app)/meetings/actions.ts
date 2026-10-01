@@ -2,12 +2,25 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import { createMeeting, deleteMeeting, updateMeeting } from "@/lib/meetings";
 
 export type ActionState = { error: string | null; success: boolean };
 
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const NEEDS_TITLE_AND_DATE = "Add a title and a date.";
+
+const meetingForm = z.object({
+  title: z.string({ error: NEEDS_TITLE_AND_DATE }).trim().min(1, NEEDS_TITLE_AND_DATE),
+  date: z
+    .string({ error: NEEDS_TITLE_AND_DATE })
+    .trim()
+    .min(1, NEEDS_TITLE_AND_DATE)
+    // A hand-crafted POST can send anything in `date`; without this check
+    // Postgres raises an invalid-input error the user sees as a 500 rather
+    // than a message.
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Enter a valid date."),
+});
 
 // Editing and deleting are creator-or-admin, not member-at-large (see the
 // spec's permission table), so "forbidden" from those needs its own copy. The
@@ -37,19 +50,10 @@ export async function createMeetingAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
-  const title = String(formData.get("title") ?? "").trim();
-  const date = String(formData.get("date") ?? "").trim();
-  if (!title || !date) {
-    return { error: "Add a title and a date.", success: false };
-  }
-  // A hand-crafted POST can send anything in `date`; without this check
-  // Postgres raises an invalid-input error the user sees as a 500 rather
-  // than a message.
-  if (!DATE_RE.test(date)) {
-    return { error: "Enter a valid date.", success: false };
-  }
+  const form = meetingForm.safeParse(Object.fromEntries(formData));
+  if (!form.success) return { error: form.error.issues[0].message, success: false };
   try {
-    await createMeeting(user.id, groupId, { title, date });
+    await createMeeting(user.id, groupId, form.data);
   } catch (err) {
     return { error: mapError(err), success: false };
   }
@@ -63,16 +67,10 @@ export async function updateMeetingAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
-  const title = String(formData.get("title") ?? "").trim();
-  const date = String(formData.get("date") ?? "").trim();
-  if (!title || !date) {
-    return { error: "Add a title and a date.", success: false };
-  }
-  if (!DATE_RE.test(date)) {
-    return { error: "Enter a valid date.", success: false };
-  }
+  const form = meetingForm.safeParse(Object.fromEntries(formData));
+  if (!form.success) return { error: form.error.issues[0].message, success: false };
   try {
-    await updateMeeting(user.id, meetingId, { title, date });
+    await updateMeeting(user.id, meetingId, form.data);
   } catch (err) {
     return { error: mapError(err, MANAGE_FORBIDDEN), success: false };
   }

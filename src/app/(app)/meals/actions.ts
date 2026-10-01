@@ -1,10 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import { addAdhocItem, claimItem, releaseItem, removeAdhocItem, setMeal } from "@/lib/meals";
 
 export type ActionState = { error: string | null; success: boolean };
+
+const adhocItemForm = z.object({
+  label: z
+    .string({ error: "Add a name for the item." })
+    .trim()
+    .min(1, "Add a name for the item."),
+});
 
 // Domain functions throw plain Error("forbidden" | "not-found" |
 // "already-claimed" | "not-claimed") — see src/lib/meals.ts. Map them to copy
@@ -86,12 +94,10 @@ export async function addAdhocItemAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
-  const label = String(formData.get("label") ?? "").trim();
-  if (!label) {
-    return { error: "Add a name for the item.", success: false };
-  }
+  const form = adhocItemForm.safeParse(Object.fromEntries(formData));
+  if (!form.success) return { error: form.error.issues[0].message, success: false };
   try {
-    await addAdhocItem(user.id, meetingId, label);
+    await addAdhocItem(user.id, meetingId, form.data.label);
   } catch (err) {
     return { error: mapError(err), success: false };
   }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import {
   approveRequest,
@@ -15,6 +16,13 @@ import {
 } from "@/lib/groups";
 
 export type ActionState = { error: string | null; success: boolean };
+
+const renameGroupForm = z.object({
+  name: z
+    .string({ error: "Group name can't be empty." })
+    .trim()
+    .min(1, "Group name can't be empty."),
+});
 
 // Domain functions throw plain Error("forbidden" | "not-found" | "last-admin"
 // | "already-member") — see src/lib/groups.ts. Map the ones reachable from
@@ -137,12 +145,10 @@ export async function renameGroupAction(
   formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) {
-    return { error: "Group name can't be empty.", success: false };
-  }
+  const form = renameGroupForm.safeParse(Object.fromEntries(formData));
+  if (!form.success) return { error: form.error.issues[0].message, success: false };
   try {
-    await renameGroup(user.id, groupId, name);
+    await renameGroup(user.id, groupId, form.data.name);
   } catch (err) {
     return { error: mapError(err), success: false };
   }
