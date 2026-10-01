@@ -121,3 +121,53 @@ test("two members fill the bowl, draw it, and each gets the other's request", as
   await expectApp(bob.getByRole("heading", { name: "My prayers", level: 1 })).toBeVisible();
   await expectApp(bob.locator("article").filter({ hasText: aliceRequest })).toBeVisible();
 });
+
+test("Edit my request stays disabled while the submit is in flight", async ({ browser }) => {
+  const run = Date.now();
+  const request = `For patience ${run}`;
+  const today = new Date().toLocaleDateString("en-CA");
+
+  const alice = await (await memberContext(browser)).newPage();
+  await signIn(alice, `prayer-race-${run}@example.com`, "Alice");
+  await alice.getByRole("link", { name: "Create a group" }).click();
+  await alice.getByLabel("Group name").fill(`Race ${run}`);
+  await alice.getByRole("button", { name: "Create group" }).click();
+  await expectApp(alice.getByRole("heading", { name: `Race ${run}` })).toBeVisible();
+
+  await alice.getByRole("link", { name: "Meetings" }).click();
+  await alice.getByRole("button", { name: "Plan a meeting" }).click();
+  await alice.getByPlaceholder("Meeting title").fill(`Week ${run}`);
+  await alice.locator('input[name="date"]').fill(today);
+  await alice.getByRole("button", { name: "Create meeting" }).click();
+  const meetingLink = alice.getByRole("link", { name: new RegExp(`Week ${run}`) });
+  await expectApp(meetingLink).toBeVisible();
+  await meetingLink.click();
+  await expectApp(alice.getByRole("button", { name: "I'm in" })).toBeVisible();
+
+  await alice.getByRole("button", { name: "I'm in" }).click();
+  await alice.getByLabel("Your prayer request").fill(request);
+
+  // Hold every server-action POST for 2s, simulating a slow round trip, so
+  // the viewer can tap "Edit my request" while the submit is still pending.
+  await alice.route("**/*", async (route) => {
+    const req = route.request();
+    if (req.method() === "POST" && req.headers()["next-action"]) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    await route.continue();
+  });
+
+  await alice.getByRole("button", { name: "Put it in the bowl" }).click();
+
+  const editButton = alice.getByRole("button", { name: "Edit my request" });
+  await expect(editButton).toBeVisible();
+  await expect(editButton).toBeDisabled();
+
+  // Once the held response lands, the button re-enables.
+  await expectApp(editButton).toBeEnabled();
+
+  await editButton.click();
+  await expect(alice.getByLabel("Your prayer request")).toHaveValue(request);
+
+  await alice.unrouteAll({ behavior: "wait" });
+});

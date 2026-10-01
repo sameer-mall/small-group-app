@@ -45,7 +45,7 @@ export function OpenPrayerBowl({
   currentUserId: string;
 }) {
   const [joinState, join] = useActionState(joinPrayerBowlAction.bind(null, meetingId), initialState);
-  const [submitState, submit] = useActionState(
+  const [submitState, submit, submitPending] = useActionState(
     submitPrayerRequestAction.bind(null, meetingId),
     initialState,
   );
@@ -119,8 +119,9 @@ export function OpenPrayerBowl({
       ) : (
         <button
           type="button"
+          disabled={submitPending}
           onClick={() => setEditing(true)}
-          className="text-accent-strong min-h-tap self-start text-sm font-semibold"
+          className="text-accent-strong min-h-tap self-start text-sm font-semibold disabled:pointer-events-none disabled:opacity-50"
         >
           Edit my request
         </button>
