@@ -4,6 +4,8 @@ import { getMeeting } from "@/lib/meetings";
 import { formatMeetingDate } from "@/lib/utils";
 import { MeetingActionsMenu } from "@/components/meeting-actions-menu";
 import { MealSection } from "@/components/meal-section";
+import { PrayerSection } from "@/components/prayer-section";
+import { RefreshOnFocus } from "@/components/refresh-on-focus";
 
 export default async function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -20,6 +22,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
 
   return (
     <main className="flex flex-col gap-6 p-6">
+      <RefreshOnFocus />
       <div className="flex items-start gap-2">
         <div className="flex flex-1 flex-col gap-1">
           <h1 className="font-serif text-2xl font-semibold">{meeting.title}</h1>
@@ -40,6 +43,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         currentUserId={user.id}
         isAdmin={role === "admin"}
       />
+      <PrayerSection meetingId={meeting.id} meetingDate={meeting.date} currentUserId={user.id} />
     </main>
   );
 }
