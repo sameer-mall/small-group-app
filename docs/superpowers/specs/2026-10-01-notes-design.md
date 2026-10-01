@@ -13,7 +13,7 @@ Ship the third weekly ritual: each member keeps one private note per meeting (th
 **In:**
 
 - **My note on the meeting page.** A card below the prayer bowl: one private note per member per meeting, autosaved, with a save status.
-- **My notes.** A `/notes` page listing every note you've written in the active group, newest meeting first, each one linking back to its meeting. A note whose meeting has since been deleted stays here too.
+- **My notes.** A `/notes` page listing every note you've written in the active group, newest meeting first, each one linking back to its meeting. A note whose meeting has since been deleted stays here too, and opens on its own page where it can still be edited or deleted.
 - **E2E smoke** for the parent spec's "write a note".
 
 **Out:**
@@ -42,7 +42,7 @@ The Hearth mockups (3g, 3n, 3h, 2a) are final for look and copy; the parent spec
 8. **A note outlives its meeting.** It belongs to its author, not to the meeting. While the meeting exists, the note shows on it, still one per member per meeting (a unique `(meeting_id, author_id)`). Deleting the meeting sets the note's `meeting_id` to null (`ON DELETE SET NULL`) instead of deleting the note. So the note carries what it needs to stand alone: its own id, its `group_id` for scoping, and a snapshot of the meeting's title and date, refreshed on every save. My notes shows the live meeting's title and date while it exists, and the snapshot after it's gone. This diverges from the parent spec's data model, where `notes` hangs off the meeting; that was the owner's call.
 9. **My notes is scoped to the active group,** like Meetings, Recipes, and My prayers. Order is newest meeting date first, with the later-started note first on a tie. A note whose meeting was deleted sorts by its snapshot date.
 10. **Leaving or being removed hides your notes; it doesn't delete them.** Every read checks current membership. If you rejoin, they come back. Deleting your account deletes them (FK cascade).
-11. **Deleting a meeting keeps everyone's notes.** The creator or an admin can delete a meeting, but that never costs anyone their private notes. The delete warning says so. On My notes, a note whose meeting is gone is marked *Meeting deleted*. It isn't a link, since there's no page to open, so its full text shows there instead of clamping. It is read-only in v1, because the meeting page was the only place to edit it.
+11. **Deleting a meeting keeps everyone's notes.** The creator or an admin can delete a meeting, but that never costs anyone their private notes. The delete warning says so. On My notes, a note whose meeting is gone is marked *Meeting deleted* and opens its own page, `/notes/{id}`. That page has the same autosaving note card, under the meeting's title and date, and a **Delete note** button with a confirm. Two rules differ from the meeting page. Clearing the field there doesn't delete the note: deleting is its own confirmed step, so clearing to retype never throws the note away, and the status reads *Empty notes aren't saved*. And a live meeting's note id redirects to its meeting page, where that note belongs.
 12. **Notes don't poll.** Nobody else writes your note. The page's existing refresh-on-focus covers editing on two devices.
 
 ## Architecture
@@ -52,8 +52,14 @@ Plans 3 and 4's layering, unchanged.
 - **Table:** `notes`: id, group_id, meeting_id (nullable, set null when the meeting is deleted), meeting_title and meeting_date (snapshot), author_id, body, created_at, updated_at. Unique `(meeting_id, author_id)`. It cascades from users and groups, never from meetings.
 - **Domain:** `src/lib/notes.ts` (`getMyNote`, `saveMyNote`, `listMyNotes`), taking explicit actor ids and using `requireMembership` from `src/lib/membership.ts`. The error vocabulary is the existing `forbidden` / `not-found`; nothing new.
 - **Pure logic:** `src/lib/autosave.ts`.
-- **Action:** `saveNoteAction(meetingId, body)` in `src/app/(app)/notes/actions.ts`. It is called directly from the card, not as a form action, and returns `{ saved: boolean }`.
-- **UI:** `NoteCard` (client) on the meeting page; the `/notes` page with a server-rendered `NoteList`.
+- **Actions** in `src/app/(app)/notes/actions.ts`:
+  - `saveNoteAction(meetingId, body)`, the meeting page's autosave.
+  - `updateNoteAction(noteId, body)`, the note page's autosave, which refuses a blank note.
+  - `deleteNoteAction(noteId)`, behind a confirm.
+
+  The card receives its save action bound by the page, so one card serves both pages.
+- **By-id domain functions** for notes whose meeting was deleted: `getMyNoteById`, `updateMyNote`, `deleteMyNote`. Someone else's note reads as `not-found`, the same as a missing one, so an id never confirms another member's note exists.
+- **UI:** `NoteCard` (client) on the meeting page and the note page; `/notes` with a server-rendered `NoteList`; `/notes/[id]` with `DeleteNoteButton`.
 
 **Permissions:**
 
@@ -62,12 +68,13 @@ Plans 3 and 4's layering, unchanged.
 | Write, edit, or clear your note on a meeting | Any member of the meeting's group |
 | Read your own note | You, while a member |
 | Read anyone else's note | **Nobody**, admins included |
-| Delete anyone's note | Only its author, by clearing it (while its meeting exists) |
+| Delete a note | Only its author: by clearing it on the meeting page, or with **Delete note** once its meeting is gone |
 
 ## Screens and copy
 
 - **Note card** (3n, 3g; dark 2a), the last card on the meeting page. Header row: **My note** (Lora 19px) with the save status right-aligned. Below it, a borderless text field that grows with its content. Footer row: *Only you can see this* when there is text, and *See all my notes ›* right-aligned.
-- **My notes** (`/notes`), after 3l: a heading and subtitle, then one card per note. Each card shows the meeting title, its date, and the note, clamped to four lines, and the whole card links to the meeting. A note whose meeting was deleted shows *Meeting deleted* beside the date, is not a link, and shows its full text.
+- **My notes** (`/notes`), after 3l: a heading and subtitle, then one card per note. Each card shows the meeting title, its date, and the note, clamped to four lines, and the whole card links to the meeting. A note whose meeting was deleted shows *Meeting deleted* beside the date and links to its own page instead.
+- **A deleted meeting's note** (`/notes/{id}`): the meeting's title and long date with *· Meeting deleted*, the note card, and **Delete note** below it. The confirm keeps Cancel focused and on top, as the meeting delete does.
 
 **Copy from the mockups, verbatim:** "My note" · "Saved just now" · "Tap to start a private note…" (the field's placeholder) · "Only you can see this".
 
@@ -78,6 +85,8 @@ Plans 3 and 4's layering, unchanged.
 - "My notes" · "Your private notes, meeting by meeting": the history page's heading and subtitle
 - "No notes yet" · "Write a note on any meeting page and it lands here.": the empty history
 - "Meeting deleted": the marker on My notes for a note whose meeting is gone
+- "Empty notes aren't saved": the note page's status while its field is blank
+- "Delete note" · "Delete this note?" · "Its meeting is already gone, so this is the only copy. It can't be undone." · "That note is already gone."
 - The meeting delete warning becomes "Its meal plan, claims, and prayer bowl are deleted with it. Everyone's notes are kept in My notes."
 
 ## Mobile-first requirements
@@ -97,8 +106,9 @@ Plans 3 and 4's layering, unchanged.
   - Outsiders and removed members are refused.
   - History is group-scoped and newest first, and shows a renamed meeting's new title.
   - Deleting a meeting keeps every note on it, with the meeting's title and date.
+  - By id, only the author can read, edit, or delete a note; anyone else gets `not-found`, and a former member gets `forbidden`.
 - **Playwright smoke:**
   - Write a note, see *Saved just now*, reload, and it's there.
   - A second member on the same meeting sees an empty note, and the text is absent from their page's HTML.
   - My notes lists it and links back.
-  - After the meeting is deleted, My notes still shows the note, marked *Meeting deleted*.
+  - After the meeting is deleted, My notes still shows the note, marked *Meeting deleted*. It opens on its own page, where an edit saves and survives a reload, and **Delete note** removes it.
