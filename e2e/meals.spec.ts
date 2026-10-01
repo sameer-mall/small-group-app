@@ -76,7 +76,11 @@ test("set a meal from a recipe, then claim and release an item", async ({ browse
 
   await alice.getByRole("button", { name: "Claim" }).first().click();
   await expectApp(alice.getByRole("button", { name: "Release" })).toBeVisible();
-  await expectApp(alice.getByText("You")).toBeVisible();
+  // Scoped to the meal section: the meeting page also renders the prayer
+  // bowl, whose buckets list the viewer as "You" too.
+  await expectApp(
+    alice.locator("section").filter({ hasText: recipeName }).getByText("You", { exact: true }),
+  ).toBeVisible();
   await expectApp(alice.getByRole("button", { name: "Claim" })).toHaveCount(1);
 
   await alice.getByRole("button", { name: "Release" }).click();
