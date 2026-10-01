@@ -1,5 +1,6 @@
 import { getPrayerBowl } from "@/lib/prayers";
 import { cn, formatMeetingDate } from "@/lib/utils";
+import { DrawnPrayerBowl } from "@/components/drawn-prayer-bowl";
 import { OpenPrayerBowl } from "@/components/open-prayer-bowl";
 import { RefreshWhileOpen } from "@/components/refresh-while-open";
 
@@ -41,7 +42,9 @@ export async function PrayerSection({
           {badge}
         </span>
       </div>
-      {drawn ? null /* Task 5 renders the drawn state here. */ : (
+      {drawn ? (
+        <DrawnPrayerBowl drawn={bowl.drawn} />
+      ) : (
         <OpenPrayerBowl bowl={bowl} meetingId={meetingId} currentUserId={currentUserId} />
       )}
     </section>

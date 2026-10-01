@@ -8,6 +8,7 @@ import {
   type ActionState,
 } from "@/app/(app)/prayers/actions";
 import type { BowlMember, PrayerBowl } from "@/lib/prayers";
+import { DrawBowlButton } from "@/components/draw-bowl-button";
 import { PrayerBuckets } from "@/components/prayer-buckets";
 import { PrayerCompose } from "@/components/prayer-compose";
 
@@ -118,7 +119,11 @@ export function OpenPrayerBowl({
         </button>
       )}
       {joinState.error && <p className="text-destructive text-xs">{joinState.error}</p>}
-      {/* Task 5 mounts the Draw button and its caption here. */}
+      <DrawBowlButton
+        meetingId={meetingId}
+        submittedCount={buckets.submitted.length}
+        stillWriting={buckets.waiting}
+      />
     </div>
   );
 }
