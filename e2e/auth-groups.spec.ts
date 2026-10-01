@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
 
 const MAIL = ".e2e-mail.jsonl";
 
@@ -10,6 +10,16 @@ const MAIL = ".e2e-mail.jsonl";
 // longer-timeout expect instead. Plain fast-path checks (e.g. URL checks)
 // can stay on the default `expect`.
 const expectApp = expect.configure({ timeout: 10_000 });
+
+// Each simulated member signs in from their own client IP, as real members
+// on their own devices do. Better Auth limits magic links per IP (5 per
+// 60s), and without this every member in the suite shares localhost's one bucket.
+function memberContext(browser: Browser) {
+  const octet = () => Math.floor(Math.random() * 250) + 2;
+  return browser.newContext({
+    extraHTTPHeaders: { "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}` },
+  });
+}
 
 async function signIn(page: Page, email: string, name: string) {
   await page.goto("/sign-in");
@@ -37,7 +47,7 @@ async function signIn(page: Page, email: string, name: string) {
 test("two users: create group, invite, approve, member arrives", async ({ browser }) => {
   const run = Date.now();
 
-  const alice = await (await browser.newContext()).newPage();
+  const alice = await (await memberContext(browser)).newPage();
   await signIn(alice, `alice-${run}@example.com`, "Alice");
   await alice.getByRole("link", { name: "Create a group" }).click();
   await alice.getByLabel("Group name").fill(`Tuesday ${run}`);
@@ -47,7 +57,7 @@ test("two users: create group, invite, approve, member arrives", async ({ browse
   await alice.getByRole("link", { name: "Group" }).click();
   const inviteUrl = await alice.getByTestId("invite-url").innerText();
 
-  const bob = await (await browser.newContext()).newPage();
+  const bob = await (await memberContext(browser)).newPage();
   await signIn(bob, `bob-${run}@example.com`, "Bob");
   await bob.goto(new URL(inviteUrl).pathname);
   await bob.getByRole("button", { name: "Ask to join" }).click();
@@ -72,7 +82,7 @@ test("two users: create group, invite, approve, member arrives", async ({ browse
 test("switcher menu creates a second group and switches back", async ({ browser }) => {
   const run = Date.now();
 
-  const carol = await (await browser.newContext()).newPage();
+  const carol = await (await memberContext(browser)).newPage();
   await signIn(carol, `carol-${run}@example.com`, "Carol");
 
   await carol.getByRole("link", { name: "Create a group" }).click();

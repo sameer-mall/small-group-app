@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
 
 const MAIL = ".e2e-mail.jsonl";
 
@@ -8,6 +8,16 @@ const MAIL = ".e2e-mail.jsonl";
 // seconds under worker load. Copied rather than imported — spec files stay
 // self-contained.
 const expectApp = expect.configure({ timeout: 10_000 });
+
+// Each simulated member signs in from their own client IP, as real members
+// on their own devices do. Better Auth limits magic links per IP (5 per
+// 60s), and without this every member in the suite shares localhost's one bucket.
+function memberContext(browser: Browser) {
+  const octet = () => Math.floor(Math.random() * 250) + 2;
+  return browser.newContext({
+    extraHTTPHeaders: { "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}` },
+  });
+}
 
 async function signIn(page: Page, email: string, name: string) {
   await page.goto("/sign-in");
@@ -37,7 +47,7 @@ test("two members fill the bowl, draw it, and each gets the other's request", as
   const aliceRequest = `For my dad's surgery ${run}`;
   const bobRequest = `For a new job ${run}`;
 
-  const alice = await (await browser.newContext()).newPage();
+  const alice = await (await memberContext(browser)).newPage();
   await signIn(alice, `prayer-alice-${run}@example.com`, "Alice");
   await alice.getByRole("link", { name: "Create a group" }).click();
   await alice.getByLabel("Group name").fill(`Bowl ${run}`);
@@ -47,7 +57,7 @@ test("two members fill the bowl, draw it, and each gets the other's request", as
   // Bob joins through the invite link; Alice approves.
   await alice.getByRole("link", { name: "Group" }).click();
   const inviteUrl = await alice.getByTestId("invite-url").innerText();
-  const bob = await (await browser.newContext()).newPage();
+  const bob = await (await memberContext(browser)).newPage();
   await signIn(bob, `prayer-bob-${run}@example.com`, "Bob");
   await bob.goto(new URL(inviteUrl).pathname);
   await bob.getByRole("button", { name: "Ask to join" }).click();

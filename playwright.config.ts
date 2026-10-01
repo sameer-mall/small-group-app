@@ -28,11 +28,6 @@ export default defineConfig({
       // `web-start` preview, say). Variables set here win over .env files, so
       // e2e stops depending on whatever the local env happens to say.
       BETTER_AUTH_URL: "http://localhost:3000",
-      // See the matching comment in src/lib/auth.ts: `next start` runs as
-      // NODE_ENV=production, which turns on Better Auth's rate limiting, and
-      // the magic-link endpoint's 5-per-60s-per-IP limit doesn't have room
-      // for every spec file's sign-ins from the one IP this suite runs as.
-      E2E_DISABLE_AUTH_RATE_LIMIT: "1",
     },
   },
 });
