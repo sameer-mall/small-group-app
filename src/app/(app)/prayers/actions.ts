@@ -29,7 +29,7 @@ function mapError(err: unknown): string {
   if (err instanceof Error) {
     if (err.message === "session-closed") return "The bowl has already been drawn.";
     if (err.message === "forbidden") return "Only group members can do that.";
-    if (err.message === "not-found") return "That didn't work — try refreshing the page.";
+    if (err.message === "not-found") return "That didn't work. Try refreshing the page.";
     if (err.message === "too-few-requests") {
       return "The bowl needs at least two requests before anyone can draw.";
     }

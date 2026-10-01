@@ -28,7 +28,7 @@ export function DrawnPrayerBowl({ drawn }: { drawn: PrayerBowl["drawn"] }) {
         &quot;{drawn.body}&quot;
       </blockquote>
       {drawn.authorName ? (
-        <p className="text-muted-foreground text-center text-[14.5px]">— {drawn.authorName}</p>
+        <p className="text-muted-foreground text-center text-[14.5px]">From {drawn.authorName}</p>
       ) : (
         <p className="text-tertiary text-center text-[14.5px] italic">Name not shared</p>
       )}
