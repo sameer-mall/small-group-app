@@ -16,6 +16,7 @@
 /test-results/
 /playwright-report/
 .e2e-mail.jsonl
+.debug-mail.jsonl
 
 # next.js
 /.next/

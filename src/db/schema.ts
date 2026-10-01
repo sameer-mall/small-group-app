@@ -2,7 +2,7 @@
 // generated into auth-schema.ts by `@better-auth/cli generate` — regenerate
 // there, never hand-edit. App tables are defined below in this file.
 import { sql } from "drizzle-orm";
-import { date, integer, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, date, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth-schema";
 
 export * from "./auth-schema";
@@ -88,3 +88,60 @@ export const itemClaims = pgTable("item_claims", {
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   claimedAt: timestamp("claimed_at").notNull().defaultNow(),
 });
+
+export const prayerSessions = pgTable("prayer_sessions", {
+  // One bowl per meeting, ever — after the draw it stays as that night's
+  // record — so the meeting id *is* the key, as it is for meal_plans.
+  meetingId: text("meeting_id").primaryKey().references(() => meetings.id, { onDelete: "cascade" }),
+  status: text("status", { enum: ["open", "drawn"] }).notNull().default("open"),
+  // Whoever joined or wrote first: the bowl starts itself on that first write.
+  startedBy: text("started_by").notNull().references(() => user.id),
+  startedAt: timestamp("started_at").notNull().defaultNow(),
+  drawnBy: text("drawn_by").references(() => user.id),
+  drawnAt: timestamp("drawn_at"),
+});
+
+export const prayerParticipants = pgTable(
+  "prayer_participants",
+  {
+    meetingId: text("meeting_id")
+      .notNull()
+      .references(() => prayerSessions.meetingId, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    joinedAt: timestamp("joined_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.meetingId, t.userId] })],
+);
+
+export const prayerRequests = pgTable(
+  "prayer_requests",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    meetingId: text("meeting_id")
+      .notNull()
+      .references(() => prayerSessions.meetingId, { onDelete: "cascade" }),
+    authorId: text("author_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    // The author's choice, like signing the paper. Off unless they opt in.
+    includeName: boolean("include_name").notNull().default(false),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  // One request per person per bowl.
+  (t) => [uniqueIndex("prayer_requests_one_per_author").on(t.meetingId, t.authorId)],
+);
+
+export const prayerAssignments = pgTable(
+  "prayer_assignments",
+  {
+    // Each request is drawn by exactly one person…
+    requestId: text("request_id")
+      .primaryKey()
+      .references(() => prayerRequests.id, { onDelete: "cascade" }),
+    meetingId: text("meeting_id")
+      .notNull()
+      .references(() => prayerSessions.meetingId, { onDelete: "cascade" }),
+    assigneeId: text("assignee_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  },
+  // …and each person draws exactly one.
+  (t) => [uniqueIndex("prayer_assignments_one_per_assignee").on(t.meetingId, t.assigneeId)],
+);

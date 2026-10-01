@@ -2,7 +2,6 @@ import { getMealPlan } from "@/lib/meals";
 import { listRecipes } from "@/lib/recipes";
 import { MealSlotRow } from "@/components/meal-slot-row";
 import { RecipePicker } from "@/components/recipe-picker";
-import { RefreshOnFocus } from "@/components/refresh-on-focus";
 import { AddAdhocItem } from "@/components/add-adhoc-item";
 import { ChangeMealDialog } from "@/components/change-meal-dialog";
 
@@ -25,7 +24,6 @@ export async function MealSection({
   if (!plan) {
     return (
       <section className="flex flex-col gap-3">
-        <RefreshOnFocus />
         <div className="flex flex-col gap-1">
           <h2 className="font-serif text-xl font-semibold">No meal planned yet</h2>
           <p className="text-muted-foreground text-sm">
@@ -39,7 +37,6 @@ export async function MealSection({
 
   return (
     <section className="flex flex-col gap-3">
-      <RefreshOnFocus />
       <div className="flex items-end justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="text-tertiary tracking-label text-xs font-bold uppercase">Meal</span>
