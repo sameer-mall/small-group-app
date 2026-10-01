@@ -6,7 +6,7 @@ export function WaitingForApproval({ groupName }: { groupName: string }) {
       </span>
       <h2 className="font-serif text-xl font-semibold mt-4">Request sent</h2>
       <p className="text-muted-foreground mt-2 text-sm">
-        An admin will let you in — check back soon.
+        An admin will let you in. Check back soon.
       </p>
       <p className="text-strong mt-3 text-sm font-medium">{groupName}</p>
     </div>
