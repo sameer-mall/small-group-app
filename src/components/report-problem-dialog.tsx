@@ -74,7 +74,7 @@ export function ReportProblemDialog({
               <DialogDescription>Your report was sent.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <DialogClose render={<Button type="button" />}>Done</DialogClose>
+              <DialogClose render={<Button type="button" className="min-h-tap" />}>Done</DialogClose>
             </DialogFooter>
           </>
         ) : (
@@ -102,7 +102,7 @@ export function ReportProblemDialog({
             </div>
             <DialogFooter>
               <DialogClose render={<Button variant="outline" type="button" />}>Cancel</DialogClose>
-              <Button type="submit" disabled={!message.trim()}>
+              <Button type="submit" className="min-h-tap" disabled={!message.trim()}>
                 Send report
               </Button>
             </DialogFooter>
