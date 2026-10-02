@@ -24,7 +24,12 @@ export default function RootLayout({
       className={`${lora.variable} ${publicSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <SerwistProvider swUrl="/serwist/sw.js">{children}</SerwistProvider>
+        {/* A hard reload on reconnect destroys anything typed but not yet
+            saved (a note, a prayer request, a recipe). Pages refresh softly
+            instead (see RefreshOnFocus). */}
+        <SerwistProvider swUrl="/serwist/sw.js" reloadOnOnline={false}>
+          {children}
+        </SerwistProvider>
         <Analytics />
         <SpeedInsights />
       </body>

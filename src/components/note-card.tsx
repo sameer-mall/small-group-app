@@ -54,14 +54,19 @@ export function NoteCard({
   }
 
   // Phones background apps constantly, and leaving the page unmounts the
-  // card: save whatever is waiting at both moments, not a second later.
+  // card: save whatever is waiting at both moments, not a second later. A
+  // save that failed offline retries the moment the connection returns,
+  // rather than waiting on the next keystroke, blur, or return to the tab.
   useEffect(() => {
     const onVisibility = () => {
       if (document.visibilityState === "hidden") void saver.flush();
     };
+    const onOnline = () => void saver.flush();
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("online", onOnline);
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("online", onOnline);
       void saver.flush();
     };
   }, [saver]);
