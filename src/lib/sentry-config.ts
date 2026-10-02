@@ -79,6 +79,10 @@ export function scrubEvent(event: ErrorEvent, hint: EventHint): ErrorEvent {
     delete event.request.data;
     delete event.request.cookies;
   }
+  // onRequestError reports the raw path, query string and all, where the
+  // query-parameter filter doesn't reach. An OAuth callback's carries the code.
+  const nextjs = event.contexts?.nextjs;
+  if (typeof nextjs?.request_path === "string") nextjs.request_path = nextjs.request_path.split("?")[0];
   // Next.js gives each server error a digest and sends only that digest to
   // the browser. Tagging the server's event with it lets the error screen's
   // event (tagged with the same digest) lead straight here.
@@ -89,16 +93,27 @@ export function scrubEvent(event: ErrorEvent, hint: EventHint): ErrorEvent {
   return event;
 }
 
+// Whether a browser error takes a replay (the replay's beforeErrorSampling).
+// Only an error a member saw does: the error screen tags it with the
+// reference it shows (src/components/error-screen.tsx).
+export function reachedErrorScreen(event: ErrorEvent): boolean {
+  return typeof event.tags?.ref === "string";
+}
+
 export function sharedSentryOptions() {
   return {
     // Read straight from process.env, not src/lib/env.ts: that module holds
     // server secrets and must never reach the browser, and Next only inlines a
     // NEXT_PUBLIC_ variable into the browser bundle when it's written out like
-    // this. Unset locally and in e2e, which turns the SDK off.
+    // this. Unset locally and in e2e, which turns the SDK off. On the server,
+    // undefined falls back to SENTRY_DSN if that's set, so it stays unset too.
     dsn: process.env.NEXT_PUBLIC_SENTRY_DSN || undefined,
     environment: process.env.NEXT_PUBLIC_VERCEL_ENV || "local",
     dataCollection: DATA_COLLECTION,
     beforeSend: scrubEvent,
     beforeBreadcrumb: scrubBreadcrumb,
+    // Drizzle's spans carry every bound value (drizzle.query.params), which
+    // databaseQueryData doesn't cover. drizzle-orm 0.45 doesn't emit them yet.
+    ignoreSpans: [/^drizzle\./],
   };
 }

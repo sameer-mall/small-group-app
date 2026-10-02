@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ErrorEvent, ReplayFrameEvent } from "@sentry/nextjs";
-import { scrubBreadcrumb, scrubEvent, scrubRecordingEvent, sharedSentryOptions } from "./sentry-config";
+import {
+  reachedErrorScreen,
+  scrubBreadcrumb,
+  scrubEvent,
+  scrubRecordingEvent,
+  sharedSentryOptions,
+} from "./sentry-config";
 
 // What Drizzle's DrizzleQueryError says when an insert fails: the query, then
 // every bound value. Here one of those values is a prayer request.
@@ -47,6 +53,15 @@ describe("scrubEvent", () => {
     } as unknown as ErrorEvent;
     const scrubbed = scrubEvent(event, {});
     expect(scrubbed.request).toEqual({ url: "https://example.com/meetings/m1" });
+  });
+
+  it("drops the query string from the path Next.js reports, which can hold an OAuth code", () => {
+    const event = {
+      contexts: { nextjs: { request_path: "/api/auth/callback/google?code=4/0Ab_secret&state=xyz", router_kind: "App Router" } },
+    } as unknown as ErrorEvent;
+    expect(scrubEvent(event, {}).contexts).toEqual({
+      nextjs: { request_path: "/api/auth/callback/google", router_kind: "App Router" },
+    });
   });
 
   it("tags a server error with its Next.js digest, so the error screen's event leads to it", () => {
@@ -142,6 +157,19 @@ describe("scrubRecordingEvent", () => {
   });
 });
 
+// Every browser error would otherwise upload a replay, and the plan allows 50
+// a month.
+describe("reachedErrorScreen", () => {
+  it("takes a replay for an error a member saw, tagged with its reference", () => {
+    expect(reachedErrorScreen({ tags: { ref: "7KQ2MX" } } as unknown as ErrorEvent)).toBe(true);
+  });
+
+  it("skips one nobody saw: a stray rejection, an extension, a chunk that failed to load", () => {
+    expect(reachedErrorScreen({ tags: { replayId: "abc" } } as unknown as ErrorEvent)).toBe(false);
+    expect(reachedErrorScreen({} as ErrorEvent)).toBe(false);
+  });
+});
+
 describe("sharedSentryOptions", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -158,6 +186,14 @@ describe("sharedSentryOptions", () => {
 
   it("scrubs every breadcrumb as it's recorded, whatever event it ends up on", () => {
     expect(sharedSentryOptions().beforeBreadcrumb).toBe(scrubBreadcrumb);
+  });
+
+  it("never sends a Drizzle query span, which would carry the values it bound", () => {
+    const ignored = sharedSentryOptions().ignoreSpans;
+    for (const name of ["drizzle.operation", "drizzle.execute", "drizzle.driver.execute"]) {
+      expect(ignored.some((pattern) => pattern.test(name))).toBe(true);
+    }
+    expect(ignored.some((pattern) => pattern.test("GET /meals"))).toBe(false);
   });
 
   it("stays off without a DSN, so local dev and e2e send nothing", () => {

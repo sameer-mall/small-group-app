@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { scrubRecordingEvent, sharedSentryOptions } from "@/lib/sentry-config";
+import { reachedErrorScreen, scrubRecordingEvent, sharedSentryOptions } from "@/lib/sentry-config";
 
 Sentry.init({
   ...sharedSentryOptions(),
@@ -18,10 +18,14 @@ Sentry.init({
       // The replay names each tapped element in its own breadcrumbs, read off
       // the live page, unmasked. Scrub those like every other breadcrumb.
       beforeAddRecordingEvent: scrubRecordingEvent,
+      // The plan allows 50 replays a month, and a stray rejection, a browser
+      // extension, or a chunk that fails to load after a deploy would each
+      // spend one. Only an error a member saw on an error screen does.
+      beforeErrorSampling: reachedErrorScreen,
     }),
   ],
   // Never record whole sessions. Keep the last minute in memory and upload it
-  // only when an error happens or "Report a problem" opens
+  // only when an error reaches an error screen or "Report a problem" opens
   // (src/lib/problem-report.ts).
   replaysSessionSampleRate: 0,
   replaysOnErrorSampleRate: 1.0,
