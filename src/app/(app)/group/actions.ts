@@ -14,6 +14,7 @@ import {
   renameGroup,
   rotateInviteCode,
 } from "@/lib/groups";
+import { logRefusal } from "@/lib/monitoring";
 
 export type ActionState = { error: string | null; success: boolean };
 
@@ -30,6 +31,7 @@ const renameGroupForm = z.object({
 // "already-member", which can't happen from these actions) rethrows and hits
 // the default error boundary.
 function mapError(err: unknown): string {
+  logRefusal(err);
   if (err instanceof Error) {
     if (err.message === "last-admin") {
       return "Promote another admin first. A group always needs one.";

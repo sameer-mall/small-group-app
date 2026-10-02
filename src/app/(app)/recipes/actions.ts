@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
+import { logRefusal } from "@/lib/monitoring";
 import { createRecipe, deleteRecipe, updateRecipe } from "@/lib/recipes";
 
 export type ActionState = { error: string | null; success: boolean };
@@ -13,6 +14,7 @@ export type ActionState = { error: string | null; success: boolean };
 // UI can show inline; anything else rethrows and hits the default error
 // boundary.
 function mapError(err: unknown): string {
+  logRefusal(err);
   if (err instanceof Error) {
     if (err.message === "forbidden") {
       return "Only group members can do that.";

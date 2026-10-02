@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
+import { logRefusal } from "@/lib/monitoring";
 import {
   drawPrayerBowl,
   joinPrayerBowl,
@@ -26,6 +27,7 @@ const prayerRequestForm = z.object({
 // Domain functions throw plain Error("forbidden" | "not-found" |
 // "session-closed" | "too-few-requests") — see src/lib/prayers.ts.
 function mapError(err: unknown): string {
+  logRefusal(err);
   if (err instanceof Error) {
     if (err.message === "session-closed") return "The bowl has already been drawn.";
     if (err.message === "forbidden") return "Only group members can do that.";

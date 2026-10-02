@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/lib/auth";
 import { getMembership } from "@/lib/membership";
 
@@ -26,6 +27,10 @@ export async function requireUser(nextPath?: string) {
   if (!session) {
     redirect(path ? `/sign-in?next=${encodeURIComponent(path)}` : "/sign-in");
   }
+  // Every server error and log from here to the end of this request carries
+  // who it happened to, by id only (src/lib/sentry-config.ts). Set before the
+  // /welcome redirect so a new member's first steps are covered too.
+  Sentry.setUser({ id: session.user.id });
   if (!session.user.name?.trim()) {
     redirect(path ? `/welcome?next=${encodeURIComponent(path)}` : "/welcome");
   }
