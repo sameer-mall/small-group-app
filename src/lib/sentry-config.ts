@@ -1,4 +1,4 @@
-import type { ErrorEvent, EventHint } from "@sentry/nextjs";
+import type { Breadcrumb, ErrorEvent, EventHint, ReplayFrameEvent } from "@sentry/nextjs";
 
 // The one place Sentry's options are decided; instrumentation.ts (server) and
 // instrumentation-client.ts (browser) both spread these. Imported by both, so
@@ -35,18 +35,45 @@ function scrubText(text: string): string {
   return text.replace(QUERY_PARAMS, "\nparams: [scrubbed]");
 }
 
+// A click or keypress breadcrumb names the element by its tag, classes, and
+// attributes (htmlTreeAsString in @sentry/browser-utils), and three of those
+// attributes carry visible copy: [aria-label="Manage Ruth Smith"]. The value
+// isn't escaped, so it ends at the `"]` that starts the next attribute, the
+// next element (" > "), or the end of the message.
+const LABEL_ATTRIBUTE = /\[(aria-label|title|alt)="[\s\S]*?"\](?=\[|\s>\s|$)/g;
+
+// Runs as each breadcrumb is recorded, on the server and in the browser, so
+// every event carries scrubbed breadcrumbs: a problem report too, though
+// Sentry runs beforeSend only for errors.
+export function scrubBreadcrumb<B extends Breadcrumb>(breadcrumb: B): B | null {
+  // A console breadcrumb keeps whatever was logged: the dev fallback for
+  // sign-in emails prints the address and code, and Better Auth logs a failed
+  // query with its values.
+  if (breadcrumb.category === "console") return null;
+  if (breadcrumb.message === undefined) return breadcrumb;
+  let message = breadcrumb.message;
+  if (breadcrumb.category?.startsWith("ui.")) {
+    message = message.replace(LABEL_ATTRIBUTE, '[$1="[filtered]"]');
+  }
+  return { ...breadcrumb, message: scrubText(message) };
+}
+
+// The replay records its own click breadcrumbs from the live page, outside
+// beforeBreadcrumb, so its timeline goes through the same scrub.
+export function scrubRecordingEvent(event: ReplayFrameEvent): ReplayFrameEvent | null {
+  // 5 is rrweb's custom event, the only kind the SDK hands this hook.
+  if (event.type !== 5 || event.data.tag !== "breadcrumb") return event;
+  const payload = scrubBreadcrumb(event.data.payload);
+  return payload ? { ...event, data: { ...event.data, payload } } : null;
+}
+
+// Sentry runs this for errors only. Their breadcrumbs were already scrubbed
+// as they were recorded (scrubBreadcrumb).
 export function scrubEvent(event: ErrorEvent, hint: EventHint): ErrorEvent {
   for (const exception of event.exception?.values ?? []) {
     if (exception.value) exception.value = scrubText(exception.value);
   }
   if (event.message) event.message = scrubText(event.message);
-  for (const breadcrumb of event.breadcrumbs ?? []) {
-    if (breadcrumb.message) breadcrumb.message = scrubText(breadcrumb.message);
-    // A console breadcrumb keeps the raw arguments that were logged (Better
-    // Auth logs a failed email send with its error), unscrubbed. The message
-    // above already says what was logged.
-    if (breadcrumb.category === "console") delete breadcrumb.data;
-  }
   // dataCollection already keeps these out. This makes sure.
   if (event.request) {
     delete event.request.data;
@@ -72,5 +99,6 @@ export function sharedSentryOptions() {
     environment: process.env.NEXT_PUBLIC_VERCEL_ENV || "local",
     dataCollection: DATA_COLLECTION,
     beforeSend: scrubEvent,
+    beforeBreadcrumb: scrubBreadcrumb,
   };
 }

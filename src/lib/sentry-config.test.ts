@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ErrorEvent } from "@sentry/nextjs";
-import { scrubEvent, sharedSentryOptions } from "./sentry-config";
+import type { ErrorEvent, ReplayFrameEvent } from "@sentry/nextjs";
+import { scrubBreadcrumb, scrubEvent, scrubRecordingEvent, sharedSentryOptions } from "./sentry-config";
 
 // What Drizzle's DrizzleQueryError says when an insert fails: the query, then
 // every bound value. Here one of those values is a prayer request.
@@ -12,6 +12,13 @@ function eventWith(value: string): ErrorEvent {
   return { exception: { values: [{ type: "Error", value }] } } as ErrorEvent;
 }
 
+// What Sentry's click breadcrumb says when an admin taps "Manage" on a
+// member's row (src/components/member-row.tsx): htmlTreeAsString names the
+// button by its classes and then its aria-label, which holds the member's name.
+const MANAGE_CLICK =
+  "li.flex > button.text-tertiary.min-h-tap.flex.min-w-[32px].items-center" +
+  '[aria-label="Manage Ruth Smith"][type="button"]';
+
 describe("scrubEvent", () => {
   it("keeps the failed query but drops the values it was writing", () => {
     const event = scrubEvent(eventWith(FAILED_INSERT), {});
@@ -21,7 +28,7 @@ describe("scrubEvent", () => {
     expect(JSON.stringify(event)).not.toContain("surgery");
   });
 
-  it("scrubs a linked cause, the message, and breadcrumbs the same way", () => {
+  it("scrubs a linked cause and the message the same way", () => {
     const event = {
       message: FAILED_INSERT,
       exception: {
@@ -30,13 +37,6 @@ describe("scrubEvent", () => {
           { type: "Error", value: "outer" },
         ],
       },
-      breadcrumbs: [
-        {
-          category: "console",
-          message: `Failed to run background task: ${FAILED_INSERT}`,
-          data: { arguments: ["Failed to run background task:", FAILED_INSERT] },
-        },
-      ],
     } as unknown as ErrorEvent;
     expect(JSON.stringify(scrubEvent(event, {}))).not.toContain("surgery");
   });
@@ -64,6 +64,84 @@ describe("scrubEvent", () => {
   });
 });
 
+// Breadcrumbs are scrubbed as they're recorded (beforeBreadcrumb), not as an
+// event is sent: a problem report is a feedback event, and Sentry runs
+// beforeSend only for errors.
+describe("scrubBreadcrumb", () => {
+  it("hides the label a tapped element is named by, so a member's name never leaves", () => {
+    const scrubbed = scrubBreadcrumb({ category: "ui.click", message: MANAGE_CLICK });
+    expect(scrubbed?.message).toBe(
+      "li.flex > button.text-tertiary.min-h-tap.flex.min-w-[32px].items-center" +
+        '[aria-label="[filtered]"][type="button"]',
+    );
+  });
+
+  it("hides title and alt the same way, quotes in the label included", () => {
+    const scrubbed = scrubBreadcrumb({
+      category: "ui.click",
+      message: 'a[title="Ruth\'s "famous" lasagna"] > img[alt="Ruth Smith"]',
+    });
+    expect(scrubbed?.message).toBe('a[title="[filtered]"] > img[alt="[filtered]"]');
+  });
+
+  it("drops console breadcrumbs, which carry whatever was logged", () => {
+    const logged = "[auth email] sign-in code for ruth@example.com: 123456";
+    expect(scrubBreadcrumb({ category: "console", message: logged, data: { arguments: [logged] } })).toBeNull();
+  });
+
+  it("keeps a failed query but drops the values it was writing", () => {
+    const scrubbed = scrubBreadcrumb({ category: "sentry.event", message: `Failed to save: ${FAILED_INSERT}` });
+    expect(scrubbed?.message).toContain('insert into "prayer_requests"');
+    expect(scrubbed?.message).toContain("params: [scrubbed]");
+    expect(JSON.stringify(scrubbed)).not.toContain("surgery");
+  });
+
+  it("leaves other breadcrumbs alone", () => {
+    const navigation = { category: "navigation", data: { from: "/meals", to: "/prayers" } };
+    expect(scrubBreadcrumb(navigation)).toEqual(navigation);
+  });
+});
+
+// The replay records its own click breadcrumbs from the live page, outside
+// beforeBreadcrumb.
+describe("scrubRecordingEvent", () => {
+  function recorded(payload: object): ReplayFrameEvent {
+    return { type: 5, timestamp: 1_000, data: { tag: "breadcrumb", payload } } as ReplayFrameEvent;
+  }
+
+  it("scrubs a breadcrumb in the recording", () => {
+    const event = scrubRecordingEvent(
+      recorded({
+        timestamp: 1,
+        type: "default",
+        category: "ui.click",
+        message: MANAGE_CLICK,
+        data: { nodeId: 12, node: { id: 12, tagName: "button", textContent: "*", attributes: {} } },
+      }),
+    );
+    expect(event).toMatchObject({ type: 5, data: { tag: "breadcrumb", payload: { category: "ui.click" } } });
+    expect(JSON.stringify(event)).not.toContain("Ruth Smith");
+  });
+
+  it("drops a console breadcrumb from the recording", () => {
+    expect(
+      scrubRecordingEvent(recorded({ timestamp: 1, type: "default", category: "console", message: "code 123456" })),
+    ).toBeNull();
+  });
+
+  it("passes every other recording event through untouched", () => {
+    const span = {
+      type: 5,
+      timestamp: 1_000,
+      data: {
+        tag: "performanceSpan",
+        payload: { op: "navigation.push", description: "/meals", startTimestamp: 1, endTimestamp: 2, data: {} },
+      },
+    } as ReplayFrameEvent;
+    expect(scrubRecordingEvent(span)).toBe(span);
+  });
+});
+
 describe("sharedSentryOptions", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
@@ -76,6 +154,10 @@ describe("sharedSentryOptions", () => {
       httpBodies: [],
       databaseQueryData: false,
     });
+  });
+
+  it("scrubs every breadcrumb as it's recorded, whatever event it ends up on", () => {
+    expect(sharedSentryOptions().beforeBreadcrumb).toBe(scrubBreadcrumb);
   });
 
   it("stays off without a DSN, so local dev and e2e send nothing", () => {

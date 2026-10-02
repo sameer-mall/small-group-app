@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
-import { sharedSentryOptions } from "@/lib/sentry-config";
+import { scrubRecordingEvent, sharedSentryOptions } from "@/lib/sentry-config";
 
 Sentry.init({
   ...sharedSentryOptions(),
@@ -12,6 +12,12 @@ Sentry.init({
       maskAllInputs: true,
       blockAllMedia: true,
       networkDetailAllowUrls: [],
+      // Sentry's default list plus "alt". These attributes carry visible copy,
+      // a member's name included ("Manage Ruth Smith").
+      maskAttributes: ["title", "placeholder", "aria-label", "alt"],
+      // The replay names each tapped element in its own breadcrumbs, read off
+      // the live page, unmasked. Scrub those like every other breadcrumb.
+      beforeAddRecordingEvent: scrubRecordingEvent,
     }),
   ],
   // Never record whole sessions. Keep the last minute in memory and upload it
