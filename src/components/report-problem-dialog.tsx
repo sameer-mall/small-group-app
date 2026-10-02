@@ -83,7 +83,7 @@ export function ReportProblemDialog({
               <DialogTitle>Report a problem</DialogTitle>
               <DialogDescription>
                 Tell us what you were trying to do and what went wrong. Your report also includes a
-                recording of the last minute on your screen, with all text hidden.
+                recording of your screen, starting a minute before you opened this, with all text hidden.
               </DialogDescription>
             </DialogHeader>
             <div className="flex flex-col gap-1.5">

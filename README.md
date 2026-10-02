@@ -39,7 +39,7 @@ Errors, problem reports, and a few logs go to Sentry (personal account, free pla
 When someone reports a problem:
 
 - **They sent a reference code** (from an error screen): search Sentry Issues for `ref:<code>`. The event has a replay. If it has a `digest` tag, search `digest:<value>` for the server's issue with the full stack.
-- **They used Report a problem** (Group tab): it's under User Feedback, with their message, name, email, a replay of the minute before, and their user id. Search Issues and Logs by that id.
+- **They used Report a problem** (Group tab): it's under User Feedback, with their message, name, email, a replay starting a minute before they opened it, and their user id. Search Issues and Logs by that id.
 - **"My code never came":** a refused send is an issue (and an email to you) tagged `area:sign-in-email`. Each accepted send is a log, `Sign-in code email sent`, with Resend's id; delivery status is in the Resend dashboard.
 - **"It said I couldn't do that":** Logs, `Action refused`, filtered by their user id. `reason` is the refusal code.
 
