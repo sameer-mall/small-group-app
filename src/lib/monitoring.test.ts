@@ -10,7 +10,7 @@ vi.mock("@sentry/nextjs", () => sentry);
 const nextServer = vi.hoisted(() => ({ after: vi.fn() }));
 vi.mock("next/server", () => nextServer);
 
-import { logEmailSent, logRefusal, reportEmailFailure } from "./monitoring";
+import { isRepeatReport, logEmailSent, logRefusal, reportEmailFailure } from "./monitoring";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -74,5 +74,46 @@ describe("sending records before the function goes idle", () => {
     expect(sentry.logger.warn).toHaveBeenCalled();
     expect(sentry.logger.info).toHaveBeenCalled();
     expect(sentry.captureException).toHaveBeenCalled();
+  });
+});
+
+// The Map behind isRepeatReport is module-level, so each test below uses its
+// own digest to stay independent of the others.
+describe("isRepeatReport", () => {
+  function requestWith(vercelId?: string, path = "/meals") {
+    return { path, headers: vercelId ? { "x-vercel-id": vercelId } : {} };
+  }
+
+  it("treats a second report with the same digest and the same x-vercel-id as a repeat", () => {
+    const error = Object.assign(new Error("boom"), { digest: "d1" });
+    expect(isRepeatReport(error, requestWith("v1"))).toBe(false);
+    expect(isRepeatReport(error, requestWith("v1"))).toBe(true);
+  });
+
+  it("doesn't treat the same digest with a different x-vercel-id as a repeat", () => {
+    const error = Object.assign(new Error("boom"), { digest: "d2" });
+    expect(isRepeatReport(error, requestWith("v1"))).toBe(false);
+    expect(isRepeatReport(error, requestWith("v2"))).toBe(false);
+  });
+
+  it("without x-vercel-id, treats the same digest and path as a repeat but a different path as new", () => {
+    const error = Object.assign(new Error("boom"), { digest: "d3" });
+    expect(isRepeatReport(error, requestWith(undefined, "/meals"))).toBe(false);
+    expect(isRepeatReport(error, requestWith(undefined, "/meals"))).toBe(true);
+    expect(isRepeatReport(error, requestWith(undefined, "/prayers"))).toBe(false);
+  });
+
+  it("stops treating it as a repeat once 10 seconds have passed", () => {
+    const error = Object.assign(new Error("boom"), { digest: "d4" });
+    const request = requestWith("v1");
+    expect(isRepeatReport(error, request, 0)).toBe(false);
+    expect(isRepeatReport(error, request, 9_999)).toBe(true);
+    expect(isRepeatReport(error, request, 10_001)).toBe(false);
+  });
+
+  it("never treats an error without a digest as a repeat", () => {
+    const request = requestWith("v1");
+    expect(isRepeatReport(new Error("boom"), request)).toBe(false);
+    expect(isRepeatReport(new Error("boom"), request)).toBe(false);
   });
 });

@@ -47,3 +47,40 @@ export function reportEmailFailure(err: unknown) {
   Sentry.captureException(err, { tags: { area: "sign-in-email" } });
   flushAfterResponse();
 }
+
+// Next calls the server's onRequestError hook twice for one page load that
+// throws in a server component: once for the server-component render
+// (context.renderSource "react-server-components") and again for the HTML
+// render that replays the same error ("server-rendering"). Both carry the
+// same `digest`, but Sentry's dedupe integration doesn't catch it, since the
+// two calls are unrelated as far as it's concerned. Key on the digest plus
+// the request's identity: Vercel sets an `x-vercel-id` header once per
+// request, and both passes of one page load share it; locally, where there's
+// no such header, fall back to the path. The path fallback means two
+// near-simultaneous unrelated local requests to the same path could get
+// merged into one report, which is harmless locally since there's nobody to
+// lose a report on.
+const seenDigests = new Map<string, number>();
+const REPEAT_REPORT_WINDOW_MS = 10_000;
+
+export function isRepeatReport(
+  error: unknown,
+  request: { path: string; headers: Record<string, string | string[] | undefined> },
+  now = Date.now(),
+): boolean {
+  const digest =
+    typeof error === "object" && error !== null && "digest" in error && typeof error.digest === "string"
+      ? error.digest
+      : undefined;
+  if (!digest) return false;
+
+  for (const [key, firstSeenAt] of seenDigests) {
+    if (now - firstSeenAt > REPEAT_REPORT_WINDOW_MS) seenDigests.delete(key);
+  }
+
+  const vercelId = request.headers["x-vercel-id"];
+  const key = `${digest}:${typeof vercelId === "string" ? vercelId : request.path}`;
+  if (seenDigests.has(key)) return true;
+  seenDigests.set(key, now);
+  return false;
+}
