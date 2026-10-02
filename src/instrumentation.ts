@@ -15,5 +15,10 @@ export function register() {
 }
 
 // Server components, server actions, and route handlers. Next calls this with
-// every error it catches while handling a request.
-export const onRequestError = Sentry.captureRequestError;
+// every error it catches while handling a request, and awaits it. On Node the
+// SDK sends the error in the background, and nothing keeps a Vercel function
+// alive for that once the response is out, so wait for the send here.
+export async function onRequestError(...args: Parameters<typeof Sentry.captureRequestError>) {
+  Sentry.captureRequestError(...args);
+  await Sentry.flush(2000);
+}
