@@ -49,7 +49,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         isAdmin={role === "admin"}
       />
       <PrayerSection meetingId={meeting.id} meetingDate={meeting.date} currentUserId={user.id} />
-      <NoteCard initialBody={note} save={saveNoteAction.bind(null, meeting.id)} />
+      <NoteCard key={meeting.id} initialBody={note} save={saveNoteAction.bind(null, meeting.id)} />
     </main>
   );
 }

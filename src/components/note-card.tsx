@@ -54,13 +54,13 @@ export function NoteCard({
   }
 
   // Phones background apps constantly, and leaving the page unmounts the
-  // card: save whatever is waiting at both moments, not a second later. A
-  // save that failed offline retries the moment the connection returns,
-  // rather than waiting on the next keystroke, blur, or return to the tab.
+  // card: save whatever is waiting at both moments, not a second later. iOS
+  // can abort an in-flight request the instant the tab is hidden, with no
+  // "online" event to retry it later, so a failed save must retry on the
+  // very next visibilitychange too (hidden or visible) rather than waiting
+  // on the next keystroke, blur, or return to the tab.
   useEffect(() => {
-    const onVisibility = () => {
-      if (document.visibilityState === "hidden") void saver.flush();
-    };
+    const onVisibility = () => void saver.flush();
     const onOnline = () => void saver.flush();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("online", onOnline);

@@ -50,6 +50,13 @@
       "when": 1790898912200,
       "tag": "0006_massive_scrambler",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790903625588,
+      "tag": "0007_spooky_jackpot",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { meetings } from "@/db/schema";
+import { meetings, notes } from "@/db/schema";
 import { requireMembership } from "@/lib/membership";
 
 export type Meeting = {
@@ -83,7 +83,18 @@ export async function updateMeeting(
 }
 
 export async function deleteMeeting(userId: string, meetingId: string): Promise<void> {
-  await requireMeetingManager(userId, meetingId);
-  // The meal plan and its items/claims cascade from the FK chain.
-  await db.delete(meetings).where(eq(meetings.id, meetingId));
+  const meeting = await requireMeetingManager(userId, meetingId);
+  // The meal plan and its items/claims cascade from the FK chain, but notes
+  // don't: a note outlives its meeting, carrying a snapshot of the title and
+  // date it showed when last saved. Refresh every note's snapshot from the
+  // live meeting right before it's gone, in the same transaction as the
+  // delete, so a meeting renamed or moved since a note's last save still
+  // leaves the final title and date behind rather than a stale one.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(notes)
+      .set({ meetingTitle: meeting.title, meetingDate: meeting.date })
+      .where(eq(notes.meetingId, meetingId));
+    await tx.delete(meetings).where(eq(meetings.id, meetingId));
+  });
 }

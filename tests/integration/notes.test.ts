@@ -166,6 +166,20 @@ describe("notes", () => {
     await expect(getMyNote(alice, meetingId)).rejects.toThrow("not-found");
   });
 
+  it("deleting a renamed meeting leaves notes with its final title and date, not a stale snapshot", async () => {
+    const { groupId, meetingId } = await seedMeeting("Stale title");
+    await saveMyNote(alice, meetingId, "note");
+    await updateMeeting(alice, meetingId, { title: "Final title", date: "2026-11-01" });
+    await deleteMeeting(alice, meetingId);
+
+    const [note] = await listMyNotes(alice, groupId);
+    expect(note).toMatchObject({
+      meetingId: null,
+      meetingTitle: "Final title",
+      meetingDate: "2026-11-01",
+    });
+  });
+
   it("a deleted meeting's note keeps its place in the history by date", async () => {
     const { groupId } = await createGroup(alice, "Ordering");
     const before = await createMeeting(alice, groupId, { title: "Before", date: "2026-09-01" });

@@ -18,7 +18,7 @@ export function NoteList({ notes }: { notes: MyNote[] }) {
             className="bg-card rounded-card shadow-card flex flex-col gap-2 p-5"
           >
             <div className="flex items-baseline justify-between gap-3">
-              <span className="font-serif text-[17px] font-semibold break-words">
+              <span className="min-w-0 font-serif text-[17px] font-semibold break-words">
                 {note.meetingTitle}
               </span>
               <span className="text-tertiary shrink-0 text-right text-xs">

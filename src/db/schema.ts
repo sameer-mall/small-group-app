@@ -2,7 +2,7 @@
 // generated into auth-schema.ts by `@better-auth/cli generate` — regenerate
 // there, never hand-edit. App tables are defined below in this file.
 import { sql } from "drizzle-orm";
-import { boolean, date, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth-schema";
 
 export * from "./auth-schema";
@@ -172,5 +172,9 @@ export const notes = pgTable(
   },
   // One note per member per live meeting. Postgres treats NULLs as distinct,
   // so any number of notes whose meetings were deleted coexist.
-  (t) => [uniqueIndex("notes_one_per_author").on(t.meetingId, t.authorId)],
+  (t) => [
+    uniqueIndex("notes_one_per_author").on(t.meetingId, t.authorId),
+    // Speeds up listMyNotes, which always filters by author then group.
+    index("notes_by_author_group").on(t.authorId, t.groupId),
+  ],
 );

@@ -41,6 +41,19 @@ async function requireMeetingMember(userId: string, meetingId: string) {
 const ownNote = (userId: string, meetingId: string) =>
   and(eq(notes.meetingId, meetingId), eq(notes.authorId, userId));
 
+// Postgres raises 23503 (foreign_key_violation) when the meeting was deleted
+// between the membership check above and this insert. Drizzle may hand that
+// back wrapped, so walk the cause chain rather than trusting the shape of the
+// top-level error (same pattern as isUniqueViolation in meals.ts).
+function isForeignKeyViolation(err: unknown): boolean {
+  let current: unknown = err;
+  while (current && typeof current === "object") {
+    if ((current as { code?: string }).code === "23503") return true;
+    current = (current as { cause?: unknown }).cause;
+  }
+  return false;
+}
+
 // The caller's own note on a meeting, or "" if they haven't written one.
 // Reading never creates a row.
 export async function getMyNote(userId: string, meetingId: string): Promise<string> {
@@ -60,13 +73,20 @@ export async function saveMyNote(userId: string, meetingId: string, body: string
     return;
   }
   const snapshot = { meetingTitle: meeting.title, meetingDate: meeting.date };
-  await db
-    .insert(notes)
-    .values({ groupId: meeting.groupId, meetingId, authorId: userId, body, ...snapshot })
-    .onConflictDoUpdate({
-      target: [notes.meetingId, notes.authorId],
-      set: { body, ...snapshot, updatedAt: new Date() },
-    });
+  try {
+    await db
+      .insert(notes)
+      .values({ groupId: meeting.groupId, meetingId, authorId: userId, body, ...snapshot })
+      .onConflictDoUpdate({
+        target: [notes.meetingId, notes.authorId],
+        set: { body, ...snapshot, updatedAt: new Date() },
+      });
+  } catch (err) {
+    // The meeting was deleted between requireMeetingMember above and this
+    // insert: treat it the same as a meeting that was never found.
+    if (isForeignKeyViolation(err)) throw new Error("not-found");
+    throw err;
+  }
 }
 
 // What My notes and the note page read. A live meeting's current title and
@@ -92,7 +112,7 @@ export async function listMyNotes(userId: string, groupId: string): Promise<MyNo
     .from(notes)
     .leftJoin(meetings, eq(meetings.id, notes.meetingId))
     .where(and(eq(notes.authorId, userId), eq(notes.groupId, groupId)))
-    .orderBy(desc(noteMeetingDate), desc(notes.createdAt));
+    .orderBy(desc(noteMeetingDate), desc(notes.createdAt), desc(notes.id));
 }
 
 // Confirms the note is the caller's own and they still belong to its group.

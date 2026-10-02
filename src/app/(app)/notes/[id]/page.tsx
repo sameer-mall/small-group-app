@@ -39,6 +39,7 @@ export default async function NotePage({ params }: { params: Promise<{ id: strin
         <p className="text-muted-foreground text-sm">{`${date} · Meeting deleted`}</p>
       </div>
       <NoteCard
+        key={note.noteId}
         initialBody={note.body}
         save={updateNoteAction.bind(null, note.noteId)}
         emptyStatus="Empty notes aren't saved"
