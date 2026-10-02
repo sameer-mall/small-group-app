@@ -1,0 +1,1 @@
+CREATE INDEX "notes_by_author_group" ON "notes" USING btree ("author_id","group_id");
