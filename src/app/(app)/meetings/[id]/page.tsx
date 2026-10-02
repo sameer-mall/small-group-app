@@ -1,10 +1,13 @@
 import { notFound } from "next/navigation";
 import { requireMember, requireUser } from "@/lib/dal";
 import { getMeeting } from "@/lib/meetings";
+import { getMyNote } from "@/lib/notes";
+import { saveNoteAction } from "@/app/(app)/notes/actions";
 import { formatMeetingDate } from "@/lib/utils";
 import { MeetingActionsMenu } from "@/components/meeting-actions-menu";
 import { MealSection } from "@/components/meal-section";
 import { PrayerSection } from "@/components/prayer-section";
+import { NoteCard } from "@/components/note-card";
 import { RefreshOnFocus } from "@/components/refresh-on-focus";
 
 export default async function MeetingPage({ params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +22,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
   // title. It also gives us the role the manage check needs.
   const { role } = await requireMember(meeting.groupId);
   const canManage = meeting.createdBy === user.id || role === "admin";
+
+  const note = await getMyNote(user.id, meeting.id);
 
   return (
     <main className="flex flex-col gap-6 p-6">
@@ -44,6 +49,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         isAdmin={role === "admin"}
       />
       <PrayerSection meetingId={meeting.id} meetingDate={meeting.date} currentUserId={user.id} />
+      <NoteCard initialBody={note} save={saveNoteAction.bind(null, meeting.id)} />
     </main>
   );
 }
