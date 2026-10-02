@@ -9,6 +9,7 @@ import { PendingRequestRow } from "@/components/pending-request-row";
 import { InviteLinkCard } from "@/components/invite-link-card";
 import { LeaveGroupButton } from "@/components/leave-group-button";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ReportProblemDialog } from "@/components/report-problem-dialog";
 
 export default async function GroupPage() {
   const user = await requireUser();
@@ -73,7 +74,8 @@ export default async function GroupPage() {
 
       <LeaveGroupButton groupId={activeGroup.id} />
 
-      <div className="flex justify-center pb-4">
+      <div className="flex flex-col items-center gap-2 pb-4">
+        <ReportProblemDialog label="Report a problem" look="link" />
         <SignOutButton />
       </div>
     </main>
