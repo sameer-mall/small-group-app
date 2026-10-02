@@ -1,7 +1,7 @@
 # Notes — Plan 5 Design
 
 **Date:** 2026-10-01
-**Status:** Draft design, pre-implementation
+**Status:** Implemented (plan 5)
 **Parent spec:** [2026-07-02-small-group-pwa-design.md](2026-07-02-small-group-pwa-design.md). The data model, feature behaviors, and edge cases live there and are not restated here. This document records what plan 5 builds, where the parent spec and the Hearth mockups disagree, and the decisions neither of them settles.
 
 ## Goal

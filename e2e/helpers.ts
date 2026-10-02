@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, type Browser, type Page } from "@playwright/test";
+import { expect, type Browser, type BrowserContextOptions, type Page } from "@playwright/test";
 
 const MAIL = ".e2e-mail.jsonl";
 
@@ -13,9 +13,10 @@ export const expectApp = expect.configure({ timeout: 10_000 });
 // Each simulated member signs in from their own client IP, as real members
 // on their own devices do. Better Auth limits sign-in code requests per IP
 // (10 per 60s), and without this every member in the suite shares localhost's one bucket.
-export function memberContext(browser: Browser) {
+export function memberContext(browser: Browser, options: BrowserContextOptions = {}) {
   const octet = () => Math.floor(Math.random() * 250) + 2;
   return browser.newContext({
+    ...options,
     extraHTTPHeaders: { "x-forwarded-for": `10.${octet()}.${octet()}.${octet()}` },
   });
 }

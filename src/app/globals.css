@@ -15,7 +15,8 @@
       @theme inline, @custom-variant dark) with this file's contents.
    3. Fonts: next/font sets --font-heading (Lora) and --font-body
       (Public Sans) on <html>. No CSS font @import — offline PWA.
-   4. Dark mode: next-themes sets data-theme="dark" on <html>.
+   4. Dark mode: next-themes (src/components/theme-provider.tsx) sets
+      data-theme="dark" on <html>, following prefers-color-scheme.
 
    Utility cheat sheet:
    - Terracotta CTA:  bg-primary text-primary-foreground
@@ -45,6 +46,7 @@
   --text-tertiary: #b4a48c;    /* placeholders, faintest hints */
   --text-strong: #5c4a33;      /* form labels, emphasized secondary */
   --text-prayer: #3e3324;      /* drawn prayer quote text */
+  --text-tab-inactive: #a99878; /* inactive tab icon + label */
 
   --accent: #c4693f;           /* terracotta — primary buttons, claim pills */
   --accent-strong: #a05a38;    /* accent text on cream (links, active tab) */
@@ -53,6 +55,7 @@
 
   --success: #6b7e5a;          /* "submitted ✓", approve, all-claimed */
   --success-tint: #eff2e7;     /* drawn-state pill background */
+  --success-contrast: #ffffff;  /* text on --success (approve pill) */
   --danger: #b3563b;           /* remove member, delete recipe */
   --warning-surface: #fff4e6;  /* "wants to join" callout bg */
   --warning-border: #ebd3b4;
@@ -82,6 +85,7 @@
   --text-tertiary: #7e6c52;
   --text-strong: #d6c4a8;
   --text-prayer: #dacdb8;
+  --text-tab-inactive: #8a7860;
 
   --accent: #c4693f;           /* buttons keep the same terracotta */
   --accent-strong: #d98a5c;    /* ember — links & active tab on dark */
@@ -90,6 +94,7 @@
 
   --success: #9baf7e;
   --success-tint: #2e3324;
+  --success-contrast: #201914;  /* dark text: white on light sage is too faint */
   --danger: #d97757;
   --warning-surface: #33281c;
   --warning-border: #4a3b2a;
@@ -149,10 +154,12 @@
   --color-strong: var(--text-strong);
   --color-tertiary: var(--text-tertiary);
   --color-prayer: var(--text-prayer);
+  --color-tab-inactive: var(--text-tab-inactive);
   --color-accent-strong: var(--accent-strong);
   --color-accent-tint: var(--accent-tint);
   --color-success: var(--success);
   --color-success-tint: var(--success-tint);
+  --color-success-contrast: var(--success-contrast);
   --color-warning-surface: var(--warning-surface);
   --color-warning-border: var(--warning-border);
   --color-divider: var(--divider);
@@ -188,7 +195,7 @@
      rounded-input px-4 py-3.5 text-[16px].
    Card: bg-card rounded-card shadow-card.
    Tab bar: 4 equal columns, 22px stroke icons (stroke-width 1.8),
-     active = text-accent-strong font-bold, inactive #A99878.
+     active = text-accent-strong font-bold, inactive text-tab-inactive.
    Toggle: 48x28 rounded-full, bg-primary when on, 22px white knob.
    ----------------------------------------------------------- */
 

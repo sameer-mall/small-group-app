@@ -3,6 +3,7 @@ import { Lora, Public_Sans } from "next/font/google";
 import { SerwistProvider } from "@serwist/turbopack/react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
 const lora = Lora({ subsets: ["latin"], variable: "--font-heading" });
@@ -22,9 +23,17 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${lora.variable} ${publicSans.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <SerwistProvider swUrl="/serwist/sw.js">{children}</SerwistProvider>
+        <ThemeProvider>
+          {/* A hard reload on reconnect destroys anything typed but not yet
+              saved (a note, a prayer request, a recipe). Pages refresh softly
+              instead (see RefreshOnFocus). */}
+          <SerwistProvider swUrl="/serwist/sw.js" reloadOnOnline={false}>
+            {children}
+          </SerwistProvider>
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

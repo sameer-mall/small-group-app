@@ -45,7 +45,7 @@ export function PendingRequestRow({ request }: { request: PendingRequest }) {
         <div className="flex shrink-0 gap-1.5">
           <button
             type="button"
-            className="bg-success rounded-full px-3.5 py-1.5 text-sm font-bold text-white"
+            className="bg-success rounded-full px-3.5 py-1.5 text-sm font-bold text-success-contrast"
             onClick={() => startTransition(() => approveAction(new FormData()))}
           >
             Approve

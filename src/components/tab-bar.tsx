@@ -25,7 +25,7 @@ export function TabBar() {
             href={href}
             className={cn(
               "min-h-tap flex flex-col items-center justify-center gap-1 py-2 text-tab",
-              active ? "text-accent-strong font-bold" : "text-[#A99878]",
+              active ? "text-accent-strong font-bold" : "text-tab-inactive",
             )}
           >
             <Icon size={22} strokeWidth={1.8} />
