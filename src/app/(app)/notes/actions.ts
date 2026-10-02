@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
+import { logRefusal } from "@/lib/monitoring";
 import { deleteMyNote, saveMyNote, updateMyNote } from "@/lib/notes";
 
 // A note is stored as typed: line endings normalized, nothing trimmed,
@@ -40,6 +41,7 @@ export async function saveNoteAction(meetingId: string, body: string): Promise<{
   try {
     await saveMyNote(user.id, meetingId, note.data);
   } catch (err) {
+    logRefusal(err);
     if (isRefusal(err)) return { saved: false };
     throw err;
   }
@@ -59,6 +61,7 @@ export async function updateNoteAction(noteId: string, body: string): Promise<{ 
   try {
     await updateMyNote(user.id, noteId, note.data);
   } catch (err) {
+    logRefusal(err);
     if (isRefusal(err)) return { saved: false };
     throw err;
   }
@@ -76,6 +79,7 @@ export async function deleteNoteAction(
   try {
     await deleteMyNote(user.id, noteId);
   } catch (err) {
+    logRefusal(err);
     if (err instanceof Error && err.message === "not-found") {
       return { error: "That note is already gone.", success: false };
     }
