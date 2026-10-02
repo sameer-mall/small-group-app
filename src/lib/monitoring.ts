@@ -9,7 +9,9 @@ import { after } from "next/server";
 // The SDK holds logs for a few seconds and sends errors in the background,
 // and a Vercel function can go idle as soon as its response is sent. Next
 // keeps the function running for `after`, so send them from there.
-function flushAfterResponse() {
+// src/instrumentation.ts also calls this, for the render path Next doesn't
+// await onRequestError on.
+export function flushAfterResponse() {
   try {
     after(() => Sentry.flush(2000));
   } catch {

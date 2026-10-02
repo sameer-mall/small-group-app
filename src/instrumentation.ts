@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { flushAfterResponse } from "@/lib/monitoring";
 import { sharedSentryOptions } from "@/lib/sentry-config";
 
 export function register() {
@@ -15,10 +16,13 @@ export function register() {
 }
 
 // Server components, server actions, and route handlers. Next calls this with
-// every error it catches while handling a request, and awaits it. On Node the
-// SDK sends the error in the background, and nothing keeps a Vercel function
-// alive for that once the response is out, so wait for the send here.
+// every error it catches while handling a request. For server actions and
+// route handlers it awaits this hook, so the awaited flush below covers
+// those. For errors thrown while rendering a server component, Next doesn't
+// await this hook, so that awaited flush can get dropped once the response
+// is out; flushAfterResponse's `after` call covers that render path instead.
 export async function onRequestError(...args: Parameters<typeof Sentry.captureRequestError>) {
   Sentry.captureRequestError(...args);
+  flushAfterResponse();
   await Sentry.flush(2000);
 }
