@@ -103,7 +103,7 @@ export function MeetingActionsMenu({ meeting }: { meeting: Meeting }) {
           <DialogHeader>
             <DialogTitle>Delete this meeting?</DialogTitle>
             <DialogDescription>
-              Its meal plan, claims, and prayer bowl are deleted with it.
+              {"Its meal plan, claims, and prayer bowl are deleted with it. Everyone's notes are kept in My notes."}
             </DialogDescription>
           </DialogHeader>
           {deleteState.error && <p className="text-destructive text-xs">{deleteState.error}</p>}
