@@ -35,3 +35,13 @@ export function sendProblemReport(message: string, associatedEventId?: string) {
     { includeReplay: true },
   );
 }
+
+// No 0/O or 1/I/L: a member reads this off their screen and says or texts it.
+const REFERENCE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+
+// The code an error screen shows. It goes to Sentry as the `ref` tag, so
+// searching `ref:<code>` finds the exact event.
+export function makeReference(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  return Array.from(bytes, (byte) => REFERENCE_ALPHABET[byte % REFERENCE_ALPHABET.length]).join("");
+}

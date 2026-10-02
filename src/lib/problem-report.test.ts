@@ -11,7 +11,13 @@ const sentry = vi.hoisted(() => {
 });
 vi.mock("@sentry/nextjs", () => sentry);
 
-import { forgetUser, identifyUser, sendProblemReport, startProblemReport } from "./problem-report";
+import {
+  forgetUser,
+  identifyUser,
+  makeReference,
+  sendProblemReport,
+  startProblemReport,
+} from "./problem-report";
 
 const ruth = { id: "u_ruth", name: "Ruth", email: "ruth@example.com" };
 
@@ -64,5 +70,18 @@ describe("problem reports", () => {
   it("open fine when no replay is running (no DSN)", () => {
     sentry.getReplay.mockReturnValueOnce(undefined);
     expect(() => startProblemReport()).not.toThrow();
+  });
+});
+
+describe("makeReference", () => {
+  it("is six characters that survive being read aloud or retyped (no 0/O, 1/I/L)", () => {
+    for (let i = 0; i < 500; i++) {
+      expect(makeReference()).toMatch(/^[2-9A-HJKMNP-Z]{6}$/);
+    }
+  });
+
+  it("is different every time", () => {
+    const references = new Set(Array.from({ length: 100 }, makeReference));
+    expect(references.size).toBe(100);
   });
 });
