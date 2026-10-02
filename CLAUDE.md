@@ -22,3 +22,4 @@ Church small-group app: weekly meal sign-ups, anonymous-draw prayer requests, pr
 - The theme blocks in src/app/globals.css are a HAND-COPY of docs/design/hearth/theme.css — no automated sync. After editing theme.css, re-paste its `:root` / `[data-theme]` / `@theme inline` blocks into globals.css.
 - Production: https://small-group-app-beta.vercel.app (Vercel, personal account; GitHub repo sameer-mall/small-group-app).
 - Auth: Better Auth (`src/lib/auth.ts`); group operations live in `src/lib/groups.ts` behind DAL guards (`src/lib/dal.ts`) — server actions stay thin.
+- Monitoring: Sentry, configured in `src/lib/sentry-config.ts` (plan 6). Nothing sent to Sentry may contain user content (prayer requests, notes, names, emails, sign-in codes): ids and codes only. Server action files call `logRefusal(err)` (`src/lib/monitoring.ts`) first thing in their refusal mapping.
