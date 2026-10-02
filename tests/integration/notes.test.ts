@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { approveRequest, createGroup, getInviteCode, removeMember, requestToJoin } from "@/lib/groups";
 import { createMeeting, deleteMeeting, updateMeeting } from "@/lib/meetings";
-import { getMyNote, listMyNotes, saveMyNote } from "@/lib/notes";
+import { deleteMyNote, getMyNote, getMyNoteById, listMyNotes, saveMyNote, updateMyNote } from "@/lib/notes";
 
 async function mkUser(id: string, name = id) {
   await db.execute(sql`insert into "user" (id, name, email, email_verified, created_at, updated_at)
@@ -180,5 +180,63 @@ describe("notes", () => {
       ["Gone", true],
       ["Before", false],
     ]);
+  });
+
+  describe("by id, for a note whose meeting was deleted", () => {
+    // A note Bob wrote and Alice (the admin) deleted the meeting under.
+    async function seedOrphan(name: string) {
+      const { groupId, meetingId } = await seedMeeting(name);
+      await saveMyNote(bob, meetingId, "Bob's kept note");
+      await deleteMeeting(alice, meetingId);
+      const [note] = await listMyNotes(bob, groupId);
+      return { groupId, noteId: note.noteId };
+    }
+
+    it("its author can read, edit, and delete it", async () => {
+      const { groupId, noteId } = await seedOrphan("Orphan");
+      expect(await getMyNoteById(bob, noteId)).toEqual({
+        noteId,
+        meetingId: null,
+        meetingTitle: "Orphan",
+        meetingDate: "2026-10-08",
+        body: "Bob's kept note",
+      });
+
+      await updateMyNote(bob, noteId, "Bob's edited note");
+      expect((await getMyNoteById(bob, noteId)).body).toBe("Bob's edited note");
+
+      await deleteMyNote(bob, noteId);
+      expect(await listMyNotes(bob, groupId)).toEqual([]);
+      await expect(getMyNoteById(bob, noteId)).rejects.toThrow("not-found");
+    });
+
+    it("nobody else can reach it by id — not the admin, not an outsider — and its existence isn't confirmed", async () => {
+      const { noteId } = await seedOrphan("Someone else's");
+      for (const intruder of [alice, outsider]) {
+        await expect(getMyNoteById(intruder, noteId)).rejects.toThrow("not-found");
+        await expect(updateMyNote(intruder, noteId, "overwritten")).rejects.toThrow("not-found");
+        await expect(deleteMyNote(intruder, noteId)).rejects.toThrow("not-found");
+      }
+      expect((await getMyNoteById(bob, noteId)).body).toBe("Bob's kept note");
+    });
+
+    it("a member who has left the group can't reach their own note by id", async () => {
+      const { groupId, noteId } = await seedOrphan("Left");
+      await removeMember(alice, groupId, bob);
+      await expect(getMyNoteById(bob, noteId)).rejects.toThrow("forbidden");
+      await expect(updateMyNote(bob, noteId, "x")).rejects.toThrow("forbidden");
+      await expect(deleteMyNote(bob, noteId)).rejects.toThrow("forbidden");
+    });
+
+    it("an id that doesn't exist is not-found", async () => {
+      await expect(getMyNoteById(bob, crypto.randomUUID())).rejects.toThrow("not-found");
+    });
+
+    it("a live meeting's note reads by id too, with its meeting", async () => {
+      const { groupId, meetingId } = await seedMeeting("Still here");
+      await saveMyNote(alice, meetingId, "live");
+      const [note] = await listMyNotes(alice, groupId);
+      expect(await getMyNoteById(alice, note.noteId)).toMatchObject({ meetingId, body: "live" });
+    });
   });
 });

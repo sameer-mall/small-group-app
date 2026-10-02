@@ -69,26 +69,63 @@ export async function saveMyNote(userId: string, meetingId: string, body: string
     });
 }
 
+// What My notes and the note page read. A live meeting's current title and
+// date win over the note's snapshot, so a renamed meeting reads right. ::text
+// keeps the date a YYYY-MM-DD string through coalesce, as the
+// `mode: "string"` columns are everywhere else.
+const noteMeetingDate = sql<string>`coalesce(${meetings.date}, ${notes.meetingDate})::text`;
+const myNoteColumns = {
+  noteId: notes.id,
+  meetingId: notes.meetingId,
+  meetingTitle: sql<string>`coalesce(${meetings.title}, ${notes.meetingTitle})`,
+  meetingDate: noteMeetingDate,
+  body: notes.body,
+};
+
 // Every note the caller has written in this group — including those whose
-// meeting was deleted — newest meeting first. A live meeting's current title
-// and date win over the note's snapshot, so a renamed meeting reads right.
-// The author filter is the whole privacy story: this can only ever return the
-// caller's own notes.
+// meeting was deleted — newest meeting first. The author filter is the whole
+// privacy story: this can only ever return the caller's own notes.
 export async function listMyNotes(userId: string, groupId: string): Promise<MyNote[]> {
   await requireMembership(userId, groupId);
-  // ::text keeps the date a YYYY-MM-DD string through coalesce, as the
-  // `mode: "string"` columns are everywhere else.
-  const meetingDate = sql<string>`coalesce(${meetings.date}, ${notes.meetingDate})::text`;
   return db
-    .select({
-      noteId: notes.id,
-      meetingId: notes.meetingId,
-      meetingTitle: sql<string>`coalesce(${meetings.title}, ${notes.meetingTitle})`,
-      meetingDate,
-      body: notes.body,
-    })
+    .select(myNoteColumns)
     .from(notes)
     .leftJoin(meetings, eq(meetings.id, notes.meetingId))
     .where(and(eq(notes.authorId, userId), eq(notes.groupId, groupId)))
-    .orderBy(desc(meetingDate), desc(notes.createdAt));
+    .orderBy(desc(noteMeetingDate), desc(notes.createdAt));
+}
+
+// Confirms the note is the caller's own and they still belong to its group.
+// Someone else's note reads as not-found, exactly like a missing one, so an
+// id never confirms that another member's note exists.
+async function requireOwnNote(userId: string, noteId: string) {
+  const [note] = await db
+    .select({ groupId: notes.groupId, authorId: notes.authorId })
+    .from(notes)
+    .where(eq(notes.id, noteId));
+  if (!note || note.authorId !== userId) throw new Error("not-found");
+  await requireMembership(userId, note.groupId);
+}
+
+// The caller's own note by id — how a note whose meeting was deleted is
+// reached, since there's no meeting page to read it on.
+export async function getMyNoteById(userId: string, noteId: string): Promise<MyNote> {
+  await requireOwnNote(userId, noteId);
+  const [note] = await db
+    .select(myNoteColumns)
+    .from(notes)
+    .leftJoin(meetings, eq(meetings.id, notes.meetingId))
+    .where(eq(notes.id, noteId));
+  if (!note) throw new Error("not-found"); // deleted a moment ago
+  return note;
+}
+
+export async function updateMyNote(userId: string, noteId: string, body: string): Promise<void> {
+  await requireOwnNote(userId, noteId);
+  await db.update(notes).set({ body, updatedAt: new Date() }).where(eq(notes.id, noteId));
+}
+
+export async function deleteMyNote(userId: string, noteId: string): Promise<void> {
+  await requireOwnNote(userId, noteId);
+  await db.delete(notes).where(eq(notes.id, noteId));
 }

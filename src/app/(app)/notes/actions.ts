@@ -1,8 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/dal";
-import { saveMyNote } from "@/lib/notes";
+import { deleteMyNote, saveMyNote, updateMyNote } from "@/lib/notes";
 
 const MAX_NOTE_LENGTH = 10_000;
 
@@ -35,4 +36,48 @@ export async function saveNoteAction(meetingId: string, body: string): Promise<{
   revalidatePath(`/meetings/${meetingId}`);
   revalidatePath("/notes");
   return { saved: true };
+}
+
+export type ActionState = { error: string | null; success: boolean };
+
+// The note page's autosave, for a note whose meeting was deleted. Unlike the
+// meeting page, a blank note is refused rather than deleted: deleting is its
+// own, confirmed step on that page, so clearing the field to retype never
+// throws the note away.
+export async function updateNoteAction(noteId: string, body: string): Promise<{ saved: boolean }> {
+  const user = await requireUser();
+  const normalized = String(body).replace(/\r\n?/g, "\n");
+  if (normalized.trim() === "" || normalized.length > MAX_NOTE_LENGTH) return { saved: false };
+  try {
+    await updateMyNote(user.id, noteId, normalized);
+  } catch (err) {
+    if (isRefusal(err)) return { saved: false };
+    throw err;
+  }
+  revalidatePath(`/notes/${noteId}`);
+  revalidatePath("/notes");
+  return { saved: true };
+}
+
+export async function deleteNoteAction(
+  noteId: string,
+  _prevState: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  try {
+    await deleteMyNote(user.id, noteId);
+  } catch (err) {
+    if (err instanceof Error && err.message === "not-found") {
+      return { error: "That note is already gone.", success: false };
+    }
+    if (err instanceof Error && err.message === "forbidden") {
+      return { error: "Only group members can do that.", success: false };
+    }
+    throw err;
+  }
+  revalidatePath("/notes");
+  // Outside the try: redirect() signals by throwing, and catching that here
+  // would turn a successful delete into an error message.
+  redirect("/notes");
 }
