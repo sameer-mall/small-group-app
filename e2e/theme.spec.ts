@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { expectApp, memberContext, signIn } from "./helpers";
 
 // Hearth's palettes hang off data-theme on <html>, which next-themes sets from
 // prefers-color-scheme before first paint. Without it the app is stuck in
@@ -19,3 +20,28 @@ for (const { colorScheme, background } of SCHEMES) {
     });
   });
 }
+
+test("the Group page's appearance choice overrides the system theme and sticks", async ({ browser }) => {
+  const run = Date.now();
+  const page = await (await memberContext(browser, { colorScheme: "dark" })).newPage();
+  await signIn(page, `theme-${run}@example.com`, "Theo");
+  await page.getByRole("link", { name: "Create a group" }).click();
+  await page.getByLabel("Group name").fill(`Theme ${run}`);
+  await page.getByRole("button", { name: "Create group" }).click();
+  await expectApp(page.getByRole("heading", { name: `Theme ${run}` })).toBeVisible();
+  await page.getByRole("link", { name: "Group" }).click();
+
+  const appearance = page.getByRole("radiogroup", { name: "Appearance" });
+  await expectApp(appearance.getByRole("radio", { name: "System" })).toBeChecked();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+
+  await appearance.getByRole("radio", { name: "Light" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(250, 245, 236)");
+  await expect(appearance.getByRole("radio", { name: "Light" })).toBeChecked();
+
+  await appearance.getByRole("radio", { name: "System" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+});
