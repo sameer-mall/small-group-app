@@ -9,6 +9,7 @@ import { PendingRequestRow } from "@/components/pending-request-row";
 import { InviteLinkCard } from "@/components/invite-link-card";
 import { LeaveGroupButton } from "@/components/leave-group-button";
 import { SignOutButton } from "@/components/sign-out-button";
+import { AppearanceCard } from "@/components/appearance-card";
 
 export default async function GroupPage() {
   const user = await requireUser();
@@ -70,6 +71,8 @@ export default async function GroupPage() {
           />
         ))}
       </div>
+
+      <AppearanceCard />
 
       <LeaveGroupButton groupId={activeGroup.id} />
 
