@@ -45,5 +45,10 @@ export async function signIn(page: Page, email: string, name: string) {
   if (page.url().includes("/welcome")) {
     await page.getByLabel("Display name").fill(name);
     await page.getByRole("button", { name: "Continue" }).click();
+    // The welcome form saves the name, then navigates client-side to `next`.
+    // Wait until it has left /welcome: a caller that navigates straight away
+    // can otherwise reach a page before the name is saved, and requireUser
+    // sends a nameless user back to /welcome.
+    await page.waitForURL((url) => url.pathname !== "/welcome");
   }
 }
