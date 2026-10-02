@@ -12,5 +12,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // `monitoring` is Sentry's tunnel (next.config.ts). Sentry's docs ask that a
+  // proxy stay out of it so browser reports pass straight through.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|monitoring).*)"],
 };
