@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/dal";
 import { requestToJoin } from "@/lib/groups";
+import { logRefusal } from "@/lib/monitoring";
 
 export async function requestToJoinAction(code: string) {
   const user = await requireUser(`/join/${code}`);
@@ -10,6 +11,7 @@ export async function requestToJoinAction(code: string) {
   try {
     await requestToJoin(user.id, code);
   } catch (err) {
+    logRefusal(err);
     if (err instanceof Error && err.message === "already-member") {
       redirect("/");
     }

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import { createMeeting, deleteMeeting, updateMeeting } from "@/lib/meetings";
+import { logRefusal } from "@/lib/monitoring";
 
 export type ActionState = { error: string | null; success: boolean };
 
@@ -33,6 +34,7 @@ const MANAGE_FORBIDDEN = "Only the meeting's creator or an admin can do that.";
 // UI can show inline; anything else rethrows and hits the default error
 // boundary.
 function mapError(err: unknown, forbidden = "Only group members can do that."): string {
+  logRefusal(err);
   if (err instanceof Error) {
     if (err.message === "forbidden") {
       return forbidden;

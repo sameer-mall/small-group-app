@@ -1,6 +1,7 @@
 import { appendFileSync } from "node:fs";
 import { Resend } from "resend";
 import { env, type Env } from "@/lib/env";
+import { logEmailSent, reportEmailFailure } from "@/lib/monitoring";
 
 export function pickTransport({
   AUTH_EMAIL_FILE,
@@ -31,11 +32,24 @@ export async function sendAuthEmail({ to, otp }: { to: string; otp: string }) {
     // AUTH_EMAIL_FROM must be on a Resend-verified domain (send.sameermall.com
     // in prod). The resend.dev fallback is test mode: owner's inbox only.
     const resend = new Resend(env.RESEND_API_KEY);
-    await resend.emails.send({
-      from: env.AUTH_EMAIL_FROM ?? "Small Group <onboarding@resend.dev>",
-      to,
-      ...signInEmail(otp),
-    });
+    try {
+      const result = await resend.emails.send({
+        from: env.AUTH_EMAIL_FROM ?? "Small Group <onboarding@resend.dev>",
+        to,
+        ...signInEmail(otp),
+      });
+      // Resend reports a refused send (quota, rate limit, unverified sender)
+      // in its return value; it doesn't throw. Its message can echo the
+      // address back, so only the error's name goes into ours.
+      if (result.error) throw new Error(`Resend refused the sign-in email: ${result.error.name}`);
+      logEmailSent(result.data.id);
+    } catch (err) {
+      // Better Auth catches whatever this throws and only console-logs it, and
+      // the sign-in screen still says the code is on its way. Reporting here is
+      // how anyone finds out.
+      reportEmailFailure(err);
+      throw err;
+    }
     return;
   }
   console.log(`\n[auth email] sign-in code for ${to}: ${otp}\n`);

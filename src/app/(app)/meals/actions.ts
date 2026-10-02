@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import { addAdhocItem, claimItem, releaseItem, removeAdhocItem, setMeal } from "@/lib/meals";
+import { logRefusal } from "@/lib/monitoring";
 
 export type ActionState = { error: string | null; success: boolean };
 
@@ -18,6 +19,7 @@ const adhocItemForm = z.object({
 // "already-claimed" | "not-claimed") — see src/lib/meals.ts. Map them to copy
 // the row can show inline; anything else rethrows to the error boundary.
 function mapError(err: unknown, forbidden = "Only group members can do that."): string {
+  logRefusal(err);
   if (err instanceof Error) {
     if (err.message === "already-claimed") {
       return "Someone just claimed that one.";
