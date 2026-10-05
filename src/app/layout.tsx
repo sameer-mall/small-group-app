@@ -4,6 +4,7 @@ import { SerwistProvider } from "@serwist/turbopack/react";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ThemeProvider } from "@/components/theme-provider";
+import { startupImages } from "@/lib/splash-screens";
 import "./globals.css";
 
 const lora = Lora({ subsets: ["latin"], variable: "--font-heading" });
@@ -12,6 +13,11 @@ const publicSans = Public_Sans({ subsets: ["latin"], variable: "--font-body" });
 export const metadata: Metadata = {
   title: "Small Group",
   description: "Meals, prayer, and notes for our weekly small group",
+  // iOS's launch screen for the installed app (src/lib/splash-screens.ts).
+  appleWebApp: { startupImage: startupImages() },
+  // appleWebApp.capable would render only the unprefixed
+  // mobile-web-app-capable, and iOS has long tied startup images to this one.
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 // Without viewport-fit=cover, iOS reports every env(safe-area-inset-*) as 0,

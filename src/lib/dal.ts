@@ -1,14 +1,22 @@
+import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import * as Sentry from "@sentry/nextjs";
 import { auth } from "@/lib/auth";
 import { getMembership } from "@/lib/membership";
 
-export async function getSession() {
+// One lookup per render. The (app) layout and the page each call
+// requireUser(), and most pages call getSession() again for the active group:
+// three sequential session reads from the database, on every page. React's
+// cache() shares the first one across the render. Outside a render (server
+// actions) it doesn't memoize, so an action that changes the session never
+// reads a stale copy.
+export const getSession = cache(async () => {
   return auth.api.getSession({ headers: await headers() });
-}
+});
 
-// Falls back to the pathname src/proxy.ts stamps on every request. This
+// Falls back to the pathname src/proxy.ts stamps on every request (except
+// the bare `/`, whose sign-in redirect needs no `next` anyway). This
 // matters because (app)/layout.tsx — which wraps every page, including
 // /join/[code] — calls requireUser() with no argument; without this
 // fallback its redirect would always win the race against a page's own
