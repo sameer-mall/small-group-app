@@ -50,7 +50,7 @@ export function GroupNameHeader({
     return (
       <div className="flex items-center justify-between gap-3">
         <h1 className="font-serif text-3xl font-semibold">{name}</h1>
-        <Button type="button" variant="ghost" onClick={() => setEditing(true)}>
+        <Button type="button" variant="secondary" size="pill" onClick={() => setEditing(true)}>
           Rename
         </Button>
       </div>
@@ -67,10 +67,8 @@ export function GroupNameHeader({
           autoFocus
           className="bg-card border-border focus:border-primary rounded-input min-h-tap min-w-0 flex-1 border-[1.5px] px-3 py-2 text-lg font-semibold outline-none"
         />
-        <Button type="submit">
-          Save
-        </Button>
-        <Button type="button" variant="ghost" onClick={() => setEditing(false)}>
+        <Button type="submit">Save</Button>
+        <Button type="button" variant="outline" onClick={() => setEditing(false)}>
           Cancel
         </Button>
       </div>

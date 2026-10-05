@@ -41,7 +41,7 @@ export function AddAdhocItem({ meetingId }: { meetingId: string }) {
           enterKeyHint="done"
           className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full flex-1 border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
         />
-        <Button type="submit" variant="outline" className="min-h-tap shrink-0 font-bold">
+        <Button type="submit" variant="secondary">
           Add item
         </Button>
       </div>

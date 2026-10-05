@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
+import { EllipsisIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -56,10 +57,10 @@ export function MeetingActionsMenu({ meeting }: { meeting: Meeting }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="text-tertiary min-h-tap flex min-w-tap items-center justify-center text-lg"
+          render={<Button variant="neutral" size="icon" />}
           aria-label="Meeting actions"
         >
-          &#8943;
+          <EllipsisIcon />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => setEditOpen(true)}>Edit</DropdownMenuItem>
@@ -97,7 +98,7 @@ export function MeetingActionsMenu({ meeting }: { meeting: Meeting }) {
               />
             </label>
             {editState.error && <p className="text-destructive text-xs">{editState.error}</p>}
-            <Button type="submit" size="lg" className="min-h-tap w-full font-bold">
+            <Button type="submit" size="block">
               Save changes
             </Button>
           </form>
@@ -125,7 +126,6 @@ export function MeetingActionsMenu({ meeting }: { meeting: Meeting }) {
             <Button
               type="button"
               variant="destructive"
-              className="min-h-tap"
               onClick={() => startTransition(() => deleteAction(new FormData()))}
             >
               Delete meeting

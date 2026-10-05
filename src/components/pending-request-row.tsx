@@ -47,17 +47,18 @@ export function PendingRequestRow({ request }: { request: PendingRequest }) {
           on a phone, wrapping the name a word per line and cutting the email
           the admin needs to recognise the person. */}
       <div className="flex items-center gap-1.5 pl-[42px]">
-        <button
+        <Button
           type="button"
-          className="bg-success tap-area rounded-full px-3.5 py-1.5 text-sm font-bold text-success-contrast"
+          variant="success"
+          size="pill"
           onClick={() => startTransition(() => approveAction(new FormData()))}
         >
           Approve
-        </button>
+        </Button>
         <Button
           type="button"
-          variant="ghost"
-          className="rounded-full"
+          variant="outline"
+          size="pill"
           onClick={() => startTransition(() => denyAction(new FormData()))}
         >
           Deny

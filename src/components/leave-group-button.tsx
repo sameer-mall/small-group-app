@@ -25,9 +25,7 @@ export function LeaveGroupButton({ groupId }: { groupId: string }) {
   return (
     <div className="flex flex-col items-center gap-1.5 pt-2 pb-6">
       <Dialog>
-        <DialogTrigger className="text-destructive min-h-tap text-sm font-semibold">
-          Leave group
-        </DialogTrigger>
+        <DialogTrigger render={<Button variant="destructive" />}>Leave group</DialogTrigger>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Leave this group?</DialogTitle>

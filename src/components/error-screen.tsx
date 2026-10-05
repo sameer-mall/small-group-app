@@ -51,12 +51,12 @@ export function ErrorScreen({
           Reference{" "}
           <span className="text-strong font-semibold tracking-[0.2em] tabular-nums">{reference}</span>
         </p>
-        <Button type="button" size="lg" className="min-h-tap w-full font-bold" onClick={() => retry()}>
+        <Button type="button" size="block" onClick={() => retry()}>
           Try again
         </Button>
         <ReportProblemDialog
           label="Report this problem"
-          look="button"
+          look="block"
           getAssociatedEventId={() => eventId.current}
         />
       </div>

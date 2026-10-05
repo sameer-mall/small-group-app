@@ -45,7 +45,7 @@ export function DrawBowlButton({
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger className="bg-primary text-primary-foreground rounded-input min-h-tap w-full px-4 py-3.5 text-base font-bold">
+        <DialogTrigger render={<Button size="block" />}>
           Draw the bowl
         </DialogTrigger>
         <DialogContent>
@@ -70,7 +70,6 @@ export function DrawBowlButton({
             </DialogClose>
             <Button
               type="button"
-              className="min-h-tap"
               disabled={pending}
               onClick={() => startTransition(() => draw(new FormData()))}
             >

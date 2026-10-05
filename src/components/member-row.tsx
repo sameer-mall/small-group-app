@@ -1,7 +1,9 @@
 "use client";
 
 import { startTransition, useActionState } from "react";
+import { EllipsisIcon } from "lucide-react";
 import { cn, initials } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,10 +76,10 @@ export function MemberRow({
         {canManage && (
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="text-tertiary min-h-tap flex min-w-tap items-center justify-center text-lg"
+              render={<Button variant="neutral" size="icon" />}
               aria-label={`Manage ${member.name}`}
             >
-              &#8943;
+              <EllipsisIcon />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {member.role === "member" ? (

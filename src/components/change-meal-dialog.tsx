@@ -27,7 +27,7 @@ export function ChangeMealDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="text-accent-strong min-h-tap shrink-0 text-sm font-semibold">
+      <DialogTrigger render={<Button variant="secondary" size="pill" />}>
         Change recipe
       </DialogTrigger>
       <DialogContent>

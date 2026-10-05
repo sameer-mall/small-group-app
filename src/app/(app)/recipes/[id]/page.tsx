@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { notFound } from "next/navigation";
 import { requireMember, requireUser } from "@/lib/dal";
 import { getRecipe } from "@/lib/recipes";
@@ -32,7 +33,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
       <div className="flex flex-col items-center gap-3">
         <Link
           href={`/recipes/${recipe.id}/edit`}
-          className="bg-primary text-primary-foreground rounded-input min-h-tap flex w-full items-center justify-center px-4 py-3.5 text-base font-bold"
+          className={buttonVariants({ size: "block" })}
         >
           Edit recipe
         </Link>

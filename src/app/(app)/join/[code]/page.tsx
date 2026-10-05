@@ -45,7 +45,7 @@ export default async function JoinPage({
           You&apos;ve been invited to join this group. An admin will approve your request.
         </p>
         <form action={requestToJoinAction.bind(null, code)} className="mt-4">
-          <Button type="submit" size="lg" className="min-h-tap w-full font-bold">
+          <Button type="submit" size="block">
             Ask to join
           </Button>
         </form>

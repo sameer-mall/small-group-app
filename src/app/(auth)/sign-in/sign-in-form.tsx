@@ -93,36 +93,33 @@ export function SignInForm({ next }: { next: string }) {
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
             className={`${inputClass} text-center font-semibold tracking-[0.4em] tabular-nums`}
           />
-          <Button
-            type="submit"
-            size="lg"
-            className="min-h-tap w-full font-bold"
-            disabled={pending || otp.length !== 6}
-          >
+          <Button type="submit" size="block" disabled={pending || otp.length !== 6}>
             Sign in
           </Button>
         </form>
-        <div className="flex items-center justify-between">
-          <button
+        <div className="flex flex-wrap gap-2">
+          <Button
             type="button"
+            variant="secondary"
             onClick={resendCode}
             disabled={pending}
-            className="text-accent-strong min-h-tap text-sm font-bold disabled:opacity-50"
+            className="flex-1"
           >
             Send a new code
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => {
               setStep("email");
               setError(null);
               setResent(false);
             }}
             disabled={pending}
-            className="text-accent-strong min-h-tap text-sm font-bold disabled:opacity-50"
+            className="flex-1"
           >
             Use a different email
-          </button>
+          </Button>
         </div>
         {resent && <p className="text-muted-foreground text-center text-sm">New code sent.</p>}
         {error && <p className="text-destructive text-center text-sm">{error}</p>}
@@ -145,7 +142,7 @@ export function SignInForm({ next }: { next: string }) {
           placeholder="you@example.com"
           className={inputClass}
         />
-        <Button type="submit" size="lg" className="min-h-tap w-full font-bold" disabled={pending}>
+        <Button type="submit" size="block" disabled={pending}>
           Email me a code
         </Button>
         <p className="text-tertiary text-center text-xs">
@@ -155,7 +152,7 @@ export function SignInForm({ next }: { next: string }) {
       <div className="text-muted-foreground flex items-center gap-3 text-xs">
         <div className="bg-divider h-px flex-1" /> or <div className="bg-divider h-px flex-1" />
       </div>
-      <Button variant="outline" size="lg" className="min-h-tap w-full" onClick={signInWithGoogle}>
+      <Button variant="outline" size="block" onClick={signInWithGoogle}>
         Continue with Google
       </Button>
       {error && <p className="text-destructive text-center text-sm">{error}</p>}

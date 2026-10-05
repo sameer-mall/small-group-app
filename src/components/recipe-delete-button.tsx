@@ -24,9 +24,7 @@ export function RecipeDeleteButton({ recipeId }: { recipeId: string }) {
 
   return (
     <Dialog>
-      <DialogTrigger className="text-destructive min-h-tap text-sm font-semibold">
-        Delete recipe
-      </DialogTrigger>
+      <DialogTrigger render={<Button variant="destructive" />}>Delete recipe</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete this recipe?</DialogTitle>
@@ -47,7 +45,6 @@ export function RecipeDeleteButton({ recipeId }: { recipeId: string }) {
           <Button
             type="button"
             variant="destructive"
-            className="min-h-tap"
             onClick={() => startTransition(() => action(new FormData()))}
           >
             Delete recipe
