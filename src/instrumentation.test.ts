@@ -24,11 +24,17 @@ describe("onRequestError", () => {
     const args = [
       new Error("boom"),
       { path: "/meals", method: "GET", headers: {} },
-      { routerKind: "App Router", routePath: "/meals", routeType: "render" },
+      {
+        routerKind: "App Router",
+        routePath: "/meals",
+        routeType: "render",
+        renderSource: "react-server-components",
+        revalidateReason: undefined,
+      },
     ] as Parameters<typeof onRequestError>;
 
     let finished = false;
-    const handled = onRequestError(...args).then(() => (finished = true));
+    const handled = Promise.resolve(onRequestError(...args)).then(() => (finished = true));
     expect(sentry.captureRequestError).toHaveBeenCalledWith(...args);
     expect(monitoring.flushAfterResponse).toHaveBeenCalledTimes(1);
     expect(sentry.flush).toHaveBeenCalledWith(2000);
@@ -48,7 +54,13 @@ describe("onRequestError", () => {
     const args = [
       Object.assign(new Error("boom"), { digest: "123" }),
       { path: "/meals", method: "GET", headers: {} },
-      { routerKind: "App Router", routePath: "/meals", routeType: "render" },
+      {
+        routerKind: "App Router",
+        routePath: "/meals",
+        routeType: "render",
+        renderSource: "react-server-components",
+        revalidateReason: undefined,
+      },
     ] as Parameters<typeof onRequestError>;
 
     await onRequestError(...args);

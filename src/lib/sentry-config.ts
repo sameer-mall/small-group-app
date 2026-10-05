@@ -86,11 +86,17 @@ export function scrubEvent(event: ErrorEvent, hint: EventHint): ErrorEvent {
   // Next.js gives each server error a digest and sends only that digest to
   // the browser. Tagging the server's event with it lets the error screen's
   // event (tagged with the same digest) lead straight here.
-  const original = hint.originalException;
-  if (typeof original === "object" && original !== null && "digest" in original) {
-    if (typeof original.digest === "string") event.tags = { ...event.tags, digest: original.digest };
-  }
+  const digest = errorDigest(hint.originalException);
+  if (digest) event.tags = { ...event.tags, digest };
   return event;
+}
+
+// Next gives each server error a digest; the error screen and the server
+// event are linked by it.
+export function errorDigest(error: unknown): string | undefined {
+  return typeof error === "object" && error !== null && "digest" in error && typeof error.digest === "string"
+    ? error.digest
+    : undefined;
 }
 
 // Whether a browser error takes a replay (the replay's beforeErrorSampling).

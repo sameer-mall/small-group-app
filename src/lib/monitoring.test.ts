@@ -81,7 +81,7 @@ describe("sending records before the function goes idle", () => {
 // own digest to stay independent of the others.
 describe("isRepeatReport", () => {
   function requestWith(vercelId?: string, path = "/meals") {
-    return { path, headers: vercelId ? { "x-vercel-id": vercelId } : {} };
+    return { path, method: "GET", headers: vercelId ? { "x-vercel-id": vercelId } : {} };
   }
 
   it("treats a second report with the same digest and the same x-vercel-id as a repeat", () => {

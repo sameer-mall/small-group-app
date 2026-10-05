@@ -1,5 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { after } from "next/server";
+import type { Instrumentation } from "next";
+import { errorDigest } from "@/lib/sentry-config";
 
 // Server-side records of what goes wrong without throwing, so that "it said I
 // couldn't" or "my code never came" has something behind it in Sentry.
@@ -63,15 +65,10 @@ export function reportEmailFailure(err: unknown) {
 const seenDigests = new Map<string, number>();
 const REPEAT_REPORT_WINDOW_MS = 10_000;
 
-export function isRepeatReport(
-  error: unknown,
-  request: { path: string; headers: Record<string, string | string[] | undefined> },
-  now = Date.now(),
-): boolean {
-  const digest =
-    typeof error === "object" && error !== null && "digest" in error && typeof error.digest === "string"
-      ? error.digest
-      : undefined;
+type ErrorRequest = Parameters<Instrumentation.onRequestError>[1];
+
+export function isRepeatReport(error: unknown, request: ErrorRequest, now = Date.now()): boolean {
+  const digest = errorDigest(error);
   if (!digest) return false;
 
   for (const [key, firstSeenAt] of seenDigests) {
