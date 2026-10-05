@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ErrorEvent, ReplayFrameEvent } from "@sentry/nextjs";
 import {
+  isHeadlessBrowser,
   reachedErrorScreen,
   scrubBreadcrumb,
   scrubEvent,
@@ -206,5 +207,33 @@ describe("sharedSentryOptions", () => {
     expect(sharedSentryOptions().environment).toBe("preview");
     vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "");
     expect(sharedSentryOptions().environment).toBe("local");
+  });
+});
+
+// Vercel loads every deployment's generated *.vercel.app URL in a headless
+// Chrome browser to check it, and that visit isn't a member.
+describe("isHeadlessBrowser", () => {
+  it("recognizes Vercel's deployment checker", () => {
+    expect(
+      isHeadlessBrowser(
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.54 Safari/537.36",
+      ),
+    ).toBe(true);
+  });
+
+  it("leaves a real desktop browser alone", () => {
+    expect(
+      isHeadlessBrowser(
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+      ),
+    ).toBe(false);
+  });
+
+  it("leaves a real phone browser alone", () => {
+    expect(
+      isHeadlessBrowser(
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+      ),
+    ).toBe(false);
   });
 });
