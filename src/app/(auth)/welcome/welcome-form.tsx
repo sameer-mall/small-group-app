@@ -30,7 +30,7 @@ export function WelcomeForm({ next }: { next: string }) {
         placeholder="Sam Miller"
         className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
       />
-      <Button type="submit" size="lg" className="min-h-tap w-full font-bold">
+      <Button type="submit" size="block">
         Continue
       </Button>
     </form>

@@ -8,6 +8,7 @@ import {
   type ActionState,
 } from "@/app/(app)/prayers/actions";
 import type { BowlMember, PrayerBowl } from "@/lib/prayers";
+import { Button } from "@/components/ui/button";
 import { DrawBowlButton } from "@/components/draw-bowl-button";
 import { PrayerBuckets } from "@/components/prayer-buckets";
 import { PrayerCompose } from "@/components/prayer-compose";
@@ -109,27 +110,28 @@ export function OpenPrayerBowl({
     <div className="flex flex-col gap-3.5">
       <PrayerBuckets {...buckets} currentUserId={currentUserId} />
       {stage === "not-joined" ? (
-        <button
+        <Button
           type="button"
+          size="block"
           onClick={() =>
             startTransition(() => {
               setStage("composing");
               join(new FormData());
             })
           }
-          className="bg-primary text-primary-foreground rounded-input min-h-tap w-full px-4 py-3.5 text-base font-bold"
         >
           I&apos;m in
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
           type="button"
+          variant="secondary"
           disabled={submitPending}
           onClick={() => setEditing(true)}
-          className="text-accent-strong min-h-tap self-start text-sm font-semibold disabled:pointer-events-none disabled:opacity-50"
+          className="self-start"
         >
           Edit my request
-        </button>
+        </Button>
       )}
       {joinState.error && <p className="text-destructive text-xs">{joinState.error}</p>}
       <DrawBowlButton

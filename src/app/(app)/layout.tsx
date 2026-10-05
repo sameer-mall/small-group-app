@@ -9,7 +9,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-dvh bg-background">
       <SentryUser id={user.id} name={user.name} email={user.email} />
-      <div className="pb-20">{children}</div>
+      {/* Clears the fixed tab bar, which grows by the home-indicator inset. */}
+      <div className="pb-[calc(5rem+env(safe-area-inset-bottom))]">{children}</div>
       <TabBar />
     </div>
   );

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { forgetUser } from "@/lib/problem-report";
+import { Button } from "@/components/ui/button";
 
 export function SignOutButton() {
   const router = useRouter();
@@ -30,12 +31,8 @@ export function SignOutButton() {
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleSignOut}
-      className="text-tertiary border-border min-h-tap rounded-input border-[1.5px] px-5 text-sm font-semibold"
-    >
+    <Button type="button" variant="outline" onClick={handleSignOut}>
       Sign out
-    </button>
+    </Button>
   );
 }

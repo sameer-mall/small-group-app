@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export function PrayerCompose({
   initialBody = "",
@@ -73,20 +74,13 @@ export function PrayerCompose({
         {includeName && <input type="hidden" name="includeName" value="on" />}
       </div>
       {error && <p className="text-destructive text-xs">{error}</p>}
-      <button
-        type="submit"
-        className="bg-primary text-primary-foreground rounded-input min-h-tap w-full px-4 py-3.5 text-base font-bold"
-      >
+      <Button type="submit" size="block">
         {editing ? "Update my request" : "Put it in the bowl"}
-      </button>
+      </Button>
       {editing ? (
-        <button
-          type="button"
-          onClick={onWithdraw}
-          className="text-destructive min-h-tap self-center text-sm font-semibold"
-        >
+        <Button type="button" variant="destructive" onClick={onWithdraw} className="self-center">
           Take it out of the bowl
-        </button>
+        </Button>
       ) : (
         <p className="text-muted-foreground text-center text-[12.5px]">
           You can edit or remove it until the draw

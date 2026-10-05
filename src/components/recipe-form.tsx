@@ -75,28 +75,25 @@ export function RecipeForm({ groupId, recipe }: { groupId: string; recipe?: Reci
             className={INPUT}
           />
           {rows.length > 1 && (
-            <button
+            <Button
               type="button"
+              variant="neutral"
+              size="icon"
               onClick={() => removeRow(row.key)}
               aria-label={`Remove ${row.value || "item"}`}
-              className="text-tertiary min-h-tap flex min-w-tap items-center justify-center"
             >
-              <XIcon size={18} />
-            </button>
+              <XIcon />
+            </Button>
           )}
         </div>
       ))}
 
-      <button
-        type="button"
-        onClick={addRow}
-        className="text-accent-strong min-h-tap self-start text-sm font-bold"
-      >
+      <Button type="button" variant="secondary" onClick={addRow} className="self-start">
         Add item
-      </button>
+      </Button>
 
       {state.error && <p className="text-destructive text-xs">{state.error}</p>}
-      <Button type="submit" size="lg" className="min-h-tap w-full font-bold">
+      <Button type="submit" size="block">
         Save recipe
       </Button>
     </form>

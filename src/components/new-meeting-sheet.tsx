@@ -32,7 +32,7 @@ export function NewMeetingSheet({ groupId }: { groupId: string }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger className="bg-primary text-primary-foreground rounded-input min-h-tap flex w-full items-center justify-center px-4 py-3.5 text-base font-bold">
+      <DialogTrigger render={<Button size="block" />}>
         Plan a meeting
       </DialogTrigger>
       <DialogContent className="fixed top-auto right-0 bottom-0 left-0 max-h-[85dvh] w-full max-w-full translate-x-0 translate-y-0 overflow-y-auto rounded-t-sheet rounded-b-none pb-[max(1.5rem,env(safe-area-inset-bottom))] duration-150 data-closed:slide-out-to-bottom data-open:slide-in-from-bottom sm:max-w-full">
@@ -56,7 +56,7 @@ export function NewMeetingSheet({ groupId }: { groupId: string }) {
             className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
           />
           {state.error && <p className="text-destructive text-xs">{state.error}</p>}
-          <Button type="submit" size="lg" className="min-h-tap w-full font-bold">
+          <Button type="submit" size="block">
             Create meeting
           </Button>
         </form>

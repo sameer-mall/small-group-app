@@ -21,13 +21,14 @@ export function DeleteNoteButton({ noteId }: { noteId: string }) {
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="destructive"
         onClick={() => setOpen(true)}
-        className="text-destructive min-h-tap self-start text-sm font-semibold"
+        className="self-start"
       >
         Delete note
-      </button>
+      </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
@@ -47,7 +48,6 @@ export function DeleteNoteButton({ noteId }: { noteId: string }) {
             <Button
               type="button"
               variant="destructive"
-              className="min-h-tap"
               onClick={() => startTransition(() => deleteAction(new FormData()))}
             >
               Delete note

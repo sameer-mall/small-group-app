@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import type { PrayerBowl } from "@/lib/prayers";
 
 export function DrawnPrayerBowl({ drawn }: { drawn: PrayerBowl["drawn"] }) {
@@ -10,7 +11,7 @@ export function DrawnPrayerBowl({ drawn }: { drawn: PrayerBowl["drawn"] }) {
         </p>
         <Link
           href="/prayers"
-          className="text-accent-strong min-h-tap inline-flex items-center text-[13px] font-semibold"
+          className={buttonVariants({ variant: "secondary", size: "pill" })}
         >
           See all my prayers ›
         </Link>
@@ -37,7 +38,7 @@ export function DrawnPrayerBowl({ drawn }: { drawn: PrayerBowl["drawn"] }) {
         <p className="text-muted-foreground">Carry this with you through the week.</p>
         <Link
           href="/prayers"
-          className="text-accent-strong min-h-tap inline-flex items-center font-semibold"
+          className={buttonVariants({ variant: "secondary", size: "pill" })}
         >
           See all my prayers ›
         </Link>
