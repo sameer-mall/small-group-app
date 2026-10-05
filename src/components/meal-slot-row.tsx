@@ -138,7 +138,9 @@ export function MealSlotRow({
           </div>
         )}
         {claimed && !mine && (
-          <span className="text-muted-foreground shrink-0 text-sm">{optimistic.name}</span>
+          <span className="text-muted-foreground max-w-[40%] shrink-0 truncate text-sm">
+            {optimistic.name}
+          </span>
         )}
         {canRemove && (
           <button

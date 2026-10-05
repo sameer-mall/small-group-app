@@ -65,7 +65,7 @@ export function GroupNameHeader({
           defaultValue={name}
           required
           autoFocus
-          className="bg-card border-border focus:border-primary rounded-input min-h-tap flex-1 border-[1.5px] px-3 py-2 text-lg font-semibold outline-none"
+          className="bg-card border-border focus:border-primary rounded-input min-h-tap min-w-0 flex-1 border-[1.5px] px-3 py-2 text-lg font-semibold outline-none"
         />
         <Button type="submit" size="sm">
           Save

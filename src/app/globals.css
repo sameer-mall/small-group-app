@@ -209,4 +209,15 @@
   html {
     @apply font-sans;
   }
+  /* iOS Safari forces box-sizing: content-box on a date input that keeps its
+     native appearance, so the input recipe's w-full + px-4 overflowed its
+     container by the padding. appearance: none hands box-sizing back to the
+     page; the native picker still opens on tap. The value then centers, so
+     pin it left like every other input. */
+  input[type="date"] {
+    appearance: none;
+  }
+  input[type="date"]::-webkit-date-and-time-value {
+    text-align: left;
+  }
 }

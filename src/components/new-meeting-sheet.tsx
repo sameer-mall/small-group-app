@@ -42,19 +42,25 @@ export function NewMeetingSheet({ groupId }: { groupId: string }) {
           </DialogTitle>
         </DialogHeader>
         <form action={formAction} className="flex flex-col gap-3">
-          <input
-            name="title"
-            placeholder="Meeting title"
-            required
-            enterKeyHint="next"
-            className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
-          />
-          <input
-            name="date"
-            type="date"
-            required
-            className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
-          />
+          <label className="flex flex-col gap-1.5">
+            <span className="text-strong text-sm font-medium">Title</span>
+            <input
+              name="title"
+              placeholder="Meeting title"
+              required
+              enterKeyHint="next"
+              className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-strong text-sm font-medium">Date</span>
+            <input
+              name="date"
+              type="date"
+              required
+              className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
+            />
+          </label>
           {state.error && <p className="text-destructive text-xs">{state.error}</p>}
           <Button type="submit" size="lg" className="min-h-tap w-full font-bold">
             Create meeting

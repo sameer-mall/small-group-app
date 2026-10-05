@@ -29,8 +29,8 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
     <main className="flex flex-col gap-6 p-6">
       <RefreshOnFocus />
       <div className="flex items-start gap-2">
-        <div className="flex flex-1 flex-col gap-1">
-          <h1 className="font-serif text-2xl font-semibold">{meeting.title}</h1>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <h1 className="font-serif text-2xl font-semibold break-words">{meeting.title}</h1>
           <p className="text-muted-foreground text-sm">
             {formatMeetingDate(meeting.date, {
               weekday: "long",

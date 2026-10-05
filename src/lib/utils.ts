@@ -1,5 +1,10 @@
 import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { extendTailwindMerge } from "tailwind-merge"
+
+// Hearth adds a `text-tab` font size (globals.css). Without registering it,
+// tailwind-merge reads it as a text colour and drops it whenever a real
+// colour class follows, so the tab labels fell back to 16px.
+const twMerge = extendTailwindMerge({ extend: { theme: { text: ["tab"] } } })
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

@@ -75,21 +75,27 @@ export function MeetingActionsMenu({ meeting }: { meeting: Meeting }) {
             <DialogTitle className="font-serif text-xl font-semibold">Edit meeting</DialogTitle>
           </DialogHeader>
           <form action={editAction} className="flex flex-col gap-3">
-            <input
-              name="title"
-              defaultValue={meeting.title}
-              placeholder="Meeting title"
-              required
-              enterKeyHint="next"
-              className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
-            />
-            <input
-              name="date"
-              type="date"
-              defaultValue={meeting.date}
-              required
-              className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
-            />
+            <label className="flex flex-col gap-1.5">
+              <span className="text-strong text-sm font-medium">Title</span>
+              <input
+                name="title"
+                defaultValue={meeting.title}
+                placeholder="Meeting title"
+                required
+                enterKeyHint="next"
+                className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-strong text-sm font-medium">Date</span>
+              <input
+                name="date"
+                type="date"
+                defaultValue={meeting.date}
+                required
+                className="bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none"
+              />
+            </label>
             {editState.error && <p className="text-destructive text-xs">{editState.error}</p>}
             <Button type="submit" size="lg" className="min-h-tap w-full font-bold">
               Save changes
