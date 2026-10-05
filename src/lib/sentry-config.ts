@@ -100,6 +100,14 @@ export function reachedErrorScreen(event: ErrorEvent): boolean {
   return typeof event.tags?.ref === "string";
 }
 
+// Vercel loads every deployment's generated *.vercel.app URL in a headless
+// Chrome browser to check it before marking the deployment ready, and that
+// visit isn't a member. Keep this free of browser globals (no `navigator`
+// here) so it stays safe to import on the server and to unit test directly.
+export function isHeadlessBrowser(userAgent: string): boolean {
+  return userAgent.includes("HeadlessChrome");
+}
+
 export function sharedSentryOptions() {
   return {
     // Read straight from process.env, not src/lib/env.ts: that module holds
