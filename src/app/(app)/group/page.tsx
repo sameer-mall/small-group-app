@@ -79,6 +79,7 @@ export default async function GroupPage() {
 
       <div className="flex flex-col items-center gap-2 pb-4">
         <ReportProblemDialog label="Report a problem" look="inline" />
+        <p className="text-tertiary text-center text-xs break-all">Signed in as {user.email}</p>
         <SignOutButton />
       </div>
     </main>

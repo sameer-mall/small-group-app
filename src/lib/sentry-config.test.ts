@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ErrorEvent, ReplayFrameEvent } from "@sentry/nextjs";
 import {
+  errorDigest,
+  isHeadlessBrowser,
   reachedErrorScreen,
   scrubBreadcrumb,
   scrubEvent,
@@ -76,6 +78,29 @@ describe("scrubEvent", () => {
     });
     expect(event.exception!.values![0].value).toBe("Cannot read properties of undefined");
     expect(event.tags).toBeUndefined();
+  });
+});
+
+describe("errorDigest", () => {
+  it("returns the digest for an error with a string digest", () => {
+    const error = Object.assign(new Error("boom"), { digest: "2847503921" });
+    expect(errorDigest(error)).toBe("2847503921");
+  });
+
+  it("returns undefined for an error without a digest", () => {
+    expect(errorDigest(new Error("boom"))).toBeUndefined();
+  });
+
+  it("returns undefined for a non-string digest", () => {
+    expect(errorDigest(Object.assign(new Error("boom"), { digest: 42 }))).toBeUndefined();
+  });
+
+  it("returns undefined for null", () => {
+    expect(errorDigest(null)).toBeUndefined();
+  });
+
+  it("returns undefined for a string", () => {
+    expect(errorDigest("boom")).toBeUndefined();
   });
 });
 
@@ -206,5 +231,33 @@ describe("sharedSentryOptions", () => {
     expect(sharedSentryOptions().environment).toBe("preview");
     vi.stubEnv("NEXT_PUBLIC_VERCEL_ENV", "");
     expect(sharedSentryOptions().environment).toBe("local");
+  });
+});
+
+// Vercel loads every deployment's generated *.vercel.app URL in a headless
+// Chrome browser to check it, and that visit isn't a member.
+describe("isHeadlessBrowser", () => {
+  it("recognizes Vercel's deployment checker", () => {
+    expect(
+      isHeadlessBrowser(
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/141.0.7390.54 Safari/537.36",
+      ),
+    ).toBe(true);
+  });
+
+  it("leaves a real desktop browser alone", () => {
+    expect(
+      isHeadlessBrowser(
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+      ),
+    ).toBe(false);
+  });
+
+  it("leaves a real phone browser alone", () => {
+    expect(
+      isHeadlessBrowser(
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+      ),
+    ).toBe(false);
   });
 });

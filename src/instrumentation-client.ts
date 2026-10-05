@@ -1,8 +1,12 @@
 import * as Sentry from "@sentry/nextjs";
-import { reachedErrorScreen, scrubRecordingEvent, sharedSentryOptions } from "@/lib/sentry-config";
+import { isHeadlessBrowser, reachedErrorScreen, scrubRecordingEvent, sharedSentryOptions } from "@/lib/sentry-config";
 
 Sentry.init({
   ...sharedSentryOptions(),
+  // Vercel loads every deployment in a headless browser to check it before
+  // marking it ready, and that visit isn't a member, so Sentry stays off for
+  // it. The e2e suite runs headless as well.
+  enabled: !isHeadlessBrowser(navigator.userAgent),
   integrations: [
     Sentry.replayIntegration({
       // Sentry's defaults, spelled out so a future default can't loosen them.

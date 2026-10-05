@@ -1,5 +1,6 @@
 import * as Sentry from "@sentry/nextjs";
-import { flushAfterResponse } from "@/lib/monitoring";
+import type { Instrumentation } from "next";
+import { flushAfterResponse, isRepeatReport } from "@/lib/monitoring";
 import { sharedSentryOptions } from "@/lib/sentry-config";
 
 export function register() {
@@ -21,8 +22,12 @@ export function register() {
 // those. For errors thrown while rendering a server component, Next doesn't
 // await this hook, so that awaited flush can get dropped once the response
 // is out; flushAfterResponse's `after` call covers that render path instead.
-export async function onRequestError(...args: Parameters<typeof Sentry.captureRequestError>) {
-  Sentry.captureRequestError(...args);
+// A server-component render error also gets reported here a second time,
+// once Next replays it for the HTML render; isRepeatReport (src/lib/
+// monitoring.ts) catches that and this returns before capturing it again.
+export const onRequestError: Instrumentation.onRequestError = async (error, request, context) => {
+  if (isRepeatReport(error, request)) return;
+  Sentry.captureRequestError(error, request, context);
   flushAfterResponse();
   await Sentry.flush(2000);
-}
+};
