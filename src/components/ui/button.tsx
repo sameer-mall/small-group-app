@@ -7,6 +7,13 @@ import { cn } from "@/lib/utils"
 // docs/design/hearth/theme.css). Every variant has a fill or a border, so no
 // action renders as floating text; button-styling.test.ts enforces that
 // tappable elements use this component or buttonVariants().
+// Pills and icon chips sit visually smaller than a tap target. This ::after
+// overlay, centred on the button, stretches the hit area to at least 44px. It
+// is sized rather than inset: insets measure from the padding box, so the
+// 1.5px border left icon chips at 41px and pills at about 42.6px.
+const HIT_AREA =
+  "after:absolute after:top-1/2 after:left-1/2 after:size-full after:min-h-tap after:min-w-tap after:-translate-1/2"
+
 const buttonVariants = cva(
   "group/button relative inline-flex shrink-0 items-center justify-center gap-1.5 border-[1.5px] border-transparent font-bold whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
@@ -26,10 +33,8 @@ const buttonVariants = cva(
       size: {
         default: "min-h-tap rounded-input px-4 text-sm",
         block: "min-h-tap w-full rounded-input px-4 py-3.5 text-base",
-        // Pills and icon chips sit visually smaller than a tap target; the
-        // ::after overlay stretches their hit area to 44px.
-        pill: "rounded-full px-3.5 py-1.5 text-sm after:absolute after:inset-x-0 after:-inset-y-1.5",
-        icon: "size-9 rounded-full after:absolute after:-inset-1 [&_svg:not([class*='size-'])]:size-[18px]",
+        pill: `rounded-full px-3.5 py-1.5 text-sm ${HIT_AREA}`,
+        icon: `size-9 rounded-full ${HIT_AREA} [&_svg:not([class*='size-'])]:size-[18px]`,
       },
     },
     defaultVariants: {

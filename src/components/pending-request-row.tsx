@@ -39,27 +39,30 @@ export function PendingRequestRow({ request }: { request: PendingRequest }) {
           {initials(request.name)}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-semibold">{request.name} wants to join</p>
-          <p className="text-muted-foreground truncate text-xs">{request.email}</p>
+          <p className="text-[15px] font-semibold break-words">{request.name} wants to join</p>
+          <p className="text-muted-foreground text-xs break-words">{request.email}</p>
         </div>
-        <div className="flex shrink-0 gap-1.5">
-          <Button
-            type="button"
-            variant="success"
-            size="pill"
-            onClick={() => startTransition(() => approveAction(new FormData()))}
-          >
-            Approve
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="pill"
-            onClick={() => startTransition(() => denyAction(new FormData()))}
-          >
-            Deny
-          </Button>
-        </div>
+      </div>
+      {/* Own row, indented under the name: beside the text they left it ~100px
+          on a phone, wrapping the name a word per line and cutting the email
+          the admin needs to recognise the person. */}
+      <div className="flex items-center gap-1.5 pl-[42px]">
+        <Button
+          type="button"
+          variant="success"
+          size="pill"
+          onClick={() => startTransition(() => approveAction(new FormData()))}
+        >
+          Approve
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="pill"
+          onClick={() => startTransition(() => denyAction(new FormData()))}
+        >
+          Deny
+        </Button>
       </div>
       {error && <p className="text-destructive text-xs">{error}</p>}
     </div>
