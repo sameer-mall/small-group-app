@@ -24,9 +24,9 @@ export function ReportProblemDialog({
   getAssociatedEventId,
 }: {
   label: string;
-  // "link" sits quietly on the Group tab; "button" is the error screen's
-  // second action, under "Try again".
-  look: "link" | "button";
+  // "inline" sits quietly on the Group tab; "block" is the error screen's
+  // full-width second action, under "Try again".
+  look: "inline" | "block";
   // The error screen passes the id of the error it just reported, so the
   // report shows up on that error in Sentry.
   getAssociatedEventId?: () => string | undefined;
@@ -55,17 +55,17 @@ export function ReportProblemDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {look === "link" ? (
-        <DialogTrigger className="text-accent-strong min-h-tap text-sm font-semibold">
-          {label}
-        </DialogTrigger>
-      ) : (
-        <DialogTrigger
-          render={<Button type="button" variant="outline" size="lg" className="min-h-tap w-full" />}
-        >
-          {label}
-        </DialogTrigger>
-      )}
+      <DialogTrigger
+        render={
+          look === "inline" ? (
+            <Button type="button" variant="secondary" />
+          ) : (
+            <Button type="button" variant="outline" size="block" />
+          )
+        }
+      >
+        {label}
+      </DialogTrigger>
       <DialogContent>
         {sent ? (
           <>
@@ -74,7 +74,7 @@ export function ReportProblemDialog({
               <DialogDescription>Your report was sent.</DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <DialogClose render={<Button type="button" className="min-h-tap" />}>Done</DialogClose>
+              <DialogClose render={<Button type="button" />}>Done</DialogClose>
             </DialogFooter>
           </>
         ) : (
@@ -102,7 +102,7 @@ export function ReportProblemDialog({
             </div>
             <DialogFooter>
               <DialogClose render={<Button variant="outline" type="button" />}>Cancel</DialogClose>
-              <Button type="submit" className="min-h-tap" disabled={!message.trim()}>
+              <Button type="submit" disabled={!message.trim()}>
                 Send report
               </Button>
             </DialogFooter>

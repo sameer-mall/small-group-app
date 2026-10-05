@@ -78,7 +78,7 @@ export default async function GroupPage() {
       <LeaveGroupButton groupId={activeGroup.id} />
 
       <div className="flex flex-col items-center gap-2 pb-4">
-        <ReportProblemDialog label="Report a problem" look="link" />
+        <ReportProblemDialog label="Report a problem" look="inline" />
         <SignOutButton />
       </div>
     </main>

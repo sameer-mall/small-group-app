@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useOptimistic, useState } from "react";
 import { XIcon } from "lucide-react";
 import { initials } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
   claimItemAction,
   releaseItemAction,
@@ -97,7 +98,7 @@ export function MealSlotRow({
 
   return (
     <div className="border-divider flex flex-col border-b last:border-b-0">
-      <div className="flex items-center gap-3 py-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
         {claimed ? (
           <div className="bg-avatar text-avatar-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
             {mine ? "You" : initials(optimistic.name ?? "?")}
@@ -107,49 +108,42 @@ export function MealSlotRow({
         )}
 
         {/* Labels wrap rather than truncate — "3 bags of tortilla chips" is
-            the whole point of the row and must stay readable. */}
-        <div className="flex min-w-0 flex-1 flex-col">
+            the whole point of the row and must stay readable. The label never
+            narrows past 7rem (where words start breaking mid-letter); on a
+            narrow phone the actions wrap onto their own line instead. */}
+        <div className="flex min-w-28 flex-1 flex-col">
           <span className="text-[15px] break-words">{item.label}</span>
           {item.source === "adhoc" && item.addedByName && (
             <span className="text-tertiary text-xs">added by {item.addedByName}</span>
           )}
         </div>
 
-        {!claimed && (
-          <div className="min-h-tap flex shrink-0 items-center">
-            <button
-              type="button"
-              onClick={onClaim}
-              className="bg-primary text-primary-foreground rounded-full px-3.5 py-1.5 text-sm font-bold"
-            >
+        <div className="min-h-tap ml-auto flex shrink-0 items-center gap-1.5">
+          {!claimed && (
+            <Button type="button" size="pill" onClick={onClaim}>
               Claim
-            </button>
-          </div>
-        )}
-        {claimed && mine && (
-          <div className="min-h-tap flex shrink-0 items-center">
-            <button
-              type="button"
-              onClick={onRelease}
-              className="text-accent-strong text-sm font-semibold"
-            >
+            </Button>
+          )}
+          {claimed && mine && (
+            <Button type="button" variant="secondary" size="pill" onClick={onRelease}>
               Release
-            </button>
-          </div>
-        )}
-        {claimed && !mine && (
-          <span className="text-muted-foreground shrink-0 text-sm">{optimistic.name}</span>
-        )}
-        {canRemove && (
-          <button
-            type="button"
-            onClick={() => startTransition(() => remove(new FormData()))}
-            aria-label={`Remove ${item.label}`}
-            className="text-tertiary min-h-tap flex min-w-tap shrink-0 items-center justify-center"
-          >
-            <XIcon size={16} />
-          </button>
-        )}
+            </Button>
+          )}
+          {claimed && !mine && (
+            <span className="text-muted-foreground text-sm">{optimistic.name}</span>
+          )}
+          {canRemove && (
+            <Button
+              type="button"
+              variant="neutral"
+              size="icon"
+              onClick={() => startTransition(() => remove(new FormData()))}
+              aria-label={`Remove ${item.label}`}
+            >
+              <XIcon />
+            </Button>
+          )}
+        </div>
       </div>
       {error && <p className="text-destructive pb-2 text-xs">{error}</p>}
     </div>

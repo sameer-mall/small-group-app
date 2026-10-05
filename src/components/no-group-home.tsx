@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { WaitingForApproval } from "@/components/waiting-for-approval";
 import { SignOutButton } from "@/components/sign-out-button";
 
@@ -24,7 +25,7 @@ export function NoGroupHome({
       )}
       <Link
         href="/create-group"
-        className="bg-primary text-primary-foreground rounded-input min-h-tap flex w-full max-w-sm items-center justify-center px-4 py-3.5 text-base font-bold"
+        className={buttonVariants({ size: "block", className: "max-w-sm" })}
       >
         Create a group
       </Link>

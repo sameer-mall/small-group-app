@@ -15,13 +15,14 @@
       data-theme="dark" on <html>, following prefers-color-scheme.
 
    Utility cheat sheet:
-   - Terracotta CTA:  bg-primary text-primary-foreground
-   - Links / active tab: text-accent-strong
+   - Buttons: <Button variant size> or buttonVariants() for links and
+     triggers (src/components/ui/button.tsx); never hand-rolled classes.
+     A test fails on any tappable element styled another way.
+   - Active tab: text-accent-strong
    - Cards: bg-card rounded-card shadow-card
    - Tinted chips / info boxes: bg-surface-tint rounded-chip
    - Metadata: text-muted-foreground; hints: text-tertiary
    - Section labels: text-xs tracking-label uppercase
-   - Claim pill: bg-primary text-primary-foreground rounded-full
    - Tap targets: min-h-tap (44px)
    NOTE: bg-accent is shadcn's subtle hover tint, NOT terracotta —
    terracotta is bg-primary.
@@ -66,6 +67,26 @@
 
   --card-shadow: 0 1px 2px rgb(64 45 26 / 0.07);
   --scrim: rgb(51 41 31 / 0.35); /* bottom-sheet overlay */
+
+  /* ---------- Buttons (semantic; consumed by src/components/ui/button.tsx) ----------
+     Every action has a fill or a border: no button renders as floating text.
+     Text/fill pairs clear 4.5:1 in both themes (icon-only neutral clears 3:1). */
+  --button-primary-bg: var(--accent);          /* the screen's main action */
+  --button-primary-fg: var(--accent-contrast);
+  --button-secondary-bg: #f2ded5;              /* terracotta tint: Release, Add item, Change */
+  --button-secondary-fg: #8f4d2e;
+  --button-outline-bg: var(--surface);         /* Cancel, Deny, Sign out */
+  --button-outline-border: var(--border-hairline);
+  --button-outline-fg: var(--text-strong);
+  /* Destructive is outlined, not tinted: terracotta and danger sit too close
+     in hue for a red tint to read apart from the secondary one. */
+  --button-destructive-bg: var(--surface);     /* Delete, Leave group, Take it out */
+  --button-destructive-border: #d9ab9d;
+  --button-destructive-fg: var(--danger);
+  --button-success-bg: var(--success);         /* Approve */
+  --button-success-fg: var(--success-contrast);
+  --button-neutral-bg: var(--surface-tint);    /* icon-only chips: remove item, ⋯ menus */
+  --button-neutral-fg: var(--text-secondary);
 }
 
 [data-theme="dark"] {
@@ -105,6 +126,11 @@
 
   --card-shadow: none;         /* dark surfaces separate by tone, not shadow */
   --scrim: rgb(0 0 0 / 0.5);
+
+  /* ---------- Buttons: only these change; the rest follow the palette ---------- */
+  --button-secondary-bg: #4a3122;
+  --button-secondary-fg: #e39a6e;
+  --button-destructive-border: #834d39;
 }
 
 @theme inline {
@@ -165,6 +191,22 @@
   --color-avatar-foreground: var(--avatar-text);
   --color-scrim: var(--scrim);
 
+  /* ---------- Buttons: bg-button-<variant> text-button-<variant>-foreground ---------- */
+  --color-button-primary: var(--button-primary-bg);
+  --color-button-primary-foreground: var(--button-primary-fg);
+  --color-button-secondary: var(--button-secondary-bg);
+  --color-button-secondary-foreground: var(--button-secondary-fg);
+  --color-button-outline: var(--button-outline-bg);
+  --color-button-outline-border: var(--button-outline-border);
+  --color-button-outline-foreground: var(--button-outline-fg);
+  --color-button-destructive: var(--button-destructive-bg);
+  --color-button-destructive-border: var(--button-destructive-border);
+  --color-button-destructive-foreground: var(--button-destructive-fg);
+  --color-button-success: var(--button-success-bg);
+  --color-button-success-foreground: var(--button-success-fg);
+  --color-button-neutral: var(--button-neutral-bg);
+  --color-button-neutral-foreground: var(--button-neutral-fg);
+
   /* ---------- Radii (shadcn scale + named Hearth radii) ---------- */
   --radius: 14px;                          /* inputs + primary buttons */
   --radius-sm: calc(var(--radius) - 4px);  /* 10px */
@@ -183,10 +225,14 @@
 }
 
 /* ---------- Component recipes (from the handoff) ----------
-   Primary button: bg-primary text-primary-foreground font-bold text-base
-     rounded-input px-4 py-3.5, full width.
-   Claim button (inline): bg-primary text-primary-foreground font-bold
-     text-sm rounded-full px-3.5 py-1.5.
+   Buttons (<Button variant size>):
+     variant: primary (one main action per screen), secondary (terracotta
+       tint), outline, destructive (danger outline), success, neutral
+       (icon-only chips).
+     size: block (full-width CTA: text-base, rounded-input, py-3.5),
+       default (44px, text-sm, rounded-input), pill (in-row actions like
+       Claim: text-sm, rounded-full, px-3.5 py-1.5), icon (36px round chip).
+     Pills and icon chips extend their hit area to 44px.
    Input: bg-card border-[1.5px] border-border focus:border-primary
      rounded-input px-4 py-3.5 text-[16px].
    Card: bg-card rounded-card shadow-card.

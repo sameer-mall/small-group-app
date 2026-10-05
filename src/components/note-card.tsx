@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { createAutosaver, type SaveStatus } from "@/lib/autosave";
 import { cn } from "@/lib/utils";
 
@@ -115,7 +116,7 @@ export function NoteCard({
         <span className="text-tertiary">{body.trim() ? "Only you can see this" : ""}</span>
         <Link
           href="/notes"
-          className="text-accent-strong min-h-tap inline-flex shrink-0 items-center font-semibold"
+          className={buttonVariants({ variant: "secondary", size: "pill" })}
         >
           See all my notes ›
         </Link>

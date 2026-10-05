@@ -63,15 +63,15 @@ export function InviteLinkCard({
         >
           {url}
         </p>
-        <Button type="button" onClick={handleCopy} className="min-h-tap shrink-0 rounded-[10px] px-3.5 font-bold">
+        <Button type="button" onClick={handleCopy}>
           {copied ? "Copied" : "Copy"}
         </Button>
       </div>
-      <p className="text-muted-foreground text-xs">
-        Anyone with this link can request to join.
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-muted-foreground text-xs">Anyone with this link can request to join.</p>
         {isAdmin && (
           <Dialog open={rotateOpen} onOpenChange={setRotateOpen}>
-            <DialogTrigger className="text-accent-strong ml-1 font-semibold">
+            <DialogTrigger render={<Button variant="secondary" size="pill" />}>
               Rotate link
             </DialogTrigger>
             <DialogContent>
@@ -97,7 +97,7 @@ export function InviteLinkCard({
             </DialogContent>
           </Dialog>
         )}
-      </p>
+      </div>
     </div>
   );
 }

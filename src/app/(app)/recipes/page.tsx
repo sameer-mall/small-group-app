@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
@@ -52,7 +53,7 @@ export default async function RecipesPage() {
 
       <Link
         href="/recipes/new"
-        className="bg-primary text-primary-foreground rounded-input min-h-tap flex w-full items-center justify-center px-4 py-3.5 text-base font-bold"
+        className={buttonVariants({ size: "block" })}
       >
         Add a recipe
       </Link>
