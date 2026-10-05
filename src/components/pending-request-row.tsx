@@ -46,10 +46,10 @@ export function PendingRequestRow({ request }: { request: PendingRequest }) {
       {/* Own row, indented under the name: beside the text they left it ~100px
           on a phone, wrapping the name a word per line and cutting the email
           the admin needs to recognise the person. */}
-      <div className="flex gap-1.5 pl-[42px]">
+      <div className="flex items-center gap-1.5 pl-[42px]">
         <button
           type="button"
-          className="bg-success rounded-full px-3.5 py-1.5 text-sm font-bold text-success-contrast"
+          className="bg-success tap-area rounded-full px-3.5 py-1.5 text-sm font-bold text-success-contrast"
           onClick={() => startTransition(() => approveAction(new FormData()))}
         >
           Approve
@@ -57,7 +57,6 @@ export function PendingRequestRow({ request }: { request: PendingRequest }) {
         <Button
           type="button"
           variant="ghost"
-          size="sm"
           className="rounded-full"
           onClick={() => startTransition(() => denyAction(new FormData()))}
         >

@@ -120,7 +120,7 @@ export function MealSlotRow({
             <button
               type="button"
               onClick={onClaim}
-              className="bg-primary text-primary-foreground rounded-full px-3.5 py-1.5 text-sm font-bold"
+              className="bg-primary text-primary-foreground tap-area rounded-full px-3.5 py-1.5 text-sm font-bold"
             >
               Claim
             </button>
@@ -131,7 +131,7 @@ export function MealSlotRow({
             <button
               type="button"
               onClick={onRelease}
-              className="text-accent-strong text-sm font-semibold"
+              className="text-accent-strong min-h-tap text-sm font-semibold"
             >
               Release
             </button>

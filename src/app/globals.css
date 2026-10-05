@@ -199,6 +199,21 @@
    Toggle: 48x28 rounded-full, bg-primary when on, 22px white knob.
    ----------------------------------------------------------- */
 
+/* Grows a control's hit area to the 44px tap minimum without changing how it
+   looks, for pills like Claim that the design draws ~31px tall. */
+@utility tap-area {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--spacing-tap));
+    height: max(100%, var(--spacing-tap));
+    transform: translate(-50%, -50%);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

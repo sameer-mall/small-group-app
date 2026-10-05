@@ -67,11 +67,14 @@ export function InviteLinkCard({
           {copied ? "Copied" : "Copy"}
         </Button>
       </div>
-      <p className="text-muted-foreground text-xs">
-        Anyone with this link can request to join.
+      {/* Rotate link is a real 44px box whose -my-2.5 hands the extra height
+          back, so the line keeps its spacing. It reaches 10px up, exactly the
+          gap above, so it never covers Copy the way a centred overlay would. */}
+      <div className="text-muted-foreground flex flex-wrap items-center gap-x-1 text-xs">
+        <p>Anyone with this link can request to join.</p>
         {isAdmin && (
           <Dialog open={rotateOpen} onOpenChange={setRotateOpen}>
-            <DialogTrigger className="text-accent-strong ml-1 font-semibold">
+            <DialogTrigger className="text-accent-strong min-h-tap -my-2.5 font-semibold">
               Rotate link
             </DialogTrigger>
             <DialogContent>
@@ -97,7 +100,7 @@ export function InviteLinkCard({
             </DialogContent>
           </Dialog>
         )}
-      </p>
+      </div>
     </div>
   );
 }

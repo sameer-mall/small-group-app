@@ -56,7 +56,7 @@ export function MeetingActionsMenu({ meeting }: { meeting: Meeting }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger
-          className="text-tertiary min-h-tap flex min-w-[32px] items-center justify-center text-lg"
+          className="text-tertiary min-h-tap flex min-w-tap items-center justify-center text-lg"
           aria-label="Meeting actions"
         >
           &#8943;

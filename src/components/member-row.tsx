@@ -74,7 +74,7 @@ export function MemberRow({
         {canManage && (
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="text-tertiary min-h-tap flex min-w-[32px] items-center justify-center text-lg"
+              className="text-tertiary min-h-tap flex min-w-tap items-center justify-center text-lg"
               aria-label={`Manage ${member.name}`}
             >
               &#8943;
