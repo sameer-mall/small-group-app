@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ErrorEvent, ReplayFrameEvent } from "@sentry/nextjs";
 import {
+  errorDigest,
   isHeadlessBrowser,
   reachedErrorScreen,
   scrubBreadcrumb,
@@ -77,6 +78,29 @@ describe("scrubEvent", () => {
     });
     expect(event.exception!.values![0].value).toBe("Cannot read properties of undefined");
     expect(event.tags).toBeUndefined();
+  });
+});
+
+describe("errorDigest", () => {
+  it("returns the digest for an error with a string digest", () => {
+    const error = Object.assign(new Error("boom"), { digest: "2847503921" });
+    expect(errorDigest(error)).toBe("2847503921");
+  });
+
+  it("returns undefined for an error without a digest", () => {
+    expect(errorDigest(new Error("boom"))).toBeUndefined();
+  });
+
+  it("returns undefined for a non-string digest", () => {
+    expect(errorDigest(Object.assign(new Error("boom"), { digest: 42 }))).toBeUndefined();
+  });
+
+  it("returns undefined for null", () => {
+    expect(errorDigest(null)).toBeUndefined();
+  });
+
+  it("returns undefined for a string", () => {
+    expect(errorDigest("boom")).toBeUndefined();
   });
 });
 
