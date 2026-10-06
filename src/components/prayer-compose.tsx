@@ -11,6 +11,7 @@ export function PrayerCompose({
   error,
   onSubmit,
   onWithdraw,
+  onLeave,
 }: {
   initialBody?: string;
   initialIncludeName?: boolean;
@@ -18,6 +19,7 @@ export function PrayerCompose({
   error: string | null;
   onSubmit: (formData: FormData) => void;
   onWithdraw: () => void;
+  onLeave: () => void;
 }) {
   const [body, setBody] = useState(initialBody);
   const [includeName, setIncludeName] = useState(initialIncludeName);
@@ -82,9 +84,16 @@ export function PrayerCompose({
           Take it out of the bowl
         </Button>
       ) : (
-        <p className="text-muted-foreground text-center text-[12.5px]">
-          You can edit or remove it until the draw
-        </p>
+        <>
+          <p className="text-muted-foreground text-center text-[12.5px]">
+            You can edit or remove it until the draw
+          </p>
+          {/* The bowl waits for everyone who's in, so joining has to be
+              undoable or one stray "I'm in" would hold up the draw. */}
+          <Button type="button" variant="outline" onClick={onLeave} className="self-center">
+            I&apos;m out
+          </Button>
+        </>
       )}
     </form>
   );

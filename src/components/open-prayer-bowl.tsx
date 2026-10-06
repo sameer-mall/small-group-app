@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useOptimistic, useState } from "react";
 import {
   joinPrayerBowlAction,
+  leavePrayerBowlAction,
   submitPrayerRequestAction,
   withdrawPrayerRequestAction,
   type ActionState,
@@ -59,6 +60,10 @@ export function OpenPrayerBowl({
     withdrawPrayerRequestAction.bind(null, meetingId),
     initialState,
   );
+  const [leaveState, leave] = useActionState(
+    leavePrayerBowlAction.bind(null, meetingId),
+    initialState,
+  );
 
   // A tap moves the viewer's own stage at once; React drops the guess when
   // the transition settles, so a refused write snaps back by itself.
@@ -87,7 +92,7 @@ export function OpenPrayerBowl({
         initialBody={editing ? bowl.viewer.request?.body : ""}
         initialIncludeName={editing ? bowl.viewer.request?.includeName : false}
         editing={editing}
-        error={submitState.error ?? withdrawState.error}
+        error={submitState.error ?? withdrawState.error ?? leaveState.error}
         // A form action already runs inside a transition, which is what lets
         // setStage here be an optimistic update.
         onSubmit={(formData) => {
@@ -98,6 +103,12 @@ export function OpenPrayerBowl({
           startTransition(() => {
             setStage("composing");
             withdraw(new FormData());
+          })
+        }
+        onLeave={() =>
+          startTransition(() => {
+            setStage("not-joined");
+            leave(new FormData());
           })
         }
       />
@@ -137,7 +148,7 @@ export function OpenPrayerBowl({
       <DrawBowlButton
         meetingId={meetingId}
         submittedCount={buckets.submitted.length}
-        stillWriting={buckets.waiting}
+        waitingCount={buckets.waiting.length}
       />
     </div>
   );

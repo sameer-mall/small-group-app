@@ -7,6 +7,7 @@ import {
   drawPrayerBowl,
   getPrayerBowl,
   joinPrayerBowl,
+  leavePrayerBowl,
   listMyDrawnPrayers,
   submitPrayerRequest,
   withdrawPrayerRequest,
@@ -127,6 +128,19 @@ describe("prayer bowl: presence and requests", () => {
     await withdrawPrayerRequest(bob, meetingId);
   });
 
+  it("leaving takes you out of the bowl, request and all, and is safe to repeat", async () => {
+    const { meetingId } = await seedMeeting("Leaving");
+    await submitPrayerRequest(bob, meetingId, { body: "Not this week", includeName: false });
+    await leavePrayerBowl(bob, meetingId);
+
+    const bowl = await getPrayerBowl(bob, meetingId);
+    expect(bowl.viewer).toEqual({ joined: false, request: null });
+    expect(bowl.submitted).toEqual([]);
+    expect(names(bowl.notJoined)).toEqual(["Alice", "Bob", "Carol"]);
+
+    await leavePrayerBowl(bob, meetingId);
+  });
+
   it("no member can read another member's request before the draw", async () => {
     const { meetingId } = await seedMeeting("Sealed");
     const secret = `Something only Alice wrote ${crypto.randomUUID()}`;
@@ -146,6 +160,7 @@ describe("prayer bowl: presence and requests", () => {
       submitPrayerRequest(outsider, meetingId, { body: "x", includeName: false }),
     ).rejects.toThrow("forbidden");
     await expect(withdrawPrayerRequest(outsider, meetingId)).rejects.toThrow("forbidden");
+    await expect(leavePrayerBowl(outsider, meetingId)).rejects.toThrow("forbidden");
   });
 
   it("a meeting that does not exist is not-found", async () => {
@@ -231,13 +246,34 @@ describe("prayer bowl: the draw", () => {
     await expect(drawPrayerBowl(alice, meetingId)).rejects.toThrow("too-few-requests");
   });
 
-  it("people who joined but never wrote are left out of the draw", async () => {
-    const { meetingId } = await seedBowl("Quiet one", [alice, bob]);
+  it("the bowl can't be drawn while someone who's in is still writing", async () => {
+    const { meetingId } = await seedBowl("Still writing", [alice, bob]);
     await joinPrayerBowl(carol, meetingId);
-    await drawPrayerBowl(alice, meetingId);
+    await expect(drawPrayerBowl(alice, meetingId)).rejects.toThrow("still-writing");
 
+    // The refusal rolled the transition back, so Carol can still write.
+    expect((await getPrayerBowl(alice, meetingId)).status).toBe("open");
+    await submitPrayerRequest(carol, meetingId, { body: "prayer 3", includeName: false });
+    expect(await drawPrayerBowl(alice, meetingId)).toEqual({ drew: true });
+    expect(await countAssignments(meetingId)).toBe(3);
+  });
+
+  it("taking your request back out holds the draw up until you write again or leave", async () => {
+    const { meetingId } = await seedBowl("Second thoughts", [alice, bob, carol]);
+    await withdrawPrayerRequest(carol, meetingId);
+    await expect(drawPrayerBowl(alice, meetingId)).rejects.toThrow("still-writing");
+
+    await leavePrayerBowl(carol, meetingId);
+    expect(await drawPrayerBowl(alice, meetingId)).toEqual({ drew: true });
     expect(await countAssignments(meetingId)).toBe(2);
     expect((await getPrayerBowl(carol, meetingId)).drawn).toBeNull();
+  });
+
+  it("someone removed from the group while still writing doesn't hold up the draw", async () => {
+    const { groupId, meetingId } = await seedBowl("Removed mid-write", [alice, bob]);
+    await joinPrayerBowl(carol, meetingId);
+    await removeMember(alice, groupId, carol);
+    expect(await drawPrayerBowl(alice, meetingId)).toEqual({ drew: true });
   });
 
   it("someone removed from the group after writing is left out of the draw", async () => {
@@ -263,6 +299,7 @@ describe("prayer bowl: the draw", () => {
       submitPrayerRequest(bob, meetingId, { body: "edited", includeName: false }),
     ).rejects.toThrow("session-closed");
     await expect(withdrawPrayerRequest(bob, meetingId)).rejects.toThrow("session-closed");
+    await expect(leavePrayerBowl(bob, meetingId)).rejects.toThrow("session-closed");
   });
 
   it("a second draw is a no-op, not an error", async () => {
@@ -334,6 +371,30 @@ describe("prayer bowl: the draw", () => {
           (select count(*)::int from prayer_assignments where meeting_id = ${meetingId}) as assigned
       `)).rows as { requests: number; assigned: number }[];
       expect(counts.assigned).toBe(counts.requests);
+    }
+  });
+
+  it("a join during a draw either holds the draw up or is refused, never left waiting", async () => {
+    // Each round races one draw against a late join. Exactly one of them can
+    // win: a drawn bowl with someone still in Waiting on is what this rule
+    // exists to prevent. The order alternates because whichever call starts
+    // first nearly always takes the bowl's lock first; started first every
+    // time, the draw won all 15 rounds even with no still-writing check.
+    for (let round = 0; round < 16; round++) {
+      const { meetingId } = await seedBowl(`Join race ${round}`, [alice, bob]);
+      const draw = () => drawPrayerBowl(alice, meetingId);
+      const join = () => joinPrayerBowl(carol, meetingId);
+      const [drawResult, joinResult] =
+        round % 2 === 0
+          ? await Promise.allSettled([draw(), join()])
+          : await Promise.allSettled([join(), draw()]).then(([j, d]) => [d, j] as const);
+      if (drawResult.status === "fulfilled") {
+        expect(joinResult.status).toBe("rejected");
+        expect((joinResult as PromiseRejectedResult).reason.message).toBe("session-closed");
+      } else {
+        expect(drawResult.reason.message).toBe("still-writing");
+        expect(joinResult.status).toBe("fulfilled");
+      }
     }
   });
 });

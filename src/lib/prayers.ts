@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db/client";
 import { member, user } from "@/db/auth-schema";
 import {
@@ -129,6 +129,26 @@ export async function withdrawPrayerRequest(userId: string, meetingId: string): 
   });
 }
 
+// Takes you out of the bowl, and your request with you if you wrote one.
+// Since the bowl can't be drawn while anyone who's in is still writing, this
+// is how someone who tapped "I'm in" and changed their mind stops holding
+// everyone else up. Doing it twice is harmless.
+export async function leavePrayerBowl(userId: string, meetingId: string): Promise<void> {
+  await requireMeetingMember(userId, meetingId);
+  await db.transaction(async (tx) => {
+    // No bowl means nothing to leave; lockOpenBowl lets that through.
+    await lockOpenBowl(tx, meetingId);
+    await tx
+      .delete(prayerRequests)
+      .where(and(eq(prayerRequests.meetingId, meetingId), eq(prayerRequests.authorId, userId)));
+    await tx
+      .delete(prayerParticipants)
+      .where(
+        and(eq(prayerParticipants.meetingId, meetingId), eq(prayerParticipants.userId, userId)),
+      );
+  });
+}
+
 export async function drawPrayerBowl(
   userId: string,
   meetingId: string,
@@ -172,6 +192,28 @@ export async function drawPrayerBowl(
 
     // Throwing rolls the transition back, so the bowl stays open for more.
     if (requests.length < 2) throw new Error("too-few-requests");
+
+    // Nobody who's in gets left behind: while anyone has joined without
+    // writing, the bowl waits for them to write or leave. Read after the
+    // UPDATE, like the requests above, so a join can't slip in between this
+    // check and the transition. Current members only, matching the buckets.
+    const [stillWriting] = await tx
+      .select({ userId: prayerParticipants.userId })
+      .from(prayerParticipants)
+      .innerJoin(
+        member,
+        and(eq(member.userId, prayerParticipants.userId), eq(member.organizationId, meeting.groupId)),
+      )
+      .leftJoin(
+        prayerRequests,
+        and(
+          eq(prayerRequests.meetingId, meetingId),
+          eq(prayerRequests.authorId, prayerParticipants.userId),
+        ),
+      )
+      .where(and(eq(prayerParticipants.meetingId, meetingId), isNull(prayerRequests.id)))
+      .limit(1);
+    if (stillWriting) throw new Error("still-writing");
 
     // Request i goes to the author of request p[i]. p has no fixed points and
     // each author wrote exactly one request, so nobody draws their own.

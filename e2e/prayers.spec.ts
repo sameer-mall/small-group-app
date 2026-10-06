@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { expectApp, memberContext, signIn } from "./helpers";
 
-test("two members fill the bowl, draw it, and each gets the other's request", async ({ browser }) => {
+test("two members fill the bowl, a third holds the draw until they leave, and each writer gets the other's request", async ({ browser }) => {
   const run = Date.now();
   const aliceRequest = `For my dad's surgery ${run}`;
   const bobRequest = `For a new job ${run}`;
@@ -27,6 +27,16 @@ test("two members fill the bowl, draw it, and each gets the other's request", as
   await alice.reload();
   await alice.getByRole("button", { name: "Approve" }).click();
   await expectApp(alice.getByTestId("member-row").filter({ hasText: "Bob" })).toBeVisible();
+
+  // Carol joins the group too. She'll opt into the bowl without writing.
+  const carol = await (await memberContext(browser)).newPage();
+  await signIn(carol, `prayer-carol-${run}@example.com`, "Carol");
+  await carol.goto(new URL(inviteUrl).pathname);
+  await carol.getByRole("button", { name: "Ask to join" }).click();
+  await expectApp(carol.getByText("Waiting for approval")).toBeVisible();
+  await alice.reload();
+  await alice.getByRole("button", { name: "Approve" }).click();
+  await expectApp(alice.getByTestId("member-row").filter({ hasText: "Carol" })).toBeVisible();
 
   // Alice plans the meeting.
   await alice.getByRole("link", { name: "Meetings" }).click();
@@ -62,6 +72,21 @@ test("two members fill the bowl, draw it, and each gets the other's request", as
   // Regression guard: the compiler once dropped the space after the number,
   // rendering "2people in" instead of "2 people in".
   await expect(alice.getByText("2 people in · you'll each draw one request")).toBeVisible();
+
+  // Carol taps "I'm in" but doesn't write: the bowl waits for her, so Alice's
+  // page (by polling) stops offering the draw.
+  await carol.goto(meetingPath);
+  await carol.getByRole("button", { name: "I'm in" }).click();
+  await expectApp(carol.getByLabel("Your prayer request")).toBeVisible();
+  await expectApp(
+    alice.getByText("The bowl can be drawn once everyone who's in has put a request in."),
+  ).toBeVisible();
+  await expect(alice.getByRole("button", { name: "Draw the bowl" })).toHaveCount(0);
+
+  // She steps back out, and the draw is offered again.
+  await carol.getByRole("button", { name: "I'm out" }).click();
+  await expectApp(carol.getByRole("button", { name: "I'm in" })).toBeVisible();
+  await expectApp(alice.getByRole("button", { name: "Draw the bowl" })).toBeVisible();
 
   await alice.getByRole("button", { name: "Draw the bowl" }).click();
   await alice.getByRole("dialog").getByRole("button", { name: "Draw the bowl" }).click();

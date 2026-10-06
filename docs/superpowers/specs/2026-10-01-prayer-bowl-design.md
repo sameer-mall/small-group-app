@@ -21,7 +21,7 @@ Ship the second weekly ritual: everyone puts one prayer request in the bowl, the
 **Out:**
 
 - Private notes → plan 5. The meeting page gains the prayer section only.
-- Leaving the bowl once joined ("I'm out"). Not in the spec or the mockups.
+- ~~Leaving the bowl once joined ("I'm out").~~ Added 2026-10-05 with decision 14.
 - Meetings-list row summaries ("Prayer gathering", "Tacos · 4 of 6 claimed") shown in the flow walkthrough. Neither plan 3 nor plan 4 builds them.
 - Undoing or re-running a draw. The parent spec makes the drawn bowl the meeting's permanent record.
 
@@ -31,11 +31,11 @@ The Hearth mockups (3g, 3n, 3h, 3l) are final for look and copy; the parent spec
 
 1. **Starting the bowl.** The spec says "any member starts a session"; the mockups have no start screen — every meeting's bowl simply shows *Open*. **Resolution:** the bowl starts itself. No session row exists until the first member joins or writes, and that member is recorded as `started_by`. The spec's rule holds (a member started it) and no screen the mockups lack is added. Page renders never write.
 2. **"I'm in".** The spec requires an "I'm in" button; the mockups never show one. But mockup 3n shows a *Waiting on* bucket, and only an explicit join without a request can put someone there. **Resolution:** a member who hasn't joined sees the buckets and an **I'm in** button; joining takes them to the compose form (3g); writing takes them to the gathering view (3n). Submitting still joins you, as the spec says.
-3. **"6 people in".** Mockup 3n's caption reads "6 people in · you'll each draw one request" while two of those six are still *Waiting on*. Under the spec only submitters draw, so the caption would promise two people a request they won't get. **Resolution:** the number is the **submitted** count. The confirm dialog names anyone still writing and says they won't be included.
+3. **"6 people in".** Mockup 3n's caption reads "6 people in · you'll each draw one request" while two of those six are still *Waiting on*. Under the spec only submitters draw, so the caption would promise two people a request they won't get. **Resolution:** the number is the **submitted** count. ~~The confirm dialog names anyone still writing and says they won't be included.~~ Since 2026-10-05 nobody can still be writing at the draw (decision 14), so the submitted count is everyone in.
 
 ## Decisions this plan makes
 
-1. **Viewer stages.** Per viewer, an open bowl is one of: *not joined* (buckets + I'm in + Draw), *composing* (3g form only), *submitted* (3n buckets + Draw + Edit my request). A drawn bowl shows 3h.
+1. **Viewer stages.** Per viewer, an open bowl is one of: *not joined* (buckets + I'm in + Draw), *composing* (3g form, plus I'm out), *submitted* (3n buckets + Draw + Edit my request). A drawn bowl shows 3h.
 2. **Badge.** *Open* while no request is in, *Gathering* once at least one is, *Drawn · {meeting date}* after. The meeting's date-only value is used, not `drawn_at`, which avoids the timezone and hydration problem `formatMeetingDate` exists to prevent.
 3. **"Include my name" defaults off.** Signing is an affirmative act ("like signing the paper"). Mockup 3g renders the toggle on, but that frame shows someone mid-compose with text and a cursor — it reads as their choice, not the default.
 4. **Privacy is enforced in the domain, not the UI.** The read model never returns another member's request text before the draw; after it, only the one request assigned to the viewer, with the author's name only if they signed it — and no author id at all. These reads check membership themselves, a deliberate exception to this codebase's "reads don't self-authorize" convention: a leak here is the feature's one unforgivable failure.
@@ -44,10 +44,11 @@ The Hearth mockups (3g, 3n, 3h, 3l) are final for look and copy; the parent spec
 7. **The draw skips people no longer in the group.** A member removed after writing would be assigned a request they can never open, and their own would reach someone else. Only current members' requests are drawn.
 8. **Every derangement is equally likely.** Fisher–Yates shuffle, retried until nothing maps to itself (about 2.7 shuffles on average, at any group size). Sattolo's algorithm avoids the retry but only ever produces a single cycle — for four people, 6 of the 9 valid draws, never the two-pairs-swap ones. That structural bias is avoided.
 9. **One bowl per meeting, keyed by meeting.** `prayer_sessions.meeting_id` is the primary key, as `meal_plans.meeting_id` already is; the child tables key on `meeting_id`.
-10. **Withdrawing keeps you joined.** You move back to *Waiting on*. No confirm: it's recoverable until the draw by writing again.
+10. **Withdrawing keeps you joined.** You move back to *Waiting on*. No confirm: it's recoverable until the draw by writing again. Since decision 14, this holds the draw up until you write again or leave.
 11. **Requests are 1–1,000 characters** after trimming.
 12. **My prayers is scoped to the active group,** like the Meetings and Recipes tabs.
 13. **Deleting a meeting** now names the prayer bowl in its warning, since the bowl cascades with it.
+14. **The draw waits for everyone who's in** (changed 2026-10-05). Originally the draw went ahead while people were still in *Waiting on*, leaving them out. Now the server refuses it (`still-writing`) while any current member has joined without writing, and the page shows a note instead of the Draw button. The check runs after the `open → drawn` UPDATE, like the request read, so a join can't land between check and transition. Because one stray "I'm in" would otherwise block the bowl, the compose form gains **I'm out**, which removes you and any request you wrote. A member who joins and then never comes back still holds the draw up; nobody else can remove them.
 
 ## Architecture
 
@@ -85,10 +86,12 @@ Plan 3's layering, unchanged.
 | Submitted, edit link | Edit my request |
 | Compose, editing | Update my request · Take it out of the bowl |
 | Fewer than two requests | The bowl can be drawn once two requests are in. |
-| Draw confirm | **Draw the bowl?** {n} requests are in — each of you will draw one, never your own. {names} is/are still writing and won't be included. Nothing can be changed afterwards. · Cancel · Draw the bowl |
+| Draw confirm | **Draw the bowl?** {n} requests are in. Each of you will draw one, never your own. Nothing can be changed afterwards. · Cancel · Draw the bowl |
+| Someone still writing | The bowl can be drawn once everyone who's in has put a request in. |
+| Compose, not editing | I'm out |
 | Drawn, you didn't write | The bowl has been drawn. You didn't put a request in this time. |
 | My prayers, empty | **Nothing drawn yet** · When your group draws the prayer bowl, the request you draw lands here. |
-| Errors | The bowl has already been drawn. · The bowl needs at least two requests before anyone can draw. · Write your request first. · Keep it under 1,000 characters. |
+| Errors | The bowl has already been drawn. · The bowl needs at least two requests before anyone can draw. · The bowl can be drawn once everyone who's in has put a request in. · Write your request first. · Keep it under 1,000 characters. |
 
 ## Mobile-first requirements
 
@@ -103,7 +106,7 @@ The parent spec's [Mobile-first experience](2026-07-02-small-group-pwa-design.md
 ## Testing
 
 - **Vitest unit:** the derangement — a permutation with no fixed points for every size from 2 to 40; two people always swap; and every derangement of four reached, which separates a uniform sampler from Sattolo's.
-- **Vitest integration:** presence and buckets; one request per author; request text never readable by another member before the draw; the drawn view withholding an unsigned author's name; fewer than two requests refused with the bowl left open; non-submitters and removed members left out; every write refused once drawn; **concurrent draws — exactly one happens**; **a request submitted during a draw is drawn or refused, never stranded.**
+- **Vitest integration:** presence and buckets; one request per author; request text never readable by another member before the draw; the drawn view withholding an unsigned author's name; fewer than two requests refused with the bowl left open; the draw refused while anyone who's in is still writing, and a join racing a draw either holds it up or is refused; leaving takes your request with you; removed members left out; every write refused once drawn; **concurrent draws — exactly one happens**; **a request submitted during a draw is drawn or refused, never stranded.**
 - **Playwright smoke:** two members fill the bowl, one draws, and each sees the other's request — with two people the draw is a swap, so the assertion is deterministic.
 
 Each contention test is confirmed to fail against the broken implementation it guards against before it is trusted (plan 3 task 7's lesson: its contention test, as first written, passed against the implementation it was meant to reject).
