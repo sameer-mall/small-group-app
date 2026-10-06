@@ -15,6 +15,7 @@ import {
   rotateInviteCode,
 } from "@/lib/groups";
 import { logRefusal } from "@/lib/monitoring";
+import { displayNameForm, updateDisplayName } from "@/lib/profile";
 
 export type ActionState = { error: string | null; success: boolean };
 
@@ -170,5 +171,23 @@ export async function rotateInviteAction(
     return { error: mapError(err), success: false };
   }
   revalidatePath("/group");
+  return { error: null, success: true };
+}
+
+export async function updateDisplayNameAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  const form = displayNameForm.safeParse(Object.fromEntries(formData));
+  if (!form.success) return { error: form.error.issues[0].message, success: false };
+  try {
+    await updateDisplayName(user.id, form.data.name);
+  } catch (err) {
+    return { error: mapError(err), success: false };
+  }
+  // The name is read on every screen (meal claims, prayers, members), not just
+  // this one. revalidatePath("/", "layout") drops the whole cache tree.
+  revalidatePath("/", "layout");
   return { error: null, success: true };
 }
