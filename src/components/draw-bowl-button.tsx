@@ -13,19 +13,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { drawPrayerBowlAction, type ActionState } from "@/app/(app)/prayers/actions";
-import type { BowlMember } from "@/lib/prayers";
 
 const initialState: ActionState = { error: null, success: false };
-const listFormat = new Intl.ListFormat("en", { style: "long", type: "conjunction" });
 
 export function DrawBowlButton({
   meetingId,
   submittedCount,
-  stillWriting,
+  waitingCount,
 }: {
   meetingId: string;
   submittedCount: number;
-  stillWriting: BowlMember[];
+  waitingCount: number;
 }) {
   const [open, setOpen] = useState(false);
   const [state, draw, pending] = useActionState(
@@ -33,11 +31,19 @@ export function DrawBowlButton({
     initialState,
   );
 
-  // The server refuses fewer than two regardless; this just doesn't offer it.
+  // The server refuses both of these regardless; this just doesn't offer the
+  // draw. The Waiting on row above already names who the bowl is waiting for.
   if (submittedCount < 2) {
     return (
       <p className="text-muted-foreground text-center text-[12.5px]">
         The bowl can be drawn once two requests are in.
+      </p>
+    );
+  }
+  if (waitingCount > 0) {
+    return (
+      <p className="text-muted-foreground text-center text-[12.5px]">
+        The bowl can be drawn once everyone who&apos;s in has put a request in.
       </p>
     );
   }
@@ -53,10 +59,6 @@ export function DrawBowlButton({
             <DialogTitle>Draw the bowl?</DialogTitle>
             <DialogDescription>
               {submittedCount} requests are in. Each of you will draw one, never your own.
-              {stillWriting.length > 0 &&
-                ` ${listFormat.format(stillWriting.map((m) => m.name))} ${
-                  stillWriting.length === 1 ? "is" : "are"
-                } still writing and won't be included.`}{" "}
               Nothing can be changed afterwards.
             </DialogDescription>
           </DialogHeader>

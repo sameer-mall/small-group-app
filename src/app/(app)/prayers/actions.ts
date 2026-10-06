@@ -7,6 +7,7 @@ import { logRefusal } from "@/lib/monitoring";
 import {
   drawPrayerBowl,
   joinPrayerBowl,
+  leavePrayerBowl,
   submitPrayerRequest,
   withdrawPrayerRequest,
 } from "@/lib/prayers";
@@ -25,7 +26,8 @@ const prayerRequestForm = z.object({
 });
 
 // Domain functions throw plain Error("forbidden" | "not-found" |
-// "session-closed" | "too-few-requests") — see src/lib/prayers.ts.
+// "session-closed" | "too-few-requests" | "still-writing") — see
+// src/lib/prayers.ts.
 function mapError(err: unknown): string {
   logRefusal(err);
   if (err instanceof Error) {
@@ -34,6 +36,9 @@ function mapError(err: unknown): string {
     if (err.message === "not-found") return "That didn't work. Try refreshing the page.";
     if (err.message === "too-few-requests") {
       return "The bowl needs at least two requests before anyone can draw.";
+    }
+    if (err.message === "still-writing") {
+      return "The bowl can be drawn once everyone who's in has put a request in.";
     }
   }
   throw err;
@@ -88,6 +93,21 @@ export async function withdrawPrayerRequestAction(
   const user = await requireUser();
   try {
     await withdrawPrayerRequest(user.id, meetingId);
+  } catch (err) {
+    return refused(err, meetingId);
+  }
+  revalidatePath(`/meetings/${meetingId}`);
+  return { error: null, success: true };
+}
+
+export async function leavePrayerBowlAction(
+  meetingId: string,
+  _prevState: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  try {
+    await leavePrayerBowl(user.id, meetingId);
   } catch (err) {
     return refused(err, meetingId);
   }
