@@ -10,6 +10,7 @@ import { InviteLinkCard } from "@/components/invite-link-card";
 import { LeaveGroupButton } from "@/components/leave-group-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { AppearanceCard } from "@/components/appearance-card";
+import { DisplayNameCard } from "@/components/display-name-card";
 import { ReportProblemDialog } from "@/components/report-problem-dialog";
 
 export default async function GroupPage() {
@@ -73,13 +74,14 @@ export default async function GroupPage() {
         ))}
       </div>
 
+      <DisplayNameCard name={user.name} email={user.email} />
+
       <AppearanceCard />
 
       <LeaveGroupButton groupId={activeGroup.id} />
 
       <div className="flex flex-col items-center gap-2 pb-4">
         <ReportProblemDialog label="Report a problem" look="inline" />
-        <p className="text-tertiary text-center text-xs break-all">Signed in as {user.email}</p>
         <SignOutButton />
       </div>
     </main>
