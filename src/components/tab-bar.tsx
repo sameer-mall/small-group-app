@@ -20,10 +20,13 @@ export function TabBar() {
     // background still runs to the screen edge.
     <nav className="bg-surface-tab border-divider-tab fixed inset-x-0 bottom-0 grid grid-cols-4 border-t pb-[env(safe-area-inset-bottom)]">
       {TABS.map(({ href, label, icon: Icon }) => {
+        // Settings is reached from the Group header, so it keeps that tab lit.
         const active =
           href === "/"
             ? pathname === "/" || pathname.startsWith("/meetings/")
-            : pathname === href || pathname.startsWith(`${href}/`);
+            : href === "/group"
+              ? pathname === "/group" || pathname.startsWith("/settings")
+              : pathname === href || pathname.startsWith(`${href}/`);
         return (
           <Link
             key={href}

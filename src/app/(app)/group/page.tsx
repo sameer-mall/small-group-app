@@ -8,10 +8,7 @@ import { MemberRow } from "@/components/member-row";
 import { PendingRequestRow } from "@/components/pending-request-row";
 import { InviteLinkCard } from "@/components/invite-link-card";
 import { LeaveGroupButton } from "@/components/leave-group-button";
-import { SignOutButton } from "@/components/sign-out-button";
-import { AppearanceCard } from "@/components/appearance-card";
-import { DisplayNameCard } from "@/components/display-name-card";
-import { ReportProblemDialog } from "@/components/report-problem-dialog";
+import { SettingsLink } from "@/components/settings-link";
 
 export default async function GroupPage() {
   const user = await requireUser();
@@ -42,7 +39,12 @@ export default async function GroupPage() {
   return (
     <main className="flex flex-col gap-4 p-6">
       <div className="flex flex-col gap-1">
-        <GroupNameHeader groupId={activeGroup.id} name={activeGroup.name} isAdmin={isAdmin} />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <GroupNameHeader groupId={activeGroup.id} name={activeGroup.name} isAdmin={isAdmin} />
+          </div>
+          <SettingsLink />
+        </div>
         <p className="text-muted-foreground text-sm">
           {memberCount} member{memberCount === 1 ? "" : "s"}
           {isAdmin ? " · you're an admin" : ""}
@@ -74,15 +76,10 @@ export default async function GroupPage() {
         ))}
       </div>
 
-      <DisplayNameCard name={user.name} email={user.email} />
-
-      <AppearanceCard />
-
-      <LeaveGroupButton groupId={activeGroup.id} />
-
-      <div className="flex flex-col items-center gap-2 pb-4">
-        <ReportProblemDialog label="Report a problem" look="inline" />
-        <SignOutButton />
+      {/* Personal controls (name, appearance, notifications, sign out) live on
+          /settings, behind the gear above. */}
+      <div className="pb-4">
+        <LeaveGroupButton groupId={activeGroup.id} />
       </div>
     </main>
   );
