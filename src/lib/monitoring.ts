@@ -50,6 +50,26 @@ export function reportEmailFailure(err: unknown) {
   flushAfterResponse();
 }
 
+// Push delivery records (src/lib/push.ts, src/lib/notifications.ts). Counts
+// and ids only: never a title, body, name, or endpoint.
+export function logPushSent(event: string, counts: { attempted: number; failed: number }) {
+  Sentry.logger.info("Push sent", { event, ...counts });
+  flushAfterResponse();
+}
+
+export function logPushRejected(subscriptionId: string, statusCode: number) {
+  Sentry.logger.warn("Push rejected", { subscriptionId, statusCode });
+  flushAfterResponse();
+}
+
+// Keys misconfigured, a lookup that found nothing, or the push service down.
+// An error, not a log, so it opens an issue; nobody notices a notification
+// that never came.
+export function reportPushFailure(err: unknown) {
+  Sentry.captureException(err, { tags: { area: "push" } });
+  flushAfterResponse();
+}
+
 // Next calls the server's onRequestError hook twice for one page load that
 // throws in a server component: once for the server-component render
 // (context.renderSource "react-server-components") and again for the HTML

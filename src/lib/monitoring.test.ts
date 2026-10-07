@@ -10,7 +10,15 @@ vi.mock("@sentry/nextjs", () => sentry);
 const nextServer = vi.hoisted(() => ({ after: vi.fn() }));
 vi.mock("next/server", () => nextServer);
 
-import { isRepeatReport, logEmailSent, logRefusal, reportEmailFailure } from "./monitoring";
+import {
+  isRepeatReport,
+  logEmailSent,
+  logPushRejected,
+  logPushSent,
+  logRefusal,
+  reportEmailFailure,
+  reportPushFailure,
+} from "./monitoring";
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -115,5 +123,32 @@ describe("isRepeatReport", () => {
     const request = requestWith("v1");
     expect(isRepeatReport(new Error("boom"), request)).toBe(false);
     expect(isRepeatReport(new Error("boom"), request)).toBe(false);
+  });
+});
+
+describe("push records", () => {
+  it("logs a batch by event name and counts only", () => {
+    logPushSent("meal-set", { attempted: 3, failed: 1 });
+    expect(sentry.logger.info).toHaveBeenCalledWith("Push sent", {
+      event: "meal-set",
+      attempted: 3,
+      failed: 1,
+    });
+    runAfterResponse();
+    expect(sentry.flush).toHaveBeenCalled();
+  });
+
+  it("warns about a rejected subscription by id and status", () => {
+    logPushRejected("sub_1", 500);
+    expect(sentry.logger.warn).toHaveBeenCalledWith("Push rejected", {
+      subscriptionId: "sub_1",
+      statusCode: 500,
+    });
+  });
+
+  it("captures a push fault tagged by area", () => {
+    const err = new Error("boom");
+    reportPushFailure(err);
+    expect(sentry.captureException).toHaveBeenCalledWith(err, { tags: { area: "push" } });
   });
 });
