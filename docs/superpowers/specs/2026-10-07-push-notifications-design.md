@@ -123,9 +123,9 @@ Added to the validated server env in `src/lib/env.ts`:
 
 And for the browser:
 
-- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (read directly from `process.env` in the one
-  client module that subscribes, per the `NEXT_PUBLIC_` exception in the
-  conventions)
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (optional in the server env too, since the
+  transport signs with it; the one client module that subscribes reads it from
+  `process.env` directly, per the `NEXT_PUBLIC_` exception in the conventions)
 
 When the private key or subject is unset, the transport logs one console line
 per send and returns without sending, the same pattern as the email transport's
@@ -226,10 +226,11 @@ Two domain functions change their return value to make this possible:
 
 ### Subscribe and unsubscribe actions (`src/app/(app)/settings/actions.ts`)
 
-- `subscribeAction(formData)`: parses the browser's `PushSubscription.toJSON()`
-  with zod (endpoint as `https` URL, `keys.p256dh` and `keys.auth` as non-empty
-  strings, user agent optional and capped) and calls `saveSubscription` for the
-  signed-in user. Returns `{ error }` for the card to show inline.
+- `subscribeAction(subscription)`: takes the browser's `PushSubscription.toJSON()`
+  plus the user agent as a plain object, parses it with zod (endpoint as `https`
+  URL, `keys.p256dh` and `keys.auth` as non-empty strings, user agent optional
+  and capped) and calls `saveSubscription` for the signed-in user. Returns
+  `{ error }` for the card to show inline.
 - `unsubscribeAction(endpoint)`: calls `deleteSubscription` for the signed-in
   user.
 
