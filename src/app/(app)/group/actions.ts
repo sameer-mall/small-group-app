@@ -187,7 +187,11 @@ export async function updateDisplayNameAction(
     return { error: mapError(err), success: false };
   }
   // The name is read on every screen (meal claims, prayers, members), not just
-  // this one. revalidatePath("/", "layout") drops the whole cache tree.
-  revalidatePath("/", "layout");
+  // this one, and every one of them sits under the (app) route group. Don't
+  // revalidate the root layout ("/", "layout") instead: every route carries
+  // that tag, so it also marks the static service worker (/serwist/sw.js)
+  // stale, and Vercel's runtime rebuild of sw.js can't work (SMALL-GROUP-7).
+  // src/revalidation.test.ts guards this.
+  revalidatePath("/(app)", "layout");
   return { error: null, success: true };
 }
