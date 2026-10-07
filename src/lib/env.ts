@@ -25,6 +25,14 @@ const envSchema = z.object({
   AUTH_EMAIL_FILE: z.string().optional(),
   RESEND_API_KEY: z.string().optional(),
   AUTH_EMAIL_FROM: z.string().optional(),
+  // Web Push signing keys — see src/lib/push.ts. Unset, pushes are skipped
+  // with a console line, which is all local dev, CI, and e2e need. Generate
+  // once with `npx web-push generate-vapid-keys`. The public half is also
+  // what the browser subscribes with, hence the NEXT_PUBLIC_ name; the
+  // transport signs sends with it too, so it is validated here as well.
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().optional(),
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
