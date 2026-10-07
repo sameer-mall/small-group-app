@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import {
@@ -15,6 +16,7 @@ import {
   rotateInviteCode,
 } from "@/lib/groups";
 import { logRefusal } from "@/lib/monitoring";
+import { notifyRequestApproved } from "@/lib/notifications";
 import { displayNameForm, updateDisplayName } from "@/lib/profile";
 
 export type ActionState = { error: string | null; success: boolean };
@@ -56,7 +58,9 @@ export async function approveRequestAction(
 ): Promise<ActionState> {
   const user = await requireUser();
   try {
-    await approveRequest(user.id, requestId);
+    const { groupId, userId } = await approveRequest(user.id, requestId);
+    // After the response: the save never waits on the push service.
+    after(() => notifyRequestApproved({ groupId, userId }));
   } catch (err) {
     return { error: mapError(err), success: false };
   }

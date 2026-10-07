@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import { createMeeting, deleteMeeting, updateMeeting } from "@/lib/meetings";
 import { logRefusal } from "@/lib/monitoring";
+import { notifyMeetingCreated } from "@/lib/notifications";
 
 export type ActionState = { error: string | null; success: boolean };
 
@@ -55,7 +57,9 @@ export async function createMeetingAction(
   const form = meetingForm.safeParse(Object.fromEntries(formData));
   if (!form.success) return { error: form.error.issues[0].message, success: false };
   try {
-    await createMeeting(user.id, groupId, form.data);
+    const { meetingId } = await createMeeting(user.id, groupId, form.data);
+    // After the response: the save never waits on the push service.
+    after(() => notifyMeetingCreated({ actorId: user.id, meetingId }));
   } catch (err) {
     return { error: mapError(err), success: false };
   }

@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import { addAdhocItem, claimItem, releaseItem, removeAdhocItem, setMeal } from "@/lib/meals";
 import { logRefusal } from "@/lib/monitoring";
+import { notifyMealSet } from "@/lib/notifications";
 
 export type ActionState = { error: string | null; success: boolean };
 
@@ -46,6 +48,8 @@ export async function setMealAction(
   const user = await requireUser();
   try {
     await setMeal(user.id, meetingId, recipeId);
+    // After the response: the save never waits on the push service.
+    after(() => notifyMealSet({ actorId: user.id, meetingId }));
   } catch (err) {
     return { error: mapError(err), success: false };
   }
