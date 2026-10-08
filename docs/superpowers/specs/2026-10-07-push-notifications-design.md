@@ -244,7 +244,8 @@ Server component. Renders, in order:
 2. `DisplayNameCard` (moved from Group)
 3. `AppearanceCard` (moved from Group)
 4. `NotificationsCard` (new)
-5. `ReportProblemDialog` and `SignOutButton` (moved from Group)
+5. `WhatsNewCard` (moved from Group; its list page moves from `/group/whats-new` to `/settings/whats-new`, see the What's new spec)
+6. `ReportProblemDialog` and `SignOutButton` (moved from Group)
 
 The Group page keeps its header, pending requests, invite link, member list,
 and Leave group. Its header row gains a gear icon button (`Button` with

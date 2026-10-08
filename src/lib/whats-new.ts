@@ -1,5 +1,5 @@
 // What's new: the release notes members see once in a popup after a release,
-// and any time from the Group screen. Hand-written, one entry per change a
+// and any time from the Settings screen. Hand-written, one entry per change a
 // member would notice, added in the same PR as the change (CLAUDE.md).
 //
 // Each member's user row records the highest id they've dismissed
@@ -21,6 +21,12 @@ export type Release = {
 
 export const releases: Release[] = [
   {
+    id: 4,
+    date: "2026-10-08",
+    title: "Notifications, and a Settings screen",
+    body: "Tap the gear on the Group screen to turn on notifications and hear when a meeting, meal, or recipe is added. Your name, appearance, and What's new live there now too.",
+  },
+  {
     id: 3,
     date: "2026-10-05",
     title: "The prayer bowl waits for everyone",
@@ -30,7 +36,7 @@ export const releases: Release[] = [
     id: 2,
     date: "2026-10-05",
     title: "Change your name anytime",
-    body: "Made a typo when you signed up? Tap Edit name on the Group screen to change how your name shows to your group.",
+    body: "Made a typo when you signed up? Tap Edit name under Settings to change how your name shows to your group.",
   },
   {
     id: 1,

@@ -2,9 +2,9 @@ import { requireUser } from "@/lib/dal";
 import { releases } from "@/lib/whats-new";
 import { formatMeetingDate } from "@/lib/utils";
 
-// Every release note, newest first, reached from the Group screen's What's new
-// card. App-wide, not per group, so it needs no group. It sits under /group so
-// the Group tab stays lit; like every page, no back link.
+// Every release note, newest first, reached from the Settings screen's What's
+// new card. App-wide, not per group, so it needs no group. It sits under
+// /settings so the Group tab stays lit; like every page, no back link.
 export default async function WhatsNewPage() {
   await requireUser();
 

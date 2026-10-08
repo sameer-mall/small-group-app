@@ -8,7 +8,7 @@ import { formatMeetingDate } from "@/lib/utils";
 export function WhatsNewCard({ latest }: { latest: Release }) {
   return (
     <Link
-      href="/group/whats-new"
+      href="/settings/whats-new"
       className="bg-card rounded-card shadow-card flex items-center justify-between gap-3 p-4"
     >
       <div className="flex min-w-0 flex-col gap-0.5">
