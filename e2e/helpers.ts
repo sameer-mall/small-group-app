@@ -21,13 +21,17 @@ export function memberContext(browser: Browser, options: BrowserContextOptions =
   });
 }
 
-export async function signIn(page: Page, email: string, name: string) {
+// Leaves the page on the code step, with the code in the mailbox file.
+export async function requestCode(page: Page, email: string) {
   await page.goto("/sign-in");
   await page.getByLabel("Email address").fill(email);
   await page.getByRole("button", { name: "Email me a code" }).click();
   // The code step only renders after the send call returns, and the file
   // transport writes before it does — so the code is on disk by now.
   await expectApp(page.getByLabel("Sign-in code")).toBeVisible();
+}
+
+export function latestCode(email: string) {
   // Pick the newest code addressed to *this* email, not simply the last line.
   // Spec files run in parallel and share one mailbox file, so "the last line"
   // is whichever worker wrote most recently — which silently signs this page
@@ -38,7 +42,12 @@ export async function signIn(page: Page, email: string, name: string) {
     .map((line) => JSON.parse(line) as { to: string; otp?: string })
     .findLast((mail) => mail.to === email && mail.otp);
   if (!mail?.otp) throw new Error(`no sign-in code for ${email} in ${MAIL}`);
-  await page.getByLabel("Sign-in code").fill(mail.otp);
+  return mail.otp;
+}
+
+export async function signIn(page: Page, email: string, name: string) {
+  await requestCode(page, email);
+  await page.getByLabel("Sign-in code").fill(latestCode(email));
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   // Sign-in navigates client-side; wait until it has left /sign-in before
   // deciding whether this is a first-time user landing on /welcome.
