@@ -57,6 +57,13 @@
       "when": 1790903625588,
       "tag": "0007_spooky_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791405496293,
+      "tag": "0008_sour_kid_colt",
+      "breakpoints": true
     }
   ]
 }

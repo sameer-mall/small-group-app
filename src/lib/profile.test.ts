@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayNameForm } from "@/lib/profile";
+import { displayNameForm, releaseIdInput } from "@/lib/profile";
 
 function parse(name: unknown) {
   return displayNameForm.safeParse({ name });
@@ -36,6 +36,18 @@ describe("displayNameForm", () => {
     expect(result.success).toBe(false);
     if (!result.success) {
       expect(result.error.issues[0].message).toBe("Keep your name under 60 characters.");
+    }
+  });
+});
+
+describe("releaseIdInput", () => {
+  it("accepts a release id", () => {
+    expect(releaseIdInput.safeParse(3).success).toBe(true);
+  });
+
+  it("rejects anything that isn't a positive whole number", () => {
+    for (const bad of [0, -1, 2.5, "3", null, undefined, Number.NaN]) {
+      expect(releaseIdInput.safeParse(bad).success, String(bad)).toBe(false);
     }
   });
 });

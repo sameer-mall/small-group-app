@@ -15,7 +15,12 @@ import {
   rotateInviteCode,
 } from "@/lib/groups";
 import { logRefusal } from "@/lib/monitoring";
-import { displayNameForm, updateDisplayName } from "@/lib/profile";
+import {
+  displayNameForm,
+  markWhatsNewSeen,
+  releaseIdInput,
+  updateDisplayName,
+} from "@/lib/profile";
 
 export type ActionState = { error: string | null; success: boolean };
 
@@ -194,4 +199,22 @@ export async function updateDisplayNameAction(
   // src/revalidation.test.ts guards this.
   revalidatePath("/(app)", "layout");
   return { error: null, success: true };
+}
+
+// The What's new popup closing, however it closed. The dialog has already
+// shut, so nothing comes back to show: if this fails, the popup simply shows
+// again on the next open. No revalidation either. The dialog keeps itself
+// closed, and the next server render reads the saved value.
+export async function markWhatsNewSeenAction(releaseId: number): Promise<void> {
+  const user = await requireUser();
+  const input = releaseIdInput.safeParse(releaseId);
+  if (!input.success) return;
+  try {
+    await markWhatsNewSeen(user.id, input.data);
+  } catch (err) {
+    logRefusal(err);
+    // The account was deleted between render and close; nothing to save.
+    if (err instanceof Error && err.message === "not-found") return;
+    throw err;
+  }
 }
