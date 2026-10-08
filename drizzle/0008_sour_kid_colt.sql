@@ -1,0 +1,1 @@
+ALTER TABLE "user" ADD COLUMN "whats_new_seen" integer DEFAULT 0 NOT NULL;

@@ -6,6 +6,7 @@ import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { sendAuthEmail } from "@/lib/auth-email";
 import { env } from "@/lib/env";
+import { LATEST_RELEASE_ID } from "@/lib/whats-new";
 
 // Vercel preview deployments get a fresh *.vercel.app URL per deploy, so a
 // single pinned BETTER_AUTH_URL can't match them. On preview, point baseURL at
@@ -32,6 +33,31 @@ export const auth = betterAuth({
   baseURL: authBaseURL,
   trustedOrigins: isPreview ? ["https://*.vercel.app"] : undefined,
   secret: env.BETTER_AUTH_SECRET,
+  user: {
+    additionalFields: {
+      // The highest What's new entry this member has dismissed (see
+      // src/lib/whats-new.ts). Sessions read the user row on every request, so
+      // the (app) layout gets it with no extra query. input: false keeps
+      // clients from setting it through Better Auth's own endpoints; only
+      // markWhatsNewSeen writes it. The SQL default of 0 is what existing
+      // members got when the column was added: they see every entry once.
+      whatsNewSeen: {
+        type: "number",
+        required: true,
+        input: false,
+        defaultValue: 0,
+      },
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        // New members start caught up: no backlog of changes from before they
+        // joined. Every sign-up path (emailed code, Google) comes through here.
+        before: async (newUser) => ({ data: { ...newUser, whatsNewSeen: LATEST_RELEASE_ID } }),
+      },
+    },
+  },
   socialProviders: {
     // Optional (see src/lib/env.ts). Left blank, Better Auth still registers
     // the provider and logs a warning, so only Google sign-in is affected.

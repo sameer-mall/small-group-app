@@ -12,6 +12,8 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { AppearanceCard } from "@/components/appearance-card";
 import { DisplayNameCard } from "@/components/display-name-card";
 import { ReportProblemDialog } from "@/components/report-problem-dialog";
+import { WhatsNewCard } from "@/components/whats-new-card";
+import { releases } from "@/lib/whats-new";
 
 export default async function GroupPage() {
   const user = await requireUser();
@@ -77,6 +79,8 @@ export default async function GroupPage() {
       <DisplayNameCard name={user.name} email={user.email} />
 
       <AppearanceCard />
+
+      <WhatsNewCard latest={releases[0]} />
 
       <LeaveGroupButton groupId={activeGroup.id} />
 

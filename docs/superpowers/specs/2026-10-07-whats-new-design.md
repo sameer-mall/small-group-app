@@ -1,7 +1,7 @@
 # What's New — Design
 
 **Date:** 2026-10-07
-**Status:** Approved design, not yet planned
+**Status:** Implemented
 **Parent spec:** [2026-07-02-small-group-pwa-design.md](2026-07-02-small-group-pwa-design.md). This feature isn't in the parent spec; it adds an app-wide channel for telling members what changed.
 
 ## Goal
@@ -46,16 +46,17 @@ Members don't follow the repo, so a feature they'd use (editing their name, the 
 ## Architecture
 
 - **Column:** `user.whats_new_seen integer NOT NULL DEFAULT 0`, from the regenerated `auth-schema.ts` plus a drizzle migration (`mise run db:generate`).
-- **Auth config** (`src/lib/auth.ts`): `user.additionalFields.whatsNewSeen` (`type: "number"`, `input: false`, `defaultValue: 0`) and a `databaseHooks.user.create.before` hook that sets it to `LATEST_RELEASE_ID`.
+- **Auth config** (`src/lib/auth.ts`): `user.additionalFields.whatsNewSeen` (`type: "number"`, `required: true`, `input: false`, `defaultValue: 0`; `required` is what makes the generated column `NOT NULL`) and a `databaseHooks.user.create.before` hook that sets it to `LATEST_RELEASE_ID`.
 - **Content and pure logic** (`src/lib/whats-new.ts`):
   - `type Release = { id: number; date: string; title: string; body: string }`, with `date` as `YYYY-MM-DD`.
   - `releases: Release[]`, newest first: a new entry goes at the top.
   - `LATEST_RELEASE_ID`, which is `releases[0].id`.
   - `unseenReleases(seen: number): Release[]`, the entries with `id > seen`, newest first.
   - `POPUP_LIMIT = 3`.
+  - `whatsNewPopup(seen)`, the popup's props: the first `POPUP_LIMIT` unseen entries, `newestId` (0 when there's nothing), and `hasMore`.
 - **Domain write** (`src/lib/profile.ts`): `markWhatsNewSeen(userId, releaseId)`, a forward-only update clamped to `LATEST_RELEASE_ID`. It throws `Error("not-found")` if the user row is gone, like `updateDisplayName`.
 - **Action** (`src/app/(app)/group/actions.ts`, next to the display-name action): `markWhatsNewSeenAction(releaseId)`. It requires a signed-in user, validates the id with zod (a positive integer), and calls the domain write. It returns nothing the UI shows.
-- **Layout** (`src/app/(app)/layout.tsx`): computes `unseenReleases(user.whatsNewSeen)`. When that isn't empty, it renders `<WhatsNewDialog>` with the first `POPUP_LIMIT` entries, the newest id, and whether more exist.
+- **Layout** (`src/app/(app)/layout.tsx`): always mounts `<WhatsNewDialog {...whatsNewPopup(user.whatsNewSeen)} />`, so its dismissed state survives the layout re-rendering. The dialog stays shut when there's nothing unseen.
 - **UI:**
   - `WhatsNewDialog` (client, `src/components/whats-new-dialog.tsx`) on the existing `Dialog`.
   - `WhatsNewCard` (`src/components/whats-new-card.tsx`) on the Group screen.
@@ -64,7 +65,7 @@ Members don't follow the repo, so a feature they'd use (editing their name, the 
 
 ## Screens and copy
 
-- **The popup.** The existing centered dialog, like Report a problem, with its close button. The title is **What's new**. Each entry shows its short date ("Oct 5"), its title in semibold, and its body. When more than 3 entries are unseen, a **See all updates** outline button links to `/group/whats-new`. At the bottom is a full-width **Got it** primary button.
+- **The popup.** The existing centered dialog, like Report a problem, with its close button. The title is **What's new**, with the line "Here's what changed since you last looked." under it. Each entry shows its short date ("Oct 5"), its title in semibold, and its body. When more than 3 entries are unseen, a **See all updates** outline button links to `/group/whats-new`. At the bottom is a full-width **Got it** primary button.
 - **Group screen card.** A tappable card directly under Appearance, styled like the other Group cards. It has an uppercase **What's new** label, the latest entry's title, and its date, with a chevron. The whole card links to `/group/whats-new`, like the note and meeting cards, so it joins the button-styling guard test's allow-list.
 - **What's new page.** Laid out like My notes: the heading **What's new** and the subtitle "The latest changes to the app", then one card per entry, newest first. Each card shows the date with year ("Oct 5, 2026"), the title, and the body. There's no back link, matching every other page; the lit Group tab leads back. The entry list is never empty: launch ships with three entries.
 
@@ -87,13 +88,12 @@ Members don't follow the repo, so a feature they'd use (editing their name, the 
 
 ## Testing
 
-- **Content guard** (Vitest, beside the button-styling test): ids are unique positive integers, strictly decreasing down the list; every `date` is a real `YYYY-MM-DD`; every title and body is non-empty after trimming; no title or body contains an em dash; `LATEST_RELEASE_ID` equals the first entry's id.
-- **Unit:** `unseenReleases` with seen at 0, in the middle, at the latest, and above the latest (a rolled-back deploy shows nothing). It also covers the popup limit with more than 3 unseen.
+- **Content guard** (Vitest, `src/lib/whats-new.test.ts`): ids are unique positive integers, strictly decreasing down the list; every `date` is a real `YYYY-MM-DD`; every title and body is non-empty after trimming; no title or body contains an em dash; `LATEST_RELEASE_ID` equals the first entry's id.
+- **Unit:** `unseenReleases` with seen at 0, in the middle, at the latest, and above the latest (a rolled-back deploy shows nothing). `whatsNewPopup` with more than 3 unseen, exactly 3, and none. `releaseIdInput` rejects anything but a positive whole number.
 - **Integration** (Postgres):
   - `markWhatsNewSeen` moves forward, ignores a lower id, and clamps an id above the latest.
   - A user created through Better Auth starts at `LATEST_RELEASE_ID`.
   - A row inserted with the column omitted starts at 0.
-  - The action refuses a non-integer id.
 - **E2E** (Playwright, port 3300):
   1. Sign up a member, then set their `whats_new_seen` to 0.
   2. Load the app: the popup shows the three launch entries.

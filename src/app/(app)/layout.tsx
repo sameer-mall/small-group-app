@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { requireUser } from "@/lib/dal";
+import { whatsNewPopup } from "@/lib/whats-new";
 import { TabBar } from "@/components/tab-bar";
 import { SentryUser } from "@/components/sentry-user";
+import { WhatsNewDialog } from "@/components/whats-new-dialog";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
@@ -12,6 +14,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       {/* Clears the fixed tab bar, which grows by the home-indicator inset. */}
       <div className="pb-[calc(5rem+env(safe-area-inset-bottom))]">{children}</div>
       <TabBar />
+      {/* Always mounted, so a dismissal survives the layout re-rendering.
+          whatsNewSeen rides along on the session's user row: no extra query. */}
+      <WhatsNewDialog {...whatsNewPopup(user.whatsNewSeen)} />
     </div>
   );
 }
