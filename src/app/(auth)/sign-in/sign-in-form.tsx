@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
+import { authClient, UNREACHABLE_MESSAGE } from "@/lib/auth-client";
 
 const inputClass =
   "bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none";
@@ -29,11 +29,17 @@ export function SignInForm({ next }: { next: string }) {
     setPending(true);
     setError(null);
     setResent(false);
-    const { error } = await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
-    setPending(false);
-    if (error) setError("Couldn't send the code. Check the address and try again.");
-    else setOtp("");
-    return !error;
+    try {
+      const { error } = await authClient.emailOtp.sendVerificationOtp({ email, type: "sign-in" });
+      if (error) setError("Couldn't send the code. Check the address and try again.");
+      else setOtp("");
+      return !error;
+    } catch {
+      setError(UNREACHABLE_MESSAGE);
+      return false;
+    } finally {
+      setPending(false);
+    }
   }
 
   async function submitEmail(e: React.FormEvent) {
@@ -50,21 +56,30 @@ export function SignInForm({ next }: { next: string }) {
     setPending(true);
     setError(null);
     setResent(false);
-    const { data, error } = await authClient.signIn.emailOtp({ email, otp });
-    if (error || !data) {
+    try {
+      const { data, error } = await authClient.signIn.emailOtp({ email, otp });
+      if (error || !data) {
+        setPending(false);
+        setError(CODE_ERRORS[error?.code ?? ""] ?? "Couldn't sign you in. Try again.");
+        return;
+      }
+      // Stay pending through the navigation so the button can't double-submit.
+      // A first-time email has no name yet: /welcome collects it, then forwards.
+      router.push(data.user.name.trim() ? next : `/welcome?next=${encodeURIComponent(next)}`);
+    } catch {
       setPending(false);
-      setError(CODE_ERRORS[error?.code ?? ""] ?? "Couldn't sign you in. Try again.");
-      return;
+      setError(UNREACHABLE_MESSAGE);
     }
-    // Stay pending through the navigation so the button can't double-submit.
-    // A first-time email has no name yet: /welcome collects it, then forwards.
-    router.push(data.user.name.trim() ? next : `/welcome?next=${encodeURIComponent(next)}`);
   }
 
   async function signInWithGoogle() {
     setError(null);
-    const { error } = await authClient.signIn.social({ provider: "google", callbackURL: next });
-    if (error) setError("Couldn't sign in with Google. Try again.");
+    try {
+      const { error } = await authClient.signIn.social({ provider: "google", callbackURL: next });
+      if (error) setError("Couldn't sign in with Google. Try again.");
+    } catch {
+      setError(UNREACHABLE_MESSAGE);
+    }
   }
 
   if (step === "code")

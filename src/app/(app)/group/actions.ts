@@ -17,7 +17,12 @@ import {
 } from "@/lib/groups";
 import { logRefusal } from "@/lib/monitoring";
 import { notifyRequestApproved } from "@/lib/notifications";
-import { displayNameForm, updateDisplayName } from "@/lib/profile";
+import {
+  displayNameForm,
+  markWhatsNewSeen,
+  releaseIdInput,
+  updateDisplayName,
+} from "@/lib/profile";
 
 export type ActionState = { error: string | null; success: boolean };
 
@@ -191,7 +196,29 @@ export async function updateDisplayNameAction(
     return { error: mapError(err), success: false };
   }
   // The name is read on every screen (meal claims, prayers, members), not just
-  // this one. revalidatePath("/", "layout") drops the whole cache tree.
-  revalidatePath("/", "layout");
+  // this one, and every one of them sits under the (app) route group. Don't
+  // revalidate the root layout ("/", "layout") instead: every route carries
+  // that tag, so it also marks the static service worker (/serwist/sw.js)
+  // stale, and Vercel's runtime rebuild of sw.js can't work (SMALL-GROUP-7).
+  // src/revalidation.test.ts guards this.
+  revalidatePath("/(app)", "layout");
   return { error: null, success: true };
+}
+
+// The What's new popup closing, however it closed. The dialog has already
+// shut, so nothing comes back to show: if this fails, the popup simply shows
+// again on the next open. No revalidation either. The dialog keeps itself
+// closed, and the next server render reads the saved value.
+export async function markWhatsNewSeenAction(releaseId: number): Promise<void> {
+  const user = await requireUser();
+  const input = releaseIdInput.safeParse(releaseId);
+  if (!input.success) return;
+  try {
+    await markWhatsNewSeen(user.id, input.data);
+  } catch (err) {
+    logRefusal(err);
+    // The account was deleted between render and close; nothing to save.
+    if (err instanceof Error && err.message === "not-found") return;
+    throw err;
+  }
 }

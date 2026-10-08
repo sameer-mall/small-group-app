@@ -1,9 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Plus } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
+import { authClient, UNREACHABLE_MESSAGE } from "@/lib/auth-client";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,7 @@ export function GroupSwitcher({
   activeGroupName: string;
 }) {
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
 
   // Split off the trailing word so it can be kept on the chevron's line.
   const words = activeGroupName.split(" ");
@@ -44,44 +46,62 @@ export function GroupSwitcher({
 
   async function handleSelect(groupId: string) {
     if (groupId === activeGroupId) return;
-    await authClient.organization.setActive({ organizationId: groupId });
+    setError(null);
+    // A returned error (say, removed from that group meanwhile) still
+    // refreshes: the server render then shows which groups are left.
+    try {
+      await authClient.organization.setActive({ organizationId: groupId });
+    } catch {
+      setError(UNREACHABLE_MESSAGE);
+      return;
+    }
     router.refresh();
   }
 
   return (
-    <h1 className="font-serif text-3xl font-semibold">
-      <DropdownMenu>
-        {/* Inline, not flex: a flex row centres the chevron against the whole
-            wrapped block, so a two-line group name flings it to the far right,
-            detached from the text. Inline keeps it trailing the last word at
-            every name length — and the nowrap span stops it wrapping alone
-            onto a line of its own when the name just fills the width. */}
-        <DropdownMenuTrigger className="text-left break-words">
-          {lead && `${lead} `}
-          <span className="whitespace-nowrap">
-            {lastWord}
-            <ChevronDown
-              size={22}
-              strokeWidth={2}
-              className="text-tertiary ml-1.5 inline-block align-middle"
-            />
-          </span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-auto min-w-56">
-          <DropdownMenuRadioGroup value={activeGroupId} onValueChange={handleSelect}>
-            {groups.map((group) => (
-              <DropdownMenuRadioItem key={group.id} value={group.id} className="min-h-tap">
-                {group.name}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem render={<Link href="/create-group" />} className="min-h-tap">
-            <Plus />
-            Create a group
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </h1>
+    <div className="flex flex-col gap-2">
+      <h1 className="font-serif text-3xl font-semibold">
+        <DropdownMenu>
+          {/* Inline, not flex: a flex row centres the chevron against the whole
+              wrapped block, so a two-line group name flings it to the far right,
+              detached from the text. Inline keeps it trailing the last word at
+              every name length — and the nowrap span stops it wrapping alone
+              onto a line of its own when the name just fills the width. */}
+          <DropdownMenuTrigger className="text-left break-words">
+            {lead && `${lead} `}
+            <span className="whitespace-nowrap">
+              {lastWord}
+              <ChevronDown
+                size={22}
+                strokeWidth={2}
+                className="text-tertiary ml-1.5 inline-block align-middle"
+              />
+            </span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-auto min-w-56">
+            {/* closeOnClick: Base UI keeps the menu open after a radio pick,
+                and open, it covers the error line under the heading. */}
+            <DropdownMenuRadioGroup value={activeGroupId} onValueChange={handleSelect}>
+              {groups.map((group) => (
+                <DropdownMenuRadioItem
+                  key={group.id}
+                  value={group.id}
+                  closeOnClick
+                  className="min-h-tap"
+                >
+                  {group.name}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem render={<Link href="/create-group" />} className="min-h-tap">
+              <Plus />
+              Create a group
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </h1>
+      {error && <p className="text-destructive text-sm">{error}</p>}
+    </div>
   );
 }

@@ -1,7 +1,8 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db/client";
 import { user } from "@/db/schema";
+import { LATEST_RELEASE_ID } from "@/lib/whats-new";
 
 // The name a member shows to their group (meal claims, prayers, member list).
 // First collected on /welcome; changed later from the Group screen. Messages
@@ -22,6 +23,23 @@ export async function updateDisplayName(userId: string, name: string) {
   const updated = await db
     .update(user)
     .set({ name })
+    .where(eq(user.id, userId))
+    .returning({ id: user.id });
+  if (updated.length === 0) throw new Error("not-found");
+}
+
+// The newest What's new entry a popup showed, sent back when it closes.
+export const releaseIdInput = z.number().int().positive();
+
+// Records that a member has seen What's new up to releaseId. Only ever moves
+// forward (a stale tab sending an older id can't un-see newer entries) and
+// stops at the latest release in code (no one can skip entries not written
+// yet). Throws Error("not-found") if the user row is gone.
+export async function markWhatsNewSeen(userId: string, releaseId: number) {
+  const seen = Math.min(releaseId, LATEST_RELEASE_ID);
+  const updated = await db
+    .update(user)
+    .set({ whatsNewSeen: sql`greatest(${user.whatsNewSeen}, ${seen})` })
     .where(eq(user.id, userId))
     .returning({ id: user.id });
   if (updated.length === 0) throw new Error("not-found");

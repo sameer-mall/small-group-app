@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, type Browser, type BrowserContextOptions, type Page } from "@playwright/test";
+import { config } from "dotenv";
+import { Pool } from "pg";
 
 const MAIL = ".e2e-mail.jsonl";
 
@@ -21,13 +23,17 @@ export function memberContext(browser: Browser, options: BrowserContextOptions =
   });
 }
 
-export async function signIn(page: Page, email: string, name: string) {
+// Leaves the page on the code step, with the code in the mailbox file.
+export async function requestCode(page: Page, email: string) {
   await page.goto("/sign-in");
   await page.getByLabel("Email address").fill(email);
   await page.getByRole("button", { name: "Email me a code" }).click();
   // The code step only renders after the send call returns, and the file
   // transport writes before it does — so the code is on disk by now.
   await expectApp(page.getByLabel("Sign-in code")).toBeVisible();
+}
+
+export function latestCode(email: string) {
   // Pick the newest code addressed to *this* email, not simply the last line.
   // Spec files run in parallel and share one mailbox file, so "the last line"
   // is whichever worker wrote most recently — which silently signs this page
@@ -38,7 +44,12 @@ export async function signIn(page: Page, email: string, name: string) {
     .map((line) => JSON.parse(line) as { to: string; otp?: string })
     .findLast((mail) => mail.to === email && mail.otp);
   if (!mail?.otp) throw new Error(`no sign-in code for ${email} in ${MAIL}`);
-  await page.getByLabel("Sign-in code").fill(mail.otp);
+  return mail.otp;
+}
+
+export async function signIn(page: Page, email: string, name: string) {
+  await requestCode(page, email);
+  await page.getByLabel("Sign-in code").fill(latestCode(email));
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   // Sign-in navigates client-side; wait until it has left /sign-in before
   // deciding whether this is a first-time user landing on /welcome.
@@ -51,5 +62,19 @@ export async function signIn(page: Page, email: string, name: string) {
     // can otherwise reach a page before the name is saved, and requireUser
     // sends a nameless user back to /welcome.
     await page.waitForURL((url) => url.pathname !== "/welcome");
+  }
+}
+
+// Puts a member back before every What's new entry, where the migration left
+// everyone who joined before it existed. New accounts start caught up, so a
+// test can't see the popup any other way. CI sets DATABASE_URL; locally it
+// comes from .env unless already exported.
+export async function resetWhatsNewSeen(email: string) {
+  config({ quiet: true });
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  try {
+    await pool.query(`update "user" set whats_new_seen = 0 where email = $1`, [email]);
+  } finally {
+    await pool.end();
   }
 }

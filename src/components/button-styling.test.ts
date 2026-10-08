@@ -19,6 +19,7 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   "src/components/tab-bar.tsx": { count: 1, why: "the tab bar" },
   "src/components/meeting-row.tsx": { count: 1, why: "a tappable meeting card" },
   "src/components/note-list.tsx": { count: 1, why: "a tappable note card" },
+  "src/components/whats-new-card.tsx": { count: 1, why: "a tappable What's new card" },
   "src/app/(app)/recipes/page.tsx": { count: 1, why: "a tappable recipe card" },
   "src/components/group-switcher.tsx": { count: 1, why: "the page title, with its chevron" },
   "src/components/notifications-card.tsx": { count: 1, why: "the notifications switch" },
