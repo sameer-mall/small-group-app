@@ -32,4 +32,17 @@ describe("parseEnv", () => {
   it("drops variables the app doesn't read", () => {
     expect(parseEnv({ ...required, HOME: "/Users/someone" })).not.toHaveProperty("HOME");
   });
+
+  it("accepts the optional VAPID trio and treats blanks as unset", () => {
+    const parsed = parseEnv({
+      ...required,
+      VAPID_PRIVATE_KEY: "private",
+      VAPID_SUBJECT: "mailto:owner@example.com",
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: "public",
+    });
+    expect(parsed.VAPID_PRIVATE_KEY).toBe("private");
+    expect(parsed.VAPID_SUBJECT).toBe("mailto:owner@example.com");
+    expect(parsed.NEXT_PUBLIC_VAPID_PUBLIC_KEY).toBe("public");
+    expect(parseEnv({ ...required, VAPID_PRIVATE_KEY: "" }).VAPID_PRIVATE_KEY).toBeUndefined();
+  });
 });

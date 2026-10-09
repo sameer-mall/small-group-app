@@ -64,6 +64,13 @@
       "when": 1791405496293,
       "tag": "0008_sour_kid_colt",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791464490318,
+      "tag": "0009_late_garia",
+      "breakpoints": true
     }
   ]
 }

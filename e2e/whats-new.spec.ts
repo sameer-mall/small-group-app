@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import { expectApp, memberContext, resetWhatsNewSeen, signIn } from "./helpers";
 import { releases } from "../src/lib/whats-new";
 
-test("a member who is behind sees what's new once, then finds it on the Group screen", async ({
+test("a member who is behind sees what's new once, then finds it under Settings", async ({
   browser,
 }) => {
   const run = Date.now();
@@ -39,8 +39,9 @@ test("a member who is behind sees what's new once, then finds it on the Group sc
   await expect(page.getByRole("dialog")).toBeHidden();
 
   await page.getByRole("link", { name: "Group" }).click();
+  await page.getByRole("link", { name: "Settings" }).click();
   await page.getByRole("link", { name: /What's new/ }).click();
-  await expect(page).toHaveURL(/\/group\/whats-new$/);
+  await expect(page).toHaveURL(/\/settings\/whats-new$/);
   await expectApp(page.getByRole("heading", { name: "What's new" })).toBeVisible();
   for (const { title } of releases) {
     await expect(page.getByText(title)).toBeVisible();

@@ -22,6 +22,7 @@ const ALLOWED: Record<string, { count: number; why: string }> = {
   "src/components/whats-new-card.tsx": { count: 1, why: "a tappable What's new card" },
   "src/app/(app)/recipes/page.tsx": { count: 1, why: "a tappable recipe card" },
   "src/components/group-switcher.tsx": { count: 1, why: "the page title, with its chevron" },
+  "src/components/notifications-card.tsx": { count: 1, why: "the notifications switch" },
 };
 
 const INTERACTIVE = /<(button|Link|DialogTrigger|DropdownMenuTrigger|DialogClose)(?=[\s/>])/g;

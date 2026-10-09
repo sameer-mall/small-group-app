@@ -1,15 +1,19 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireUser } from "@/lib/dal";
 import { requestToJoin } from "@/lib/groups";
 import { logRefusal } from "@/lib/monitoring";
+import { notifyJoinRequested } from "@/lib/notifications";
 
 export async function requestToJoinAction(code: string) {
   const user = await requireUser(`/join/${code}`);
 
   try {
-    await requestToJoin(user.id, code);
+    const { groupId, created } = await requestToJoin(user.id, code);
+    // Only a new request pings the admins; a repeat tap on the link does not.
+    if (created) after(() => notifyJoinRequested({ groupId, requesterId: user.id }));
   } catch (err) {
     logRefusal(err);
     if (err instanceof Error && err.message === "already-member") {

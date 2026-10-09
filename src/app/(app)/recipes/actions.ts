@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import { logRefusal } from "@/lib/monitoring";
+import { notifyRecipeAdded } from "@/lib/notifications";
 import { createRecipe, deleteRecipe, updateRecipe } from "@/lib/recipes";
 
 export type ActionState = { error: string | null; success: boolean };
@@ -55,7 +57,9 @@ export async function createRecipeAction(
   if (!form.success) return { error: form.error.issues[0].message, success: false };
 
   try {
-    await createRecipe(user.id, groupId, form.data);
+    const { recipeId } = await createRecipe(user.id, groupId, form.data);
+    // After the response: the save never waits on the push service.
+    after(() => notifyRecipeAdded({ actorId: user.id, recipeId }));
   } catch (err) {
     return { error: mapError(err), success: false };
   }

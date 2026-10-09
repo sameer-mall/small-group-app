@@ -67,8 +67,9 @@ test("a new display name shows on meal claims, the prayer bowl, and the member l
   await bob.getByRole("link", { name: "Group" }).click();
   await expectApp(bob.getByTestId("member-row").filter({ hasText: "Alice" })).toBeVisible();
 
-  // Alice renames herself on the Group screen.
+  // Alice renames herself from Settings.
   await alice.getByRole("link", { name: "Group" }).click();
+  await alice.getByRole("link", { name: "Settings" }).click();
   await alice.getByRole("button", { name: "Edit name" }).click();
   await alice.getByRole("dialog").getByRole("textbox").fill(newName);
   await alice.getByRole("dialog").getByRole("button", { name: "Save" }).click();

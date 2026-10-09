@@ -1,5 +1,7 @@
 # What's New — Design
 
+> **Update 2026-10-08:** the What's new card and list moved with the other personal controls to the Settings screen (`/settings`, `/settings/whats-new`), reached by the gear on the Group screen. See `2026-10-07-push-notifications-design.md`. References to the Group screen below describe the original placement.
+
 **Date:** 2026-10-07
 **Status:** Implemented
 **Parent spec:** [2026-07-02-small-group-pwa-design.md](2026-07-02-small-group-pwa-design.md). This feature isn't in the parent spec; it adds an app-wide channel for telling members what changed.

@@ -186,4 +186,18 @@ describe("groups domain", () => {
     await denyRequest(alice, pending[0].id);
     expect(await listPendingRequests(groupId)).toHaveLength(0);
   });
+
+  it("requestToJoin reports whether it created a request, so a repeat tap doesn't re-ping admins", async () => {
+    const { groupId } = await createGroup(alice, "Repeat taps");
+    const code = await getInviteCode(groupId);
+    expect((await requestToJoin(bob, code)).created).toBe(true);
+    expect((await requestToJoin(bob, code)).created).toBe(false);
+  });
+
+  it("approveRequest returns the group and the new member", async () => {
+    const { groupId } = await createGroup(alice, "Approval ids");
+    await requestToJoin(bob, await getInviteCode(groupId));
+    const [pending] = await listPendingRequests(groupId);
+    expect(await approveRequest(alice, pending.id)).toEqual({ groupId, userId: bob });
+  });
 });

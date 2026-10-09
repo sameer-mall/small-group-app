@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { expectApp, memberContext, signIn } from "./helpers";
 
-test("a member reports a problem from the Group tab", async ({ browser }) => {
+test("a member reports a problem from Settings", async ({ browser }) => {
   const run = Date.now();
   const page = await (await memberContext(browser)).newPage();
   await signIn(page, `reporter-${run}@example.com`, "Reporter");
@@ -11,6 +11,7 @@ test("a member reports a problem from the Group tab", async ({ browser }) => {
   await expectApp(page.getByText(`Reports ${run}`)).toBeVisible();
 
   await page.getByRole("link", { name: "Group" }).click();
+  await page.getByRole("link", { name: "Settings" }).click();
   await page.getByRole("button", { name: "Report a problem" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("button", { name: "Send report" })).toBeDisabled();

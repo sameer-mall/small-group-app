@@ -100,12 +100,14 @@ export async function requestToJoin(userId: string, code: string) {
   const [group] = await db.select().from(organization).where(eq(organization.id, groupId));
   if (!group) throw new Error("not-found");
 
+  // `created` tells the action whether to ping the admins: a repeat tap on an
+  // invite link while a request is already pending must not.
   if (existingPending) {
-    return { groupId, groupName: group.name };
+    return { groupId, groupName: group.name, created: false };
   }
 
   await db.insert(joinRequests).values({ groupId, userId });
-  return { groupId, groupName: group.name };
+  return { groupId, groupName: group.name, created: true };
 }
 
 export async function approveRequest(userId: string, requestId: string) {
@@ -128,6 +130,8 @@ export async function approveRequest(userId: string, requestId: string) {
       role: "member", createdAt: new Date(),
     });
   });
+  // So the action can tell the new member they're in.
+  return { groupId: req.groupId, userId: req.userId };
 }
 
 export async function denyRequest(userId: string, requestId: string) {

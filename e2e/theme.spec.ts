@@ -21,7 +21,7 @@ for (const { colorScheme, background } of SCHEMES) {
   });
 }
 
-test("the Group page's appearance choice overrides the system theme and sticks", async ({ browser }) => {
+test("the Settings page's appearance choice overrides the system theme and sticks", async ({ browser }) => {
   const run = Date.now();
   const page = await (await memberContext(browser, { colorScheme: "dark" })).newPage();
   await signIn(page, `theme-${run}@example.com`, "Theo");
@@ -30,6 +30,7 @@ test("the Group page's appearance choice overrides the system theme and sticks",
   await page.getByRole("button", { name: "Create group" }).click();
   await expectApp(page.getByRole("heading", { name: `Theme ${run}` })).toBeVisible();
   await page.getByRole("link", { name: "Group" }).click();
+  await page.getByRole("link", { name: "Settings" }).click();
 
   const appearance = page.getByRole("radiogroup", { name: "Appearance" });
   await expectApp(appearance.getByRole("radio", { name: "System" })).toBeChecked();

@@ -71,7 +71,7 @@ export function WhatsNewDialog({
         <div className="flex flex-col gap-2">
           {hasMore && (
             <Link
-              href="/group/whats-new"
+              href="/settings/whats-new"
               onClick={dismiss}
               className={buttonVariants({ variant: "outline", size: "block" })}
             >

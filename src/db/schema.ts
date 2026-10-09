@@ -178,3 +178,23 @@ export const notes = pgTable(
     index("notes_by_author_group").on(t.authorId, t.groupId),
   ],
 );
+
+// One row per device that turned notifications on (Settings). Subscriptions
+// belong to a user, not a group: one toggle covers every group they're in.
+// `endpoint` is the push service's URL for the device and is unique, which is
+// what makes re-subscribing the same device an upsert. Rows are deleted when
+// a send comes back 404 or 410 (the app was removed or its data cleared).
+export const pushSubscriptions = pgTable(
+  "push_subscriptions",
+  {
+    id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    endpoint: text("endpoint").notNull().unique(),
+    p256dh: text("p256dh").notNull(),
+    auth: text("auth").notNull(),
+    // For the owner's debugging only (which device went stale); never shown.
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("push_subscriptions_by_user").on(t.userId)],
+);
