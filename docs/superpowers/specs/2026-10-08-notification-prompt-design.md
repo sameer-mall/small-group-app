@@ -1,7 +1,7 @@
 # Asking to turn notifications on, once, at first launch
 
 **Date:** 2026-10-08
-**Status:** approved in conversation; a follow-up to `2026-10-07-push-notifications-design.md`, to ship as its own PR after that one merges
+**Status:** approved in conversation; a follow-up to `2026-10-07-push-notifications-design.md`, shipped in the same PR (#72) at the owner's request
 
 ## Goal
 
@@ -70,12 +70,15 @@ dialog's.
 
 - Unit: `shouldPromptForNotifications` over every input that can block it.
 - E2E (`e2e/notification-prompt.spec.ts`): Playwright cannot set
-  `display-mode`, so the test uses `context.addInitScript` to make
-  `window.matchMedia("(display-mode: standalone)")` report `matches: true`,
-  and clears `localStorage` first. A fresh member who is caught up on What's
-  new sees the dialog on their first page after sign-in; **Not now** closes
-  it; a reload does not bring it back. A second test confirms the dialog does
-  not appear when the What's new popup is showing. Existing specs are
+  `display-mode`, and headless Chromium reports `Notification.permission` as
+  `"denied"` whatever the context grants, so a shared helper
+  (`fakeInstalledApp` in `e2e/helpers.ts`) uses `context.addInitScript` to make
+  `window.matchMedia("(display-mode: standalone)")` report `matches: true` and
+  the permission getter report `"default"`. A fresh member sees the dialog on
+  their first page after sign-in, before they have a group; **Not now** closes
+  it; a reload does not bring it back. A second test confirms a plain browser
+  tab is never asked. A third confirms the dialog waits while the What's new
+  popup is showing and appears on the launch after. Existing specs are
   unaffected because headless Chromium is not standalone.
 - By hand on an iPhone: delete and reinstall the Home Screen app, open it,
   see the dialog, tap Turn on, tap Allow, confirm Settings shows the toggle on.

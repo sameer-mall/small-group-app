@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { expect, type Browser, type BrowserContextOptions, type Page } from "@playwright/test";
+import { expect, type Browser, type BrowserContext, type BrowserContextOptions, type Page } from "@playwright/test";
 import { config } from "dotenv";
 import { Pool } from "pg";
 
@@ -77,4 +77,20 @@ export async function resetWhatsNewSeen(email: string) {
   } finally {
     await pool.end();
   }
+}
+
+// Makes the app believe it is the installed Home Screen app on a device that
+// has not answered the notification permission question. Playwright can't set
+// display-mode, and headless Chromium reports Notification.permission as
+// "denied" whatever the context grants, so both are faked at the page level.
+// Push itself is never attempted: there's no push service to answer.
+export async function fakeInstalledApp(context: BrowserContext) {
+  await context.addInitScript(() => {
+    const real = window.matchMedia.bind(window);
+    window.matchMedia = (query: string) =>
+      query === "(display-mode: standalone)"
+        ? ({ matches: true, media: query } as MediaQueryList)
+        : real(query);
+    Object.defineProperty(Notification, "permission", { get: () => "default" });
+  });
 }

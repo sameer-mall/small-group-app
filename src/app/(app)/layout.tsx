@@ -4,9 +4,11 @@ import { whatsNewPopup } from "@/lib/whats-new";
 import { TabBar } from "@/components/tab-bar";
 import { SentryUser } from "@/components/sentry-user";
 import { WhatsNewDialog } from "@/components/whats-new-dialog";
+import { NotificationPromptDialog } from "@/components/notification-prompt-dialog";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
+  const whatsNew = whatsNewPopup(user.whatsNewSeen);
 
   return (
     <div className="min-h-dvh bg-background">
@@ -16,7 +18,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <TabBar />
       {/* Always mounted, so a dismissal survives the layout re-rendering.
           whatsNewSeen rides along on the session's user row: no extra query. */}
-      <WhatsNewDialog {...whatsNewPopup(user.whatsNewSeen)} />
+      <WhatsNewDialog {...whatsNew} />
+      {/* One launch at a time: when What's new is showing, the notifications
+          ask waits for the next launch. */}
+      <NotificationPromptDialog deferred={whatsNew.releases.length > 0} />
     </div>
   );
 }
