@@ -9,7 +9,7 @@ export function NoGroupHome({
   pendingGroups?: { groupId: string; groupName: string }[];
 }) {
   return (
-    <main className="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center gap-6 p-6 text-center">
+    <main className="flex min-h-[calc(100dvh-7rem)] flex-col items-center justify-center gap-6 p-6 text-center">
       <div>
         <h1 className="font-serif text-3xl font-semibold">Small Group</h1>
         <p className="text-muted-foreground mt-2 max-w-sm">

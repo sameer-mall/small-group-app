@@ -21,6 +21,12 @@ export type Release = {
 
 export const releases: Release[] = [
   {
+    id: 5,
+    date: "2026-10-09",
+    title: "Back buttons, and Settings from any tab",
+    body: "Tap Back at the top of a screen to return to where you were, like from My notes to your meeting. The gear for Settings now sits at the top of every tab.",
+  },
+  {
     id: 4,
     date: "2026-10-08",
     title: "Notifications, and a Settings screen",
