@@ -3,8 +3,8 @@ import { releases } from "@/lib/whats-new";
 import { formatMeetingDate } from "@/lib/utils";
 
 // Every release note, newest first, reached from the Settings screen's What's
-// new card. App-wide, not per group, so it needs no group. It sits under
-// /settings so the Group tab stays lit; like every page, no back link.
+// new card or the popup. App-wide, not per group, so it needs no group. The
+// top bar's Back returns to whichever opened it.
 export default async function WhatsNewPage() {
   await requireUser();
 

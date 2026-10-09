@@ -8,7 +8,6 @@ import { MemberRow } from "@/components/member-row";
 import { PendingRequestRow } from "@/components/pending-request-row";
 import { InviteLinkCard } from "@/components/invite-link-card";
 import { LeaveGroupButton } from "@/components/leave-group-button";
-import { SettingsLink } from "@/components/settings-link";
 
 export default async function GroupPage() {
   const user = await requireUser();
@@ -39,12 +38,7 @@ export default async function GroupPage() {
   return (
     <main className="flex flex-col gap-4 p-6">
       <div className="flex flex-col gap-1">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <GroupNameHeader groupId={activeGroup.id} name={activeGroup.name} isAdmin={isAdmin} />
-          </div>
-          <SettingsLink />
-        </div>
+        <GroupNameHeader groupId={activeGroup.id} name={activeGroup.name} isAdmin={isAdmin} />
         <p className="text-muted-foreground text-sm">
           {memberCount} member{memberCount === 1 ? "" : "s"}
           {isAdmin ? " · you're an admin" : ""}
@@ -77,7 +71,7 @@ export default async function GroupPage() {
       </div>
 
       {/* Personal controls (name, appearance, notifications, sign out) live on
-          /settings, behind the gear above. */}
+          the Settings tab. */}
       <div className="pb-4">
         <LeaveGroupButton groupId={activeGroup.id} />
       </div>

@@ -16,7 +16,7 @@ export default async function JoinPage({
   const group = await getGroupByInviteCode(code);
   if (!group) {
     return (
-      <main className="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center gap-4 p-6 text-center">
+      <main className="flex min-h-[calc(100dvh-7rem)] flex-col items-center justify-center gap-4 p-6 text-center">
         <h1 className="font-serif text-xl font-semibold">Invite link not found</h1>
         <p className="text-muted-foreground max-w-sm">
           This invite link is no longer valid. Ask the group admin for a fresh one.
@@ -31,14 +31,14 @@ export default async function JoinPage({
   const pending = await getPendingRequest(group.groupId, user.id);
   if (pending) {
     return (
-      <main className="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center p-6">
+      <main className="flex min-h-[calc(100dvh-7rem)] flex-col items-center justify-center p-6">
         <WaitingForApproval groupName={group.name} />
       </main>
     );
   }
 
   return (
-    <main className="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center p-6">
+    <main className="flex min-h-[calc(100dvh-7rem)] flex-col items-center justify-center p-6">
       <div className="bg-card rounded-card shadow-card mx-auto w-full max-w-sm p-6 text-center">
         <h1 className="font-serif text-xl font-semibold">{group.name}</h1>
         <p className="text-muted-foreground mt-2 text-sm">

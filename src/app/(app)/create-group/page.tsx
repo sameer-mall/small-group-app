@@ -3,7 +3,7 @@ import { createGroupAction } from "./actions";
 
 export default function CreateGroupPage() {
   return (
-    <main className="flex min-h-[calc(100dvh-5rem)] flex-col justify-center gap-6 p-6">
+    <main className="flex min-h-[calc(100dvh-7rem)] flex-col justify-center gap-6 p-6">
       <div className="text-center">
         <h1 className="font-serif text-3xl font-semibold">Create a group</h1>
         <p className="text-muted-foreground mt-2">
