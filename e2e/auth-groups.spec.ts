@@ -12,7 +12,8 @@ test("two users: create group, invite, approve, member arrives", async ({ browse
   await expectApp(alice.getByText(`Tuesday ${run}`)).toBeVisible();
 
   await alice.getByRole("link", { name: "Group" }).click();
-  await expectApp(alice.getByText(`alice-${run}@example.com`)).toBeVisible();
+  // The invite link is the Group screen's own content (the email moved to Settings).
+  await expectApp(alice.getByTestId("invite-url")).toBeVisible();
   const inviteUrl = await alice.getByTestId("invite-url").innerText();
 
   const bob = await (await memberContext(browser)).newPage();
