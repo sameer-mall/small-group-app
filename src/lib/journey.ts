@@ -1,7 +1,7 @@
 // Where the top bar's Back pill goes. The app keeps the member's journey: the
 // screens they passed through since they last tapped a tab. Back returns to
 // the screen before this one, so a meeting opened from My notes goes back to
-// My notes, and Settings goes back to whichever tab opened it.
+// My notes, and What's new goes back to wherever its popup was opened.
 //
 // The journey is in memory only. After a cold launch (a notification, an
 // invite link, a reload) it starts at the current screen, and Back falls back
@@ -10,9 +10,8 @@
 // Pure, so the rules are unit tested without a browser. Browser-shipped: no
 // zod, no db.
 
-// The bottom bar's four screens. Each starts a fresh journey and shows the
-// settings gear instead of Back.
-const TAB_SCREENS = ["/", "/recipes", "/prayers", "/group"];
+// The bottom bar's five screens. Each starts a fresh journey and has no Back.
+const TAB_SCREENS = ["/", "/recipes", "/prayers", "/group", "/settings"];
 
 export function isTabScreen(path: string): boolean {
   return TAB_SCREENS.includes(path);
@@ -45,7 +44,7 @@ function parentOf(path: string): string {
   if (path.startsWith("/recipes/")) return "/recipes";
   if (path.startsWith("/notes/")) return "/notes";
   if (path.startsWith("/settings/")) return "/settings";
-  // Meetings, My notes, Settings, Create a group, and an invite link.
+  // Meetings, My notes, Create a group, and an invite link.
   return "/";
 }
 

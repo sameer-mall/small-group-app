@@ -236,7 +236,7 @@
    Input: bg-card border-[1.5px] border-border focus:border-primary
      rounded-input px-4 py-3.5 text-[16px].
    Card: bg-card rounded-card shadow-card.
-   Tab bar: 4 equal columns, 22px stroke icons (stroke-width 1.8),
+   Tab bar: 5 equal columns, 22px stroke icons (stroke-width 1.8),
      active = text-accent-strong font-bold, inactive text-tab-inactive.
    Toggle: 48x28 rounded-full, bg-primary when on, 22px white knob.
    ----------------------------------------------------------- */

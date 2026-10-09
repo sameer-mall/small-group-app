@@ -9,7 +9,7 @@ import { releases } from "@/lib/whats-new";
 
 // What is personal to the member, as opposed to the group's (see /group),
 // plus the app-wide What's new list.
-// Reached by the gear on any tab screen; Back returns to that tab.
+// The fifth tab.
 export default async function SettingsPage() {
   const user = await requireUser();
 

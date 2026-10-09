@@ -23,14 +23,14 @@ export const releases: Release[] = [
   {
     id: 5,
     date: "2026-10-09",
-    title: "Back buttons, and Settings from any tab",
-    body: "Tap Back at the top of a screen to return to where you were, like from My notes to your meeting. The gear for Settings now sits at the top of every tab.",
+    title: "Back buttons, and a Settings tab",
+    body: "Tap Back at the top of a screen to return to where you were, like from My notes to your meeting. Settings now has its own tab at the bottom of the screen.",
   },
   {
     id: 4,
     date: "2026-10-08",
     title: "Notifications, and a Settings screen",
-    body: "Tap the gear on the Group screen to turn on notifications and hear when a meeting, meal, or recipe is added. Your name, appearance, and What's new live there now too.",
+    body: "Open Settings to turn on notifications and hear when a meeting, meal, or recipe is added. Your name, appearance, and What's new live there now too.",
   },
   {
     id: 3,

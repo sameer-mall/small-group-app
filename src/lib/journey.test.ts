@@ -7,9 +7,11 @@ function walk(...paths: string[]): string[] {
 }
 
 describe("isTabScreen", () => {
-  it("is true for the four tab screens only", () => {
-    expect(["/", "/recipes", "/prayers", "/group"].every(isTabScreen)).toBe(true);
-    expect(["/meetings/m1", "/recipes/r1", "/notes", "/settings"].some(isTabScreen)).toBe(false);
+  it("is true for the five tab screens only", () => {
+    expect(["/", "/recipes", "/prayers", "/group", "/settings"].every(isTabScreen)).toBe(true);
+    expect(["/meetings/m1", "/recipes/r1", "/notes", "/settings/whats-new"].some(isTabScreen)).toBe(
+      false,
+    );
   });
 });
 
@@ -45,6 +47,7 @@ describe("backTarget", () => {
   it("is null on a tab screen", () => {
     expect(backTarget(walk("/"))).toBeNull();
     expect(backTarget(walk("/", "/meetings/m1", "/group"))).toBeNull();
+    expect(backTarget(walk("/recipes", "/settings"))).toBeNull();
   });
 
   it("goes to the screen before, named for where it lands", () => {
@@ -53,19 +56,15 @@ describe("backTarget", () => {
       href: "/meetings/m1",
       label: "Meeting",
     });
-    expect(backTarget(walk("/prayers", "/settings"))).toEqual({
-      href: "/prayers",
-      label: "My prayers",
-    });
-    expect(backTarget(walk("/group", "/settings", "/settings/whats-new"))).toEqual({
+    expect(backTarget(walk("/settings", "/settings/whats-new"))).toEqual({
       href: "/settings",
       label: "Settings",
     });
   });
 
-  it("returns to the tab Settings was opened from, after a trip to What's new", () => {
-    const journey = walk("/recipes", "/settings", "/settings/whats-new", "/settings");
-    expect(backTarget(journey)).toEqual({ href: "/recipes", label: "Recipes" });
+  it("returns to wherever the What's new popup was opened", () => {
+    const journey = walk("/", "/meetings/m1", "/settings/whats-new");
+    expect(backTarget(journey)).toEqual({ href: "/meetings/m1", label: "Meeting" });
   });
 
   it("returns to the meeting My notes was opened from, after a deleted note", () => {
@@ -81,7 +80,6 @@ describe("backTarget", () => {
       "/recipes/r1/edit": "/recipes/r1",
       "/notes": "/",
       "/notes/n1": "/notes",
-      "/settings": "/",
       "/settings/whats-new": "/settings",
       "/create-group": "/",
       "/join/abc123": "/",

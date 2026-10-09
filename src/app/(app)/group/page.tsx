@@ -71,7 +71,7 @@ export default async function GroupPage() {
       </div>
 
       {/* Personal controls (name, appearance, notifications, sign out) live on
-          /settings, behind the gear in the top bar. */}
+          the Settings tab. */}
       <div className="pb-4">
         <LeaveGroupButton groupId={activeGroup.id} />
       </div>
