@@ -4,8 +4,10 @@
 "Hearth" is a mobile PWA for a church small group: weekly meetings with a meal
 sign-up (claim ingredient slots from a shared recipe), an anonymous "prayer
 bowl" draw, and private per-meeting notes. Four bottom tabs: **Meetings,
-Recipes, My prayers, Group**. The aesthetic is warm, simple, and highly legible
-for a mixed-age group: cream + terracotta, serif headings, generous tap targets.
+Recipes, My prayers, Group** (the app has since added a fifth, **Settings**,
+for the member's own name, appearance, and notifications). The aesthetic is
+warm, simple, and highly legible for a mixed-age group: cream + terracotta,
+serif headings, generous tap targets.
 
 ## About the Design Files
 The `.dc.html` files in this bundle are **design references created in HTML** —
