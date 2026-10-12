@@ -199,9 +199,13 @@ name field, centered, with the copy "Add a photo so the group knows your face.
 Optional." The name form is unchanged.
 
 **Settings** (`src/app/(app)/settings/page.tsx`): `DisplayNameCard` becomes
-`ProfileCard` (`src/components/profile-card.tsx`). The "You" card shows the
-avatar at 64px beside the name and email, "Edit name" where it is today, and
-the picker's buttons on a second row.
+`ProfileCard` (`src/components/profile-card.tsx`). Revised 2026-10-12 after a
+design pass: the "You" card opens with the photo edge to edge (300px tall, or
+a 176px block of the initials when there is none), and a white panel rises
+into it with a shallow circular arc, holding the name, email, "Edit name",
+and the two photo buttons side by side. The arc is a 948px circle positioned
+32px up from the photo's bottom edge, so it is one gentle curve across the
+card that still slopes where it meets the sides.
 
 **Group**, **Meeting**: `MemberRow`, `PendingRequestRow`, and `MealSlotRow`
 render `<Avatar>` for other members. `listMembers`, `listPendingRequests`, and
