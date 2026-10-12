@@ -33,6 +33,10 @@ const envSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().optional(),
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
+  // Profile photos (src/lib/avatar-storage.ts). Vercel injects it once a Blob
+  // store is connected to the project. Unset locally, photos are stored
+  // inline; unset on Vercel, uploads are hidden.
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
