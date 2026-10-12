@@ -70,6 +70,14 @@ export function reportPushFailure(err: unknown) {
   flushAfterResponse();
 }
 
+// An old avatar file that could not be deleted after a replace or remove
+// (src/lib/avatars.ts). The member's change already landed; this is about
+// storage leaking quietly.
+export function reportAvatarCleanupFailure(err: unknown) {
+  Sentry.captureException(err, { tags: { area: "avatar" } });
+  flushAfterResponse();
+}
+
 // Next calls the server's onRequestError hook twice for one page load that
 // throws in a server component: once for the server-component render
 // (context.renderSource "react-server-components") and again for the HTML
