@@ -21,24 +21,28 @@ const MAX_PICK_BYTES = 20 * 1024 * 1024;
 // are off (Vercel without a Blob store): the photo still shows, the buttons
 // don't.
 //
-// Two layouts. "inline" (Welcome): a round avatar with the buttons beside
-// it. "card" (Settings): the photo fills the top of the card edge to edge,
-// and a white panel rises into it with a shallow arc, holding `children`
-// (the name row) and then the buttons. The arc is one circular curve across
-// the panel's width: a 948px circle whose top sits ARC_RISE px below the
-// photo's bottom edge, so at a phone's card width it rises about 32px in the
+// Three layouts. "inline": a round avatar with the buttons beside it.
+// "card" (Settings): the photo fills the top of the card edge to edge, and a
+// white panel rises into it with a shallow arc, holding `children` (the name
+// row) and then the buttons. "page" (Welcome): the same, across the whole
+// screen, with the cream page as the panel, `children` (the heading) above
+// centred buttons, and `hint` under them. The arc is one circular curve
+// across the panel's width: a 948px circle whose top sits 32px below the
+// photo's bottom edge, so at a phone's width it rises about 32px in the
 // middle and is still sloping gently where it meets the sides.
 export function AvatarPicker({
   name,
   image,
   enabled,
   layout = "inline",
+  hint,
   children,
 }: {
   name: string;
   image: string | null;
   enabled: boolean;
-  layout?: "inline" | "card";
+  layout?: "inline" | "card" | "page";
+  hint?: string;
   children?: ReactNode;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -92,7 +96,14 @@ export function AvatarPicker({
   }
 
   const buttons = enabled && (
-    <div className={cn("flex gap-2", layout === "inline" ? "flex-wrap" : "[&>*]:flex-1")}>
+    <div
+      className={cn(
+        "flex gap-2",
+        layout === "inline" && "flex-wrap",
+        layout === "card" && "[&>*]:flex-1",
+        layout === "page" && "justify-center",
+      )}
+    >
       <Button
         type="button"
         variant="secondary"
@@ -130,25 +141,37 @@ export function AvatarPicker({
     </>
   );
 
-  if (layout === "card") {
+  if (layout !== "inline") {
+    const page = layout === "page";
     return (
       <>
-        {/* With a photo, a tall cover; without one, a shorter block of the
-            initials in the avatar colours, so the card still opens with the
-            member rather than a blank. */}
+        {/* With a photo, a tall cover; without one, a block of the initials
+            (or the person mark) in the avatar colours, so the screen still
+            opens with the member rather than a blank. The card keeps that
+            block shorter. */}
         <Avatar
           name={name}
           image={image}
           className={cn(
             "w-full rounded-none text-4xl",
-            image ? "h-[300px]" : "h-44",
+            image || page ? "h-[300px]" : "h-44",
             busy && "opacity-50",
           )}
         />
-        <div className="relative isolate -mt-8 flex flex-col gap-3.5 px-5 pt-[42px] pb-5 before:absolute before:top-0 before:left-1/2 before:-z-10 before:size-[948px] before:-translate-x-1/2 before:rounded-full before:bg-card before:content-['']">
+        <div
+          className={cn(
+            // overflow-hidden clips the circle to the panel: without it the
+            // 948px disc widens the page, and a phone zooms out to fit it.
+            "relative isolate -mt-8 flex flex-col overflow-hidden before:absolute before:top-0 before:left-1/2 before:-z-10 before:size-[948px] before:-translate-x-1/2 before:rounded-full before:bg-card before:content-['']",
+            page ? "gap-6 px-6 pt-12 before:bg-background" : "gap-3.5 px-5 pt-[42px] pb-5",
+          )}
+        >
           {children}
-          {buttons}
-          {error && <p className="text-destructive text-xs">{error}</p>}
+          <div className="flex flex-col gap-2">
+            {buttons}
+            {hint && <p className="text-tertiary text-center text-xs">{hint}</p>}
+            {error && <p className={cn("text-destructive text-xs", page && "text-center")}>{error}</p>}
+          </div>
         </div>
         {hidden}
       </>

@@ -194,9 +194,13 @@ canvas that is a no-op.
 
 ### Screens
 
-**Welcome** (`src/app/(auth)/welcome/page.tsx`): the picker sits above the
-name field, centered, with the copy "Add a photo so the group knows your face.
-Optional." The name form is unchanged.
+**Welcome** (`src/app/(auth)/welcome/page.tsx`): revised 2026-10-12 to
+match the Settings card. The photo block runs edge to edge across the top of
+the screen (300px; the avatar colour with a person mark until a photo is
+chosen), and the cream page rises into it with the same arc, holding the
+heading, the photo buttons centered, the copy "So the group knows your face.
+Optional.", and then the name form. The buttons' panel clips its own arc
+circle; left unclipped it widens the page and a phone zooms out to fit it.
 
 **Settings** (`src/app/(app)/settings/page.tsx`): `DisplayNameCard` becomes
 `ProfileCard` (`src/components/profile-card.tsx`). Revised 2026-10-12 after a
