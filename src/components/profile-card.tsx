@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { AvatarPicker } from "@/components/avatar-picker";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,10 +14,22 @@ import { updateDisplayNameAction, type ActionState } from "@/app/(app)/group/act
 
 const initialState: ActionState = { error: null, success: false };
 
-// The one place a member sees their own name the way the group sees it (the
-// member list shows them as "You"). The email sits beneath it since it's the
-// account identity, kept distinct from the name people actually read.
-export function DisplayNameCard({ name, email }: { name: string; email: string }) {
+// The one place a member sees themselves the way the group sees them: name
+// and photo (the member list shows them as "You"). The email sits beneath the
+// name since it's the account identity, kept distinct from the name people
+// actually read. `enabled` is false when photos are off (see
+// src/lib/avatar-storage.ts); the photo still shows, the buttons don't.
+export function ProfileCard({
+  name,
+  email,
+  image,
+  enabled,
+}: {
+  name: string;
+  email: string;
+  image: string | null;
+  enabled: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [state, formAction] = useActionState(updateDisplayNameAction, initialState);
 
@@ -29,15 +42,18 @@ export function DisplayNameCard({ name, email }: { name: string; email: string }
   }
 
   return (
-    <div className="bg-card rounded-card shadow-card flex items-center justify-between gap-3 p-4">
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <p className="text-muted-foreground tracking-label text-xs uppercase">You</p>
-        <p className="text-strong truncate font-medium">{name}</p>
-        <p className="text-tertiary truncate text-xs">{email}</p>
+    <div className="bg-card rounded-card shadow-card flex flex-col gap-3 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="text-muted-foreground tracking-label text-xs uppercase">You</p>
+          <p className="text-strong truncate font-medium">{name}</p>
+          <p className="text-tertiary truncate text-xs">{email}</p>
+        </div>
+        <Button type="button" variant="secondary" size="pill" onClick={() => setOpen(true)}>
+          Edit name
+        </Button>
       </div>
-      <Button type="button" variant="secondary" size="pill" onClick={() => setOpen(true)}>
-        Edit name
-      </Button>
+      <AvatarPicker name={name} image={image} enabled={enabled} />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
