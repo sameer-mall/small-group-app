@@ -39,6 +39,21 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col pt-[env(safe-area-inset-top)]">
+        {/* iOS 26+ blurs the top of an installed web app, and on iOS 27 the
+            blur reaches past the status bar and frosts the Back pill. WebKit
+            skips it when a fixed box with a solid background covers the top
+            edge: it hit-tests the middle of the top edge, 4px down, ignoring
+            pointer-events, for a fixed or sticky box over 10px tall and at
+            least 90% as wide as the screen (LocalFrameView::fixedContainerEdges),
+            then gives the status bar that box's colour. This strip is that
+            box: the page colour, the status bar's height, and 12px at least
+            so the probe still finds it when iOS reports no inset. Below menus
+            and dialogs (z-50). e2e/top-edge.spec.ts checks it. */}
+        <div
+          aria-hidden="true"
+          data-top-edge
+          className="bg-background pointer-events-none fixed inset-x-0 top-0 z-40 h-[max(env(safe-area-inset-top),12px)]"
+        />
         <ThemeProvider>
           {/* A hard reload on reconnect destroys anything typed but not yet
               saved (a note, a prayer request, a recipe). Pages refresh softly
