@@ -4,11 +4,8 @@ import { startTransition, useActionState, useRef, useState } from "react";
 import { Avatar } from "@/components/avatar";
 import { CropDialog } from "@/components/crop-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  removeAvatarAction,
-  updateAvatarAction,
-  type ActionState,
-} from "@/app/(app)/settings/actions";
+import type { ActionState } from "@/app/(app)/group/actions";
+import { removeAvatarAction, updateAvatarAction } from "@/app/(app)/settings/actions";
 
 const initialState: ActionState = { error: null, success: false };
 

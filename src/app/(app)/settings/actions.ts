@@ -6,9 +6,11 @@ import { requireAccount, requireUser } from "@/lib/dal";
 import { avatarForm, removeAvatar, saveAvatar, UNREADABLE_PHOTO } from "@/lib/avatars";
 import { logRefusal } from "@/lib/monitoring";
 import { deleteSubscription, pushSubscriptionInput, saveSubscription } from "@/lib/push";
+// Not re-exported: Next treats every export of a "use server" file as an
+// action, type-only ones included, and the client then fails at runtime
+// with "ActionState is not defined". Clients import it from group/actions.
 import type { ActionState } from "@/app/(app)/group/actions";
 
-export type { ActionState };
 export type SubscribeState = { error: string | null };
 
 // The card posts PushSubscription.toJSON() plus the user agent. Parsed here,
