@@ -45,6 +45,16 @@ export async function requireUser(nextPath?: string) {
   return session.user;
 }
 
+// Signed in, name not required. The photo actions run from the Welcome screen,
+// before a member has a name, where requireUser would redirect them straight
+// back to Welcome.
+export async function requireAccount() {
+  const session = await getSession();
+  if (!session) redirect("/sign-in");
+  Sentry.setUser({ id: session.user.id });
+  return session.user;
+}
+
 // Resolves which group a page should render: the session's active organization
 // if the user still belongs to it, otherwise their first membership — and
 // persists that fallback so the session (and every group-scoped page) agree on

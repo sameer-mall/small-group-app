@@ -2,7 +2,8 @@
 
 import { startTransition, useActionState } from "react";
 import { EllipsisIcon } from "lucide-react";
-import { cn, initials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ const initialState: ActionState = { error: null, success: false };
 export type MemberRowMember = {
   userId: string;
   name: string;
+  image: string | null;
   // `member.role` is a plain text column (see src/db/auth-schema.ts), not a
   // DB-level enum — any non-"admin" value is treated as a regular member.
   role: string;
@@ -57,14 +59,13 @@ export function MemberRow({
   return (
     <div className="border-divider flex flex-col border-b py-0.5 last:border-b-0" data-testid="member-row">
       <div className="flex items-center gap-2.5 py-2.5">
-        <div
-          className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-            isSelf ? "bg-primary text-primary-foreground" : "bg-avatar text-avatar-foreground",
-          )}
-        >
-          {isSelf ? "You" : initials(member.name)}
-        </div>
+        {isSelf ? (
+          <div className="bg-primary text-primary-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+            You
+          </div>
+        ) : (
+          <Avatar name={member.name} image={member.image} />
+        )}
         <div className={cn("flex-1 text-[15px]", isSelf && "font-semibold")}>
           {isSelf ? "You" : member.name}
         </div>

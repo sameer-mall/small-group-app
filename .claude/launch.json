@@ -8,6 +8,30 @@
       "port": 3000
     },
     {
+      "name": "web-file-mail",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "AUTH_EMAIL_FILE=.e2e-mail.jsonl",
+        "BETTER_AUTH_URL=http://localhost:3000",
+        "./node_modules/.bin/next",
+        "dev"
+      ],
+      "port": 3000
+    },
+    {
+      "name": "web-file-mail-3400",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "AUTH_EMAIL_FILE=.e2e-mail.jsonl",
+        "BETTER_AUTH_URL=http://localhost:3400",
+        "./node_modules/.bin/next",
+        "dev",
+        "-p",
+        "3400"
+      ],
+      "port": 3400
+    },
+    {
       "name": "web-start",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["next", "start", "-p", "3200"],

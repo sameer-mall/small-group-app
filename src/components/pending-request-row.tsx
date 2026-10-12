@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useActionState } from "react";
-import { initials } from "@/lib/utils";
+import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import {
   approveRequestAction,
@@ -15,6 +15,7 @@ export type PendingRequest = {
   id: string;
   name: string;
   email: string;
+  image: string | null;
 };
 
 export function PendingRequestRow({ request }: { request: PendingRequest }) {
@@ -35,9 +36,7 @@ export function PendingRequestRow({ request }: { request: PendingRequest }) {
       data-testid="pending-request-row"
     >
       <div className="flex items-center gap-2.5">
-        <div className="bg-avatar text-avatar-foreground flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold">
-          {initials(request.name)}
-        </div>
+        <Avatar name={request.name} image={request.image} />
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-semibold break-words">{request.name} wants to join</p>
           <p className="text-muted-foreground text-xs break-words">{request.email}</p>

@@ -160,10 +160,19 @@ describe("groups domain", () => {
       userId: eve,
       role: "admin",
       name: "Eve Example",
+      image: null,
     });
     // Email is PII and the member list is shown to every member + serialized to
     // the client, so it must not ride along in the payload.
     expect(members[0]).not.toHaveProperty("email");
+  });
+
+  it("listMembers carries each member's photo URL for the avatar", async () => {
+    const fay = await mkUser(`u_fay_${crypto.randomUUID()}`, "Fay");
+    await db.execute(sql`update "user" set image = 'https://lh3.googleusercontent.com/a/fay' where id = ${fay}`);
+    const { groupId } = await createGroup(fay, "Photo members");
+    const [member] = await listMembers(groupId);
+    expect(member.image).toBe("https://lh3.googleusercontent.com/a/fay");
   });
 
   it("listPendingRequests includes the requester's name and email for the admin UI", async () => {
@@ -180,6 +189,7 @@ describe("groups domain", () => {
       status: "pending",
       name: "Frank Foo",
       email: `${frank}@example.com`,
+      image: null,
     });
 
     // Denied/approved requests are excluded, same as before this change.
