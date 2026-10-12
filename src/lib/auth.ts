@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { emailOTP, organization } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db/client";
@@ -48,6 +49,18 @@ export const auth = betterAuth({
         defaultValue: 0,
       },
     },
+  },
+  hooks: {
+    // Better Auth's own /update-user endpoint accepts `image` from the
+    // browser, which would let any member point their avatar at any URL and
+    // have every other member's browser load it. Photos only come through
+    // saveAvatar (src/lib/avatars.ts), which writes the row directly. Google
+    // sign-up sets the image through createOAuthUser, not this endpoint.
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === "/update-user" && ctx.body && "image" in ctx.body) {
+        throw new APIError("BAD_REQUEST", { message: "Photos are changed from Settings." });
+      }
+    }),
   },
   databaseHooks: {
     user: {
