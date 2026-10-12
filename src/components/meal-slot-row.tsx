@@ -2,7 +2,7 @@
 
 import { startTransition, useActionState, useOptimistic, useState } from "react";
 import { XIcon } from "lucide-react";
-import { initials } from "@/lib/utils";
+import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import {
   claimItemAction,
@@ -14,7 +14,7 @@ import type { MealPlanItem } from "@/lib/meals";
 
 const initialState: ActionState = { error: null, success: false };
 
-type Claim = { by: string | null; name: string | null };
+type Claim = { by: string | null; name: string | null; image: string | null };
 
 export function MealSlotRow({
   item,
@@ -44,7 +44,11 @@ export function MealSlotRow({
   // the new state immediately and React discards the guess once the transition
   // settles — so a failed claim snaps back to the truth on its own, without
   // this component tracking a rollback.
-  const truth: Claim = { by: item.claimedBy, name: item.claimedByName };
+  const truth: Claim = {
+    by: item.claimedBy,
+    name: item.claimedByName,
+    image: item.claimedByImage,
+  };
   const [optimistic, setOptimistic] = useOptimistic(truth, (_, next: Claim) => next);
 
   // An inline error explains one failed attempt, so it should not outlive the
@@ -75,14 +79,14 @@ export function MealSlotRow({
   // transition to attach the guess to and discards it immediately.
   function onClaim() {
     startTransition(() => {
-      setOptimistic({ by: currentUserId, name: "You" });
+      setOptimistic({ by: currentUserId, name: "You", image: null });
       claim(new FormData());
     });
   }
 
   function onRelease() {
     startTransition(() => {
-      setOptimistic({ by: null, name: null });
+      setOptimistic({ by: null, name: null, image: null });
       release(new FormData());
     });
   }
@@ -100,9 +104,13 @@ export function MealSlotRow({
     <div className="border-divider flex flex-col border-b last:border-b-0">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3">
         {claimed ? (
-          <div className="bg-avatar text-avatar-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
-            {mine ? "You" : initials(optimistic.name ?? "?")}
-          </div>
+          mine ? (
+            <div className="bg-avatar text-avatar-foreground flex size-9 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+              You
+            </div>
+          ) : (
+            <Avatar name={optimistic.name ?? "?"} image={optimistic.image} className="size-9" />
+          )
         ) : (
           <div className="border-slot-dashed size-9 shrink-0 rounded-full border-[1.5px] border-dashed" />
         )}

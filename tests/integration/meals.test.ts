@@ -144,8 +144,8 @@ describe("meals domain", () => {
     await claim(plan!.items[1].id, bob);
 
     const after = await getMealPlan(meetingId);
-    expect(after!.items[1]).toMatchObject({ claimedBy: bob, claimedByName: "Bob" });
-    expect(after!.items[0]).toMatchObject({ claimedBy: null, claimedByName: null });
+    expect(after!.items[1]).toMatchObject({ claimedBy: bob, claimedByName: "Bob", claimedByImage: null });
+    expect(after!.items[0]).toMatchObject({ claimedBy: null, claimedByName: null, claimedByImage: null });
   });
 
   it("addAdhocItem records the adder and appends after the recipe items", async () => {
