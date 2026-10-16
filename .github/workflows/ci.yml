@@ -29,7 +29,7 @@ jobs:
       BETTER_AUTH_SECRET: ci-checks-only-secret-not-used-in-production
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4
+      - uses: jdx/mise-action@v4.2.3
       - run: pnpm install --frozen-lockfile
       - run: mise run lint
       - run: mise run typecheck
@@ -59,7 +59,7 @@ jobs:
       BETTER_AUTH_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v7
-      - uses: jdx/mise-action@v4
+      - uses: jdx/mise-action@v4.2.3
       - run: pnpm install --frozen-lockfile
       - run: pnpm playwright install --with-deps chromium
       - run: mise run db:migrate
