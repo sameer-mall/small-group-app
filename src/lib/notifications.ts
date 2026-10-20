@@ -15,9 +15,17 @@ import { formatMeetingDate } from "@/lib/utils";
 
 const SHORT_DATE = { weekday: "short", month: "short", day: "numeric" } as const;
 
+// Every link goes through /open (src/app/open/route.ts), which switches the app
+// to this group before showing the screen. Screens show whichever group the
+// member last had open, so a bare path could land in the wrong one.
+function inGroup(groupId: string, path: string): string {
+  return `/open?${new URLSearchParams({ group: groupId, next: path })}`;
+}
+
 // Copy builders: pure, unit tested in src/lib/notifications.test.ts.
 
 export function meetingCreatedCopy(i: {
+  groupId: string;
   groupName: string;
   actorName: string;
   date: string;
@@ -27,11 +35,12 @@ export function meetingCreatedCopy(i: {
   return {
     title: i.groupName,
     body: `${i.actorName} added a meeting: ${i.title} on ${formatMeetingDate(i.date, SHORT_DATE)}`,
-    url: `/meetings/${i.meetingId}`,
+    url: inGroup(i.groupId, `/meetings/${i.meetingId}`),
   };
 }
 
 export function mealSetCopy(i: {
+  groupId: string;
   groupName: string;
   actorName: string;
   date: string;
@@ -41,11 +50,12 @@ export function mealSetCopy(i: {
   return {
     title: i.groupName,
     body: `${i.actorName} set the meal for ${formatMeetingDate(i.date, SHORT_DATE)}: ${i.recipeName}`,
-    url: `/meetings/${i.meetingId}`,
+    url: inGroup(i.groupId, `/meetings/${i.meetingId}`),
   };
 }
 
 export function recipeAddedCopy(i: {
+  groupId: string;
   groupName: string;
   actorName: string;
   recipeName: string;
@@ -54,16 +64,28 @@ export function recipeAddedCopy(i: {
   return {
     title: i.groupName,
     body: `${i.actorName} added a recipe: ${i.recipeName}`,
-    url: `/recipes/${i.recipeId}`,
+    url: inGroup(i.groupId, `/recipes/${i.recipeId}`),
   };
 }
 
-export function joinRequestedCopy(i: { groupName: string; requesterName: string }): PushPayload {
-  return { title: i.groupName, body: `${i.requesterName} asked to join`, url: "/group" };
+export function joinRequestedCopy(i: {
+  groupId: string;
+  groupName: string;
+  requesterName: string;
+}): PushPayload {
+  return {
+    title: i.groupName,
+    body: `${i.requesterName} asked to join`,
+    url: inGroup(i.groupId, "/group"),
+  };
 }
 
-export function requestApprovedCopy(i: { groupName: string }): PushPayload {
-  return { title: i.groupName, body: `You're in. Welcome to ${i.groupName}.`, url: "/" };
+export function requestApprovedCopy(i: { groupId: string; groupName: string }): PushPayload {
+  return {
+    title: i.groupName,
+    body: `You're in. Welcome to ${i.groupName}.`,
+    url: inGroup(i.groupId, "/"),
+  };
 }
 
 // Recipient shapes.
@@ -128,6 +150,7 @@ export async function notifyMeetingCreated(i: { actorId: string; meetingId: stri
     return {
       recipients,
       payload: meetingCreatedCopy({
+        groupId: meeting.groupId,
         groupName: name,
         actorName,
         date: meeting.date,
@@ -155,6 +178,7 @@ export async function notifyMealSet(i: { actorId: string; meetingId: string }): 
     return {
       recipients,
       payload: mealSetCopy({
+        groupId: row.groupId,
         groupName: name,
         actorName,
         date: row.date,
@@ -179,7 +203,13 @@ export async function notifyRecipeAdded(i: { actorId: string; recipeId: string }
     ]);
     return {
       recipients,
-      payload: recipeAddedCopy({ groupName: name, actorName, recipeName: recipe.name, recipeId: i.recipeId }),
+      payload: recipeAddedCopy({
+        groupId: recipe.groupId,
+        groupName: name,
+        actorName,
+        recipeName: recipe.name,
+        recipeId: i.recipeId,
+      }),
     };
   });
 }
@@ -191,13 +221,19 @@ export async function notifyJoinRequested(i: { groupId: string; requesterId: str
       userName(i.requesterId),
       groupAdmins(i.groupId),
     ]);
-    return { recipients, payload: joinRequestedCopy({ groupName: name, requesterName }) };
+    return {
+      recipients,
+      payload: joinRequestedCopy({ groupId: i.groupId, groupName: name, requesterName }),
+    };
   });
 }
 
 export async function notifyRequestApproved(i: { groupId: string; userId: string }): Promise<void> {
   await deliver("request-approved", async () => {
     const name = await groupName(i.groupId);
-    return { recipients: [i.userId], payload: requestApprovedCopy({ groupName: name }) };
+    return {
+      recipients: [i.userId],
+      payload: requestApprovedCopy({ groupId: i.groupId, groupName: name }),
+    };
   });
 }

@@ -45,6 +45,11 @@ function recipientsOfLastSend(): string[] {
   return [...(calls[calls.length - 1][0] as string[])].sort();
 }
 
+// Taps land in the notification's own group, whichever one the app had open.
+function openLink(group: string, next: string): string {
+  return `/open?${new URLSearchParams({ group, next })}`;
+}
+
 function payloadOfLastSend() {
   const calls = push.sendToUsers.mock.calls;
   return calls[calls.length - 1][1];
@@ -77,7 +82,7 @@ describe("notifications: who gets told", () => {
     expect(payloadOfLastSend()).toEqual({
       title: "Tuesday Group",
       body: "Bob added a meeting: Game night on Tue, Oct 13",
-      url: `/meetings/${meetingId}`,
+      url: openLink(groupId, `/meetings/${meetingId}`),
     });
     expect(monitoring.logPushSent).toHaveBeenCalledWith("meeting-created", { attempted: 2, failed: 0 });
   });
@@ -91,7 +96,7 @@ describe("notifications: who gets told", () => {
     expect(payloadOfLastSend()).toEqual({
       title: "Tuesday Group",
       body: "Carol set the meal for Tue, Oct 20: Tacos",
-      url: `/meetings/${meetingId}`,
+      url: openLink(groupId, `/meetings/${meetingId}`),
     });
   });
 
@@ -102,14 +107,18 @@ describe("notifications: who gets told", () => {
     expect(payloadOfLastSend()).toEqual({
       title: "Tuesday Group",
       body: "Alice added a recipe: Chili",
-      url: `/recipes/${recipeId}`,
+      url: openLink(groupId, `/recipes/${recipeId}`),
     });
   });
 
   it("join requested: admins only", async () => {
     await notifyJoinRequested({ groupId, requesterId: dan });
     expect(recipientsOfLastSend()).toEqual([alice]);
-    expect(payloadOfLastSend()).toEqual({ title: "Tuesday Group", body: "Dan asked to join", url: "/group" });
+    expect(payloadOfLastSend()).toEqual({
+      title: "Tuesday Group",
+      body: "Dan asked to join",
+      url: openLink(groupId, "/group"),
+    });
   });
 
   it("request approved: the requester alone", async () => {
@@ -118,7 +127,7 @@ describe("notifications: who gets told", () => {
     expect(payloadOfLastSend()).toEqual({
       title: "Thursday Group",
       body: "You're in. Welcome to Thursday Group.",
-      url: "/",
+      url: openLink(otherGroupId, "/"),
     });
   });
 
