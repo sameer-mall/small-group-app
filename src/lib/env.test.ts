@@ -45,4 +45,17 @@ describe("parseEnv", () => {
     expect(parsed.NEXT_PUBLIC_VAPID_PUBLIC_KEY).toBe("public");
     expect(parseEnv({ ...required, VAPID_PRIVATE_KEY: "" }).VAPID_PRIVATE_KEY).toBeUndefined();
   });
+
+  it("accepts the optional Blob store id and OIDC token", () => {
+    const parsed = parseEnv({ ...required, BLOB_STORE_ID: "store_x", VERCEL_OIDC_TOKEN: "eyJ" });
+    expect(parsed.BLOB_STORE_ID).toBe("store_x");
+    expect(parsed.VERCEL_OIDC_TOKEN).toBe("eyJ");
+  });
+
+  it("accepts the optional Blob token", () => {
+    expect(
+      parseEnv({ ...required, BLOB_READ_WRITE_TOKEN: "vercel_blob_rw_x" }).BLOB_READ_WRITE_TOKEN,
+    ).toBe("vercel_blob_rw_x");
+    expect(parseEnv(required).BLOB_READ_WRITE_TOKEN).toBeUndefined();
+  });
 });

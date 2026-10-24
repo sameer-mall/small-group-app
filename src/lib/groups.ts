@@ -33,7 +33,7 @@ export async function createGroup(userId: string, name: string) {
   return { groupId };
 }
 
-// Joined to `user` for the display name — the group member list needs a name
+// Joined to `user` for the display name and photo — the member list needs both
 // and can't query auth tables directly (DAL/domain boundary), so this is the
 // one place that resolves it. Deliberately does NOT return email: this list is
 // shown to every member (not just admins), and the row is serialized to the
@@ -44,6 +44,7 @@ export async function listMembers(groupId: string) {
       userId: member.userId,
       role: member.role,
       name: user.name,
+      image: user.image,
     })
     .from(member)
     .innerJoin(user, eq(user.id, member.userId))
@@ -64,6 +65,7 @@ export async function listPendingRequests(groupId: string) {
       respondedBy: joinRequests.respondedBy,
       name: user.name,
       email: user.email,
+      image: user.image,
     })
     .from(joinRequests)
     .innerJoin(user, eq(user.id, joinRequests.userId))

@@ -21,6 +21,7 @@ export type MealPlanItem = {
   addedByName: string | null;
   claimedBy: string | null;
   claimedByName: string | null;
+  claimedByImage: string | null;
 };
 
 export type MealPlan = {
@@ -121,6 +122,7 @@ export async function getMealPlan(meetingId: string): Promise<MealPlan | null> {
       addedByName: adder.name,
       claimedBy: itemClaims.userId,
       claimedByName: claimer.name,
+      claimedByImage: claimer.image,
     })
     .from(mealPlanItems)
     .leftJoin(adder, eq(adder.id, mealPlanItems.addedBy))

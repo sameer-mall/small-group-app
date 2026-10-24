@@ -33,6 +33,15 @@ const envSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().optional(),
   NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().optional(),
+  // Profile photos (src/lib/avatar-storage.ts). Connecting a Blob store to
+  // the project gives it BLOB_STORE_ID, and on Vercel the SDK then signs
+  // requests with the short-lived OIDC token each function request carries
+  // (`vercel env pull` writes one to .env.local as VERCEL_OIDC_TOKEN). A
+  // read-write token is the older, hand-set way in. With none of these,
+  // photos are stored inline locally and uploads are hidden on Vercel.
+  BLOB_STORE_ID: z.string().optional(),
+  VERCEL_OIDC_TOKEN: z.string().optional(),
+  BLOB_READ_WRITE_TOKEN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

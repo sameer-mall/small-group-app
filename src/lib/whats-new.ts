@@ -21,6 +21,12 @@ export type Release = {
 
 export const releases: Release[] = [
   {
+    id: 6,
+    date: "2026-10-11",
+    title: "Put a face to your name",
+    body: "Add a photo of yourself from Settings and the group sees it next to your name on the member list and meal sign-ups. Signed in with Google? Your Google photo shows until you pick another.",
+  },
+  {
     id: 5,
     date: "2026-10-09",
     title: "Back buttons, and a Settings tab",
