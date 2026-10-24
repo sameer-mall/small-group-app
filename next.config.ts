@@ -2,8 +2,18 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
 import { withSerwist } from "@serwist/turbopack";
 
+// sharp's native addon loads libvips through the OS loader, not require(), so
+// Next's file tracing copies the libvips package's JS but not the library
+// itself. On Vercel the photo upload then fails with "libvips-cpp.so... cannot
+// open shared object file". Copy it into the routes whose actions run sharp
+// (src/lib/avatars.ts, via the Settings actions).
+const libvips = ["./node_modules/.pnpm/@img+sharp-libvips-*/node_modules/@img/sharp-libvips-*/lib/**"];
+
 const nextConfig: NextConfig = {
-  /* config options here */
+  outputFileTracingIncludes: {
+    "/settings": libvips,
+    "/welcome": libvips,
+  },
 };
 
 export default withSentryConfig(withSerwist(nextConfig), {
