@@ -20,9 +20,10 @@ import {
   type Offset,
 } from "@/lib/crop";
 
-// Pixels in the JPEG handed back. Twice the stored size (src/lib/avatars.ts),
-// so the server's final downscale averages out JPEG artifacts.
-export const CROP_OUTPUT_SIZE = 512;
+// Pixels in the JPEG handed back: the stored size (AVATAR_SIZE in
+// src/lib/avatars.ts). Any bigger and a detailed photo can pass the 1 MB
+// upload limit (MAX_UPLOAD_BYTES there).
+export const CROP_OUTPUT_SIZE = 1024;
 // The square the member frames their face in. Fits the dialog on a 375px
 // phone (375 minus 2 x 16 margin minus 2 x 16 padding leaves 311).
 const VIEWPORT = 280;

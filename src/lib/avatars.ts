@@ -12,10 +12,11 @@ import { reportAvatarCleanupFailure } from "@/lib/monitoring";
 // back to initials. Nothing else writes user.image: Better Auth's own
 // update-user endpoint refuses `image` (src/lib/auth.ts).
 
-// Stored pixels, square. Avatars render at 32 to 64 CSS px, so this covers a
-// 3x display with room to spare.
-export const AVATAR_SIZE = 256;
-// What the action accepts. The browser sends a 512px JPEG, around 100 KB;
+// Stored pixels, square. The Settings card shows the photo edge to edge, about
+// 380 CSS px on a large phone, so this stays sharp on a 3x display. Google
+// photos are fetched at the same size (src/lib/google-photo.ts).
+export const AVATAR_SIZE = 1024;
+// What the action accepts. The browser sends a 1024px JPEG, a few hundred KB;
 // this is a sanity bound, under Next's 1 MB server action body limit.
 export const MAX_UPLOAD_BYTES = 1_000_000;
 const CONTENT_TYPE = "image/webp";

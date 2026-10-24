@@ -42,8 +42,8 @@ export const blobStorage: AvatarStorage = {
   },
 };
 
-// Local dev and CI: the bytes ride along in user.image as a data URL. A 256px
-// WebP is about 15 KB, nothing for a local database, and the whole flow runs
+// Local dev and CI: the bytes ride along in user.image as a data URL. A 1024px
+// WebP is about 100 KB, nothing for a local database, and the whole flow runs
 // with no account and no network.
 export const inlineStorage: AvatarStorage = {
   async put(_pathname, bytes, contentType) {
