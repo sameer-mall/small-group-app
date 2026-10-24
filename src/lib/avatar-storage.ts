@@ -15,9 +15,10 @@ export type AvatarStorage = {
 
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
-// Production: a public Vercel Blob store. The SDK reads BLOB_READ_WRITE_TOKEN
-// from the process environment itself. Pathnames already carry a UUID, so no
-// random suffix; the URL changes on every upload, which is what makes a
+// Production: a public Vercel Blob store. The SDK finds its own credentials:
+// BLOB_STORE_ID plus the OIDC token Vercel hands each request (or a
+// BLOB_READ_WRITE_TOKEN, if one is set). Pathnames already carry a UUID, so
+// no random suffix; the URL changes on every upload, which is what makes a
 // year-long cache header safe.
 export const blobStorage: AvatarStorage = {
   async put(pathname, bytes, contentType) {
@@ -54,12 +55,16 @@ export const inlineStorage: AvatarStorage = {
   },
 };
 
-// null means photos are off: on Vercel without a token, uploads are hidden
-// rather than silently stored inline in the production database.
+// Blob when the SDK will find credentials: a read-write token anywhere, or a
+// connected store (BLOB_STORE_ID) where an OIDC token exists, which is every
+// request on Vercel and a local .env.local after `vercel env pull`. null means
+// photos are off: on Vercel without a store, uploads are hidden rather than
+// silently stored inline in the production database.
 export function selectStorage(
-  e: Pick<Env, "BLOB_READ_WRITE_TOKEN" | "VERCEL_ENV">,
+  e: Pick<Env, "BLOB_READ_WRITE_TOKEN" | "BLOB_STORE_ID" | "VERCEL_OIDC_TOKEN" | "VERCEL_ENV">,
 ): AvatarStorage | null {
   if (e.BLOB_READ_WRITE_TOKEN) return blobStorage;
+  if (e.BLOB_STORE_ID && (e.VERCEL_ENV || e.VERCEL_OIDC_TOKEN)) return blobStorage;
   if (e.VERCEL_ENV) return null;
   return inlineStorage;
 }

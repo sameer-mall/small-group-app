@@ -9,11 +9,21 @@ describe("selectStorage", () => {
     );
   });
 
-  it("stores inline off Vercel without a token (local, CI)", () => {
+  it("uses Vercel Blob through OIDC when a store is connected and the code runs on Vercel", () => {
+    expect(selectStorage({ BLOB_STORE_ID: "store_x", VERCEL_ENV: "production" })).toBe(blobStorage);
+    expect(selectStorage({ BLOB_STORE_ID: "store_x", VERCEL_ENV: "preview" })).toBe(blobStorage);
+  });
+
+  it("uses Vercel Blob locally with a store id only when an OIDC token was pulled", () => {
+    expect(selectStorage({ BLOB_STORE_ID: "store_x", VERCEL_OIDC_TOKEN: "eyJ" })).toBe(blobStorage);
+    expect(selectStorage({ BLOB_STORE_ID: "store_x" })).toBe(inlineStorage);
+  });
+
+  it("stores inline off Vercel without credentials (local, CI)", () => {
     expect(selectStorage({})).toBe(inlineStorage);
   });
 
-  it("disables photos on Vercel without a token, rather than filling the database", () => {
+  it("disables photos on Vercel without a store, rather than filling the database", () => {
     expect(selectStorage({ VERCEL_ENV: "preview" })).toBeNull();
     expect(selectStorage({ VERCEL_ENV: "production" })).toBeNull();
   });

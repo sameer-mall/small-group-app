@@ -48,19 +48,28 @@ is. It does not, for three reasons:
 
 ## Environment and storage modes
 
-One new optional server variable in `src/lib/env.ts`:
+Connecting a Blob store to the Vercel project (revised 2026-10-24, after
+doing it) sets `BLOB_STORE_ID` and `BLOB_WEBHOOK_PUBLIC_KEY` on the project.
+It does not set a read-write token any more: the SDK signs requests with the
+short-lived OIDC token Vercel hands every function request, which requires
+"Secure Backend Access with OIDC Federation" to be on in the project's
+Security settings. `vercel env pull` writes a 12-hour `VERCEL_OIDC_TOKEN` to
+`.env.local`, which makes local uploads go to the real store. All three are
+optional in `src/lib/env.ts`:
 
 ```
-BLOB_READ_WRITE_TOKEN   injected by Vercel once the store is connected to the project
+BLOB_STORE_ID           set by Vercel when a store is connected
+VERCEL_OIDC_TOKEN       local only, from `vercel env pull`; on Vercel it comes with the request
+BLOB_READ_WRITE_TOKEN   the older, hand-set credential; still honoured
 ```
 
-`src/lib/avatar-storage.ts` picks a backend from it:
+`src/lib/avatar-storage.ts` picks a backend from them:
 
-| `BLOB_READ_WRITE_TOKEN` | `VERCEL_ENV` | Backend |
+| Credentials | `VERCEL_ENV` | Backend |
 |---|---|---|
-| set | any | **Vercel Blob.** `put` with `access: "public"`, `contentType: "image/webp"`, `addRandomSuffix: false` (the pathname already carries a UUID), `cacheControlMaxAge` of one year. `del` by URL. |
-| unset | unset (local, CI) | **Inline.** `put` returns a `data:image/webp;base64,…` URL that is stored in `user.image` itself. `del` is a no-op. A 256px WebP is about 15 KB, which is nothing for a local database and keeps the local and CI flow free of any external service. |
-| unset | set (Vercel) | **Disabled.** Uploads are hidden in the UI; Google photos still show. This is the state production will be in until the store is connected, and it must not break the deploy. |
+| read-write token, or a store id with an OIDC token available | any | **Vercel Blob.** `put` with `access: "public"`, `contentType: "image/webp"`, `addRandomSuffix: false` (the pathname already carries a UUID), `cacheControlMaxAge` of one year. `del` by URL. On Vercel a store id alone counts, since the OIDC token arrives with each request. |
+| none | unset (local, CI) | **Inline.** `put` returns a `data:image/webp;base64,…` URL that is stored in `user.image` itself. `del` is a no-op. A 256px WebP is about 15 KB, which is nothing for a local database and keeps the local and CI flow free of any external service. |
+| none | set (Vercel) | **Disabled.** Uploads are hidden in the UI; Google photos still show. This is the state production is in until a store is connected, and it must not break the deploy. |
 
 The storage interface is three functions, so the domain code is the same for
 all three:
