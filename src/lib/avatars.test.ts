@@ -23,6 +23,11 @@ async function pixel(webp: Buffer, x: number, y: number): Promise<Rgb> {
   return { r: data[i], g: data[i + 1], b: data[i + 2] };
 }
 
+// Spots near each edge and the middle, wherever AVATAR_SIZE lands.
+const EDGE = 10;
+const MID = AVATAR_SIZE / 2;
+const FAR = AVATAR_SIZE - EDGE;
+
 const near = (a: Rgb, b: Rgb) =>
   Math.abs(a.r - b.r) < 20 && Math.abs(a.g - b.g) < 20 && Math.abs(a.b - b.b) < 20;
 
@@ -38,16 +43,16 @@ describe("processAvatar", () => {
 
   it("crops to the centre, keeping both halves", async () => {
     const out = await processAvatar(await redBlueJpeg());
-    expect(near(await pixel(out, 10, 128), RED)).toBe(true);
-    expect(near(await pixel(out, 245, 128), BLUE)).toBe(true);
+    expect(near(await pixel(out, EDGE, MID), RED)).toBe(true);
+    expect(near(await pixel(out, FAR, MID), BLUE)).toBe(true);
   });
 
   it("applies the EXIF orientation before cropping", async () => {
     // Orientation 6 means "rotate 90 degrees clockwise to display": the left
     // (red) half becomes the top.
     const out = await processAvatar(await redBlueJpeg(6));
-    expect(near(await pixel(out, 128, 10), RED)).toBe(true);
-    expect(near(await pixel(out, 128, 245), BLUE)).toBe(true);
+    expect(near(await pixel(out, MID, EDGE), RED)).toBe(true);
+    expect(near(await pixel(out, MID, FAR), BLUE)).toBe(true);
   });
 
   it("refuses bytes that are not an image", async () => {

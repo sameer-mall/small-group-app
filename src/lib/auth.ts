@@ -7,6 +7,7 @@ import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { sendAuthEmail } from "@/lib/auth-email";
 import { env } from "@/lib/env";
+import { largeGooglePhoto } from "@/lib/google-photo";
 import { LATEST_RELEASE_ID } from "@/lib/whats-new";
 
 // Vercel preview deployments get a fresh *.vercel.app URL per deploy, so a
@@ -77,6 +78,8 @@ export const auth = betterAuth({
     google: {
       clientId: env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: env.GOOGLE_CLIENT_SECRET ?? "",
+      // Google's picture URL asks for 96px; store a large copy instead.
+      mapProfileToUser: (profile) => ({ image: largeGooglePhoto(profile.picture) }),
     },
   },
   plugins: [

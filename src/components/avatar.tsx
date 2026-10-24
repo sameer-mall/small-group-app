@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { UserRoundIcon } from "lucide-react";
+import { largeGooglePhoto } from "@/lib/google-photo";
 import { cn, initials } from "@/lib/utils";
 
 // One member's avatar: their photo when they have one, initials otherwise,
@@ -30,11 +31,12 @@ export function Avatar({
     >
       {showImage ? (
         // The name is always beside the avatar, so the image is decorative.
-        // A plain <img>: one fixed 256px file from a CDN, which next/image
-        // would only re-encode on every render.
+        // A plain <img>: one fixed-size file from a CDN, which next/image
+        // would only re-encode on every render. largeGooglePhoto also fixes
+        // accounts saved before sign-in started asking Google for a big copy.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={image}
+          src={largeGooglePhoto(image)}
           alt=""
           referrerPolicy="no-referrer"
           draggable={false}
