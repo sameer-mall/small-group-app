@@ -21,12 +21,6 @@ export type Release = {
 
 export const releases: Release[] = [
   {
-    id: 6,
-    date: "2026-10-20",
-    title: "Notifications open the right group",
-    body: "Tapping a notification now takes you to the group it's about, even if you had a different group open.",
-  },
-  {
     id: 5,
     date: "2026-10-09",
     title: "Back buttons, and a Settings tab",
