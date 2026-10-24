@@ -26,6 +26,12 @@ const serwist = new Serwist({
       matcher: ({ url, sameOrigin }) => sameOrigin && url.pathname.startsWith("/api/auth/"),
       handler: new NetworkOnly(),
     },
+    {
+      // A notification tap's group switch (src/app/open/route.ts). The default
+      // rules would cache its redirect, and a cached redirect skips the switch.
+      matcher: ({ url, sameOrigin }) => sameOrigin && url.pathname === "/open",
+      handler: new NetworkOnly(),
+    },
     ...defaultCache,
   ],
 });
