@@ -11,7 +11,9 @@ import { logPushRejected } from "@/lib/monitoring";
 // encrypted end to end by the protocol, so Apple's and Google's push services
 // never read them; what we log is counts and ids only.
 
-export type PushPayload = { title: string; body: string; url: string };
+// `tag` groups notifications on the device: a newer one with the same tag
+// replaces the older one instead of stacking under it.
+export type PushPayload = { title: string; body: string; url: string; tag?: string };
 
 // What PushSubscription.toJSON() produces in the browser, plus the user agent
 // the card sends along. `expirationTime` arrives too and is ignored.

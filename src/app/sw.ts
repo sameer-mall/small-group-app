@@ -38,10 +38,10 @@ const serwist = new Serwist({
 
 serwist.addEventListeners();
 
-// Web Push. The payload is { title, body, url } (src/lib/push.ts), encrypted
+// Web Push. The payload is { title, body, url, tag? } (src/lib/push.ts), encrypted
 // end to end, so this is the first place it's readable. A payload that fails
 // to parse is a bug, not something to show a member: skip it.
-type PushPayload = { title: string; body: string; url: string };
+type PushPayload = { title: string; body: string; url: string; tag?: string };
 
 self.addEventListener("push", (event) => {
   let payload: PushPayload;
@@ -56,6 +56,9 @@ self.addEventListener("push", (event) => {
       body: payload.body,
       icon: "/icons/icon-192.png",
       data: { url: payload.url },
+      // A tagged notification replaces the earlier one with the same tag.
+      // renotify still alerts for the replacement, since it says something new.
+      ...(payload.tag ? { tag: payload.tag, renotify: true } : {}),
     }),
   );
 });

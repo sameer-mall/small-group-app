@@ -47,6 +47,7 @@ export async function MealSection({
         <ChangeMealDialog
           meetingId={meetingId}
           recipes={recipes}
+          currentRecipeId={plan.recipeId}
           hasClaims={plan.items.some((item) => item.claimedBy !== null)}
         />
       </div>

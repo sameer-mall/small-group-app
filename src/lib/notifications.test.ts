@@ -42,6 +42,8 @@ describe("notification copy", () => {
       title: "Tuesday Group",
       body: "Sameer set the meal for Tue, Oct 13: Tacos",
       url: "/open?group=g1&next=%2Fmeetings%2Fm1",
+      // One per meeting: a later meal change replaces this one on the phone.
+      tag: "meal-m1",
     });
   });
 
