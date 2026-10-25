@@ -51,6 +51,9 @@ export function mealSetCopy(i: {
     title: i.groupName,
     body: `${i.actorName} set the meal for ${formatMeetingDate(i.date, SHORT_DATE)}: ${i.recipeName}`,
     url: inGroup(i.groupId, `/meetings/${i.meetingId}`),
+    // Only the latest meal for a meeting matters, so a change replaces the
+    // earlier notification on the phone.
+    tag: `meal-${i.meetingId}`,
   };
 }
 
