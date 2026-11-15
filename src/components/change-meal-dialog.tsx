@@ -11,16 +11,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { RecipeChoice } from "@/components/recipe-picker";
+import { RecipeChoices } from "@/components/recipe-picker";
 import type { RecipeSummary } from "@/lib/recipes";
 
 export function ChangeMealDialog({
   meetingId,
   recipes,
+  currentRecipeId,
   hasClaims,
 }: {
   meetingId: string;
   recipes: RecipeSummary[];
+  // Null when the recipe the meal came from has since been deleted.
+  currentRecipeId: string | null;
   hasClaims: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -53,16 +56,13 @@ export function ChangeMealDialog({
             No recipes yet. Save one in the Recipes tab first.
           </p>
         ) : (
-          <div className="flex max-h-[50dvh] flex-col overflow-y-auto">
-            {recipes.map((recipe) => (
-              <RecipeChoice
-                key={recipe.id}
-                recipe={recipe}
-                meetingId={meetingId}
-                onChosen={() => setOpen(false)}
-              />
-            ))}
-          </div>
+          <RecipeChoices
+            recipes={recipes}
+            meetingId={meetingId}
+            currentRecipeId={currentRecipeId}
+            onChosen={() => setOpen(false)}
+            className="max-h-[50dvh]"
+          />
         )}
       </DialogContent>
     </Dialog>

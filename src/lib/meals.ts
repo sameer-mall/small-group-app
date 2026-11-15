@@ -48,17 +48,29 @@ async function requireMeetingMember(userId: string, meetingId: string) {
 // recipe rather than referenced, so a later edit to the recipe never rewrites
 // a week that has already happened — and deleting the recipe only nulls
 // `recipeId`, leaving the copies standing.
+//
+// Picking the recipe the meeting already has changes nothing: the items and
+// their claims stay, and `changed: false` tells the caller not to notify.
 export async function setMeal(
   userId: string,
   meetingId: string,
   recipeId: string,
-): Promise<void> {
+): Promise<{ changed: boolean }> {
   const { meeting } = await requireMeetingMember(userId, meetingId);
 
   // The recipe is read inside the transaction alongside the write, so a
   // concurrent edit to that recipe cannot land between "read its items" and
   // "copy them" and leave the plan holding half of each version.
-  await db.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
+    // Lock the meeting so two picks of the same recipe at once take turns,
+    // and the second sees the first's plan and changes nothing.
+    await tx.select({ id: meetings.id }).from(meetings).where(eq(meetings.id, meetingId)).for("update");
+    const [current] = await tx
+      .select({ recipeId: mealPlans.recipeId })
+      .from(mealPlans)
+      .where(eq(mealPlans.meetingId, meetingId));
+    if (current?.recipeId === recipeId) return { changed: false };
+
     const [recipe] = await tx
       .select({ id: recipes.id, groupId: recipes.groupId })
       .from(recipes)
@@ -92,6 +104,7 @@ export async function setMeal(
         })),
       );
     }
+    return { changed: true };
   });
 }
 

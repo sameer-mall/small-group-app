@@ -47,9 +47,10 @@ export async function setMealAction(
 ): Promise<ActionState> {
   const user = await requireUser();
   try {
-    await setMeal(user.id, meetingId, recipeId);
-    // After the response: the save never waits on the push service.
-    after(() => notifyMealSet({ actorId: user.id, meetingId }));
+    const { changed } = await setMeal(user.id, meetingId, recipeId);
+    // After the response: the save never waits on the push service. Re-picking
+    // the current recipe saves nothing, so there's nothing to tell anyone.
+    if (changed) after(() => notifyMealSet({ actorId: user.id, meetingId }));
   } catch (err) {
     return { error: mapError(err), success: false };
   }

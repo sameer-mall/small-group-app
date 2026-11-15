@@ -97,6 +97,7 @@ describe("notifications: who gets told", () => {
       title: "Tuesday Group",
       body: "Carol set the meal for Tue, Oct 20: Tacos",
       url: openLink(groupId, `/meetings/${meetingId}`),
+      tag: `meal-${meetingId}`,
     });
   });
 

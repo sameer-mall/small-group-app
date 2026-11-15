@@ -136,6 +136,30 @@ describe("meals domain", () => {
     expect(claims.map((c) => c.item_id)).not.toContain(before!.items[0].id);
   });
 
+  it("setMeal reports whether the meal changed", async () => {
+    const { groupId, meetingId, recipeId } = await mkGroupWithMeal(alice, bob, "Changed flag");
+    expect(await setMeal(alice, meetingId, recipeId)).toEqual({ changed: true });
+
+    const { recipeId: soupId } = await createRecipe(alice, groupId, {
+      name: "Soup night",
+      items: ["broth"],
+    });
+    expect(await setMeal(alice, meetingId, soupId)).toEqual({ changed: true });
+  });
+
+  it("picking the recipe that's already set changes nothing and keeps claims", async () => {
+    const { meetingId, recipeId } = await mkGroupWithMeal(alice, bob, "Same pick");
+    await setMeal(alice, meetingId, recipeId);
+    const before = await getMealPlan(meetingId);
+    await claim(before!.items[0].id, bob);
+
+    expect(await setMeal(bob, meetingId, recipeId)).toEqual({ changed: false });
+
+    const after = await getMealPlan(meetingId);
+    expect(after!.items.map((i) => i.id)).toEqual(before!.items.map((i) => i.id));
+    expect(after!.items[0].claimedBy).toBe(bob);
+  });
+
   it("getMealPlan reports who claimed an item, by name", async () => {
     const { meetingId, recipeId } = await mkGroupWithMeal(alice, bob, "Claim names");
     await setMeal(alice, meetingId, recipeId);
