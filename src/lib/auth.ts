@@ -37,6 +37,18 @@ export const auth = betterAuth({
   baseURL: authBaseURL,
   trustedOrigins: isPreview ? ["https://*.vercel.app"] : undefined,
   secret: env.BETTER_AUTH_SECRET,
+  session: {
+    // 0 turns off Better Auth's fresh-session check (it skips the check when
+    // freshAge is 0). The passkey plugin puts that check on registration, and
+    // members turn on Face ID from Settings on sessions days or weeks old; the
+    // default 24 hours refused them all. The session cookie is already full
+    // account access, so a re-sign-in adds nothing here.
+    freshAge: 0,
+  },
+  // The passkey plugin's list, rename, and delete endpoints. The app lists and
+  // removes passkeys through src/lib/passkeys.ts instead: the plugin's list
+  // returns the public key, and members can't rename passkeys (spec).
+  disabledPaths: ["/passkey/list-user-passkeys", "/passkey/update-passkey", "/passkey/delete-passkey"],
   user: {
     additionalFields: {
       // The highest What's new entry this member has dismissed (see
@@ -115,7 +127,9 @@ export const auth = betterAuth({
     passkey({
       rpID: passkeyRpID(authBaseURL ?? "http://localhost:3000", env.PASSKEY_RP_ID),
       rpName: "Small Group",
-      origin: authBaseURL,
+      // SimpleWebAuthn compares origins as exact strings, so drop any trailing
+      // slash or path a BETTER_AUTH_URL might carry.
+      origin: authBaseURL ? new URL(authBaseURL).origin : undefined,
       authenticatorSelection: { residentKey: "required", userVerification: "required" },
     }),
     nextCookies(), // must stay last in this array (Better Auth docs)
