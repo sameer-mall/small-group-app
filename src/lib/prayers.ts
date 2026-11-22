@@ -12,24 +12,6 @@ import { derangement } from "@/lib/derangement";
 import { listMembers } from "@/lib/groups";
 import { requireMembership } from "@/lib/membership";
 
-export type BowlMember = { userId: string; name: string };
-
-export type PrayerBowl = {
-  meetingId: string;
-  status: "open" | "drawn";
-  // Names only — who is in, never what they wrote.
-  submitted: BowlMember[];
-  waiting: BowlMember[];
-  notJoined: BowlMember[];
-  viewer: {
-    joined: boolean;
-    // The viewer's own request, so they can edit it. Nobody else's, ever.
-    request: { body: string } | null;
-  };
-  // After the draw, the one request the viewer drew (Task 3).
-  drawn: { body: string; authorName: string } | null;
-};
-
 export type WallPerson = { userId: string; name: string };
 export type WallRequest = {
   id: string;
@@ -249,73 +231,6 @@ export async function assignPrayers(
     );
     return { assigned: true };
   });
-}
-
-// The read model behind the meeting page's prayer section. It reveals who is
-// in — names, never words — plus the viewer's own request so they can edit
-// it. It checks membership itself rather than trusting the page to have done
-// so: a leak here is the feature's one unforgivable failure.
-export async function getPrayerBowl(viewerId: string, meetingId: string): Promise<PrayerBowl> {
-  const meeting = await requireMeetingMember(viewerId, meetingId);
-
-  const [[session], members, participants, authors, own] = await Promise.all([
-    db
-      .select({ status: prayerSessions.status })
-      .from(prayerSessions)
-      .where(eq(prayerSessions.meetingId, meetingId)),
-    listMembers(meeting.groupId),
-    db
-      .select({ userId: prayerParticipants.userId })
-      .from(prayerParticipants)
-      .where(eq(prayerParticipants.meetingId, meetingId)),
-    // Who wrote — and deliberately nothing else. Bodies are not selected
-    // here, so they cannot leak from here.
-    db
-      .select({ userId: prayerRequests.authorId })
-      .from(prayerRequests)
-      .where(eq(prayerRequests.meetingId, meetingId)),
-    db
-      .select({ body: prayerRequests.body })
-      .from(prayerRequests)
-      .where(and(eq(prayerRequests.meetingId, meetingId), eq(prayerRequests.authorId, viewerId))),
-  ]);
-
-  const joined = new Set(participants.map((p) => p.userId));
-  const wrote = new Set(authors.map((a) => a.userId));
-  // Buckets come from the group's *current* members, so anyone removed from
-  // the group drops out of every list.
-  const people = members
-    .map((m) => ({ userId: m.userId, name: m.name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  let drawn: PrayerBowl["drawn"] = null;
-  if (session?.status === "drawn") {
-    const [assigned] = await db
-      .select({
-        body: prayerRequests.body,
-        authorName: user.name,
-      })
-      .from(prayerAssignments)
-      .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
-      .innerJoin(user, eq(user.id, prayerRequests.authorId))
-      .where(
-        and(eq(prayerAssignments.meetingId, meetingId), eq(prayerAssignments.assigneeId, viewerId)),
-      );
-    if (assigned) {
-      // The writer's name is always shown; no author id is ever returned.
-      drawn = { body: assigned.body, authorName: assigned.authorName };
-    }
-  }
-
-  return {
-    meetingId,
-    status: session?.status ?? "open",
-    submitted: people.filter((p) => wrote.has(p.userId)),
-    waiting: people.filter((p) => joined.has(p.userId) && !wrote.has(p.userId)),
-    notJoined: people.filter((p) => !joined.has(p.userId)),
-    viewer: { joined: joined.has(viewerId), request: own[0] ?? null },
-    drawn,
-  };
 }
 
 // The read model behind the wall page and the meeting card. Every request is

@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { MeetingRow } from "@/components/meeting-row";
-import type { Meeting } from "@/lib/meetings";
+import type { MeetingWithPrayers } from "@/lib/meetings";
 
 // The local date never changes while the page is mounted, so there is nothing
 // to subscribe to; React only needs a valid unsubscribe back.
@@ -18,7 +18,7 @@ export function MeetingList({
   meetings,
   serverToday,
 }: {
-  meetings: Meeting[];
+  meetings: MeetingWithPrayers[];
   serverToday: string;
 }) {
   // "Today" differs between the server and the viewer: the host runs UTC, which

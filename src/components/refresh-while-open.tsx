@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 
-// While the bowl is open, every screen in the room should show who has joined
+// While the wall is open, every screen showing it should show who has joined
 // and who has written without anyone pulling to refresh. Five seconds is
 // indistinguishable from realtime for ten people, and needs no websocket —
 // the parent spec rules those out for v1. It uses router.refresh() rather

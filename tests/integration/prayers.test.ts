@@ -6,7 +6,6 @@ import { createMeeting } from "@/lib/meetings";
 import {
   assignPrayers,
   deletePrayerRequest,
-  getPrayerBowl,
   getPrayerWall,
   joinPrayerWall,
   leavePrayerWall,
@@ -51,13 +50,14 @@ describe("prayer bowl: presence and requests", () => {
 
   it("a meeting's bowl reads as open with nobody in, and reading it writes nothing", async () => {
     const { meetingId } = await seedMeeting("Untouched");
-    const bowl = await getPrayerBowl(alice, meetingId);
-    expect(bowl.status).toBe("open");
-    expect(names(bowl.notJoined)).toEqual(["Alice", "Bob", "Carol"]);
-    expect(bowl.submitted).toEqual([]);
-    expect(bowl.waiting).toEqual([]);
-    expect(bowl.viewer).toEqual({ joined: false, request: null });
-    expect(bowl.drawn).toBeNull();
+    const wall = await getPrayerWall(alice, meetingId);
+    expect(wall.status).toBe("open");
+    expect(names(wall.notJoined)).toEqual(["Alice", "Bob", "Carol"]);
+    expect(wall.requests).toEqual([]);
+    expect(wall.writing).toEqual([]);
+    expect(wall.viewerJoined).toBe(false);
+    expect(wall.mine).toBeNull();
+    expect(wall.assigned).toBeNull();
 
     const rows = (await db.execute(
       sql`select 1 from prayer_sessions where meeting_id = ${meetingId}`,
@@ -69,9 +69,9 @@ describe("prayer bowl: presence and requests", () => {
     const { meetingId } = await seedMeeting("Joining");
     await joinPrayerWall(bob, meetingId);
 
-    const bowl = await getPrayerBowl(alice, meetingId);
-    expect(names(bowl.waiting)).toEqual(["Bob"]);
-    expect(names(bowl.notJoined)).toEqual(["Alice", "Carol"]);
+    const wall = await getPrayerWall(alice, meetingId);
+    expect(names(wall.writing)).toEqual(["Bob"]);
+    expect(names(wall.notJoined)).toEqual(["Alice", "Carol"]);
 
     const [session] = (await db.execute(
       sql`select started_by, status from prayer_sessions where meeting_id = ${meetingId}`,
@@ -91,19 +91,17 @@ describe("prayer bowl: presence and requests", () => {
       sql`select 1 from prayer_sessions where meeting_id = ${meetingId}`,
     )).rows;
     expect(rows).toHaveLength(1);
-    expect(names((await getPrayerBowl(alice, meetingId)).waiting)).toEqual(["Alice", "Bob", "Carol"]);
+    expect(names((await getPrayerWall(alice, meetingId)).writing)).toEqual(["Alice", "Bob", "Carol"]);
   });
 
   it("writing a request joins you and moves you to submitted", async () => {
     const { meetingId } = await seedMeeting("Writing");
     await postPrayerRequest(carol, meetingId, { body: "For my sister's new job" });
 
-    const bowl = await getPrayerBowl(carol, meetingId);
-    expect(names(bowl.submitted)).toEqual(["Carol"]);
-    expect(bowl.viewer).toEqual({
-      joined: true,
-      request: { body: "For my sister's new job" },
-    });
+    const wall = await getPrayerWall(carol, meetingId);
+    expect(names(wall.requests)).toEqual(["Carol"]);
+    expect(wall.viewerJoined).toBe(true);
+    expect(wall.mine).toEqual({ body: "For my sister's new job" });
   });
 
   it("writing again edits your one request rather than adding a second", async () => {
@@ -122,9 +120,10 @@ describe("prayer bowl: presence and requests", () => {
     await postPrayerRequest(bob, meetingId, { body: "Never mind" });
     await deletePrayerRequest(bob, meetingId);
 
-    const bowl = await getPrayerBowl(bob, meetingId);
-    expect(bowl.viewer).toEqual({ joined: true, request: null });
-    expect(names(bowl.waiting)).toEqual(["Bob"]);
+    const wall = await getPrayerWall(bob, meetingId);
+    expect(wall.viewerJoined).toBe(true);
+    expect(wall.mine).toBeNull();
+    expect(names(wall.writing)).toEqual(["Bob"]);
 
     await deletePrayerRequest(bob, meetingId);
   });
@@ -134,28 +133,28 @@ describe("prayer bowl: presence and requests", () => {
     await postPrayerRequest(bob, meetingId, { body: "Not this week" });
     await leavePrayerWall(bob, meetingId);
 
-    const bowl = await getPrayerBowl(bob, meetingId);
-    expect(bowl.viewer).toEqual({ joined: false, request: null });
-    expect(bowl.submitted).toEqual([]);
-    expect(names(bowl.notJoined)).toEqual(["Alice", "Bob", "Carol"]);
+    const wall = await getPrayerWall(bob, meetingId);
+    expect(wall.viewerJoined).toBe(false);
+    expect(wall.mine).toBeNull();
+    expect(wall.requests).toEqual([]);
+    expect(names(wall.notJoined)).toEqual(["Alice", "Bob", "Carol"]);
 
     await leavePrayerWall(bob, meetingId);
   });
 
-  it("no member can read another member's request before the draw", async () => {
-    const { meetingId } = await seedMeeting("Sealed");
-    const secret = `Something only Alice wrote ${crypto.randomUUID()}`;
-    await postPrayerRequest(alice, meetingId, { body: secret });
+  it("every member can read another member's request on the wall", async () => {
+    const { meetingId } = await seedMeeting("Open wall");
+    const words = `Something Alice wrote ${crypto.randomUUID()}`;
+    await postPrayerRequest(alice, meetingId, { body: words });
 
-    // Bob may see *that* Alice wrote — names are public — but never her words.
-    const bowl = await getPrayerBowl(bob, meetingId);
-    expect(names(bowl.submitted)).toEqual(["Alice"]);
-    expect(JSON.stringify(bowl)).not.toContain(secret);
+    const wall = await getPrayerWall(bob, meetingId);
+    expect(names(wall.requests)).toEqual(["Alice"]);
+    expect(wall.requests[0].body).toBe(words);
   });
 
   it("non-members can neither read the bowl nor write to it", async () => {
     const { meetingId } = await seedMeeting("Closed doors");
-    await expect(getPrayerBowl(outsider, meetingId)).rejects.toThrow("forbidden");
+    await expect(getPrayerWall(outsider, meetingId)).rejects.toThrow("forbidden");
     await expect(joinPrayerWall(outsider, meetingId)).rejects.toThrow("forbidden");
     await expect(
       postPrayerRequest(outsider, meetingId, { body: "x" }),
@@ -165,7 +164,7 @@ describe("prayer bowl: presence and requests", () => {
   });
 
   it("a meeting that does not exist is not-found", async () => {
-    await expect(getPrayerBowl(alice, crypto.randomUUID())).rejects.toThrow("not-found");
+    await expect(getPrayerWall(alice, crypto.randomUUID())).rejects.toThrow("not-found");
   });
 });
 
@@ -206,10 +205,10 @@ describe("prayer bowl: the draw", () => {
 
     const drawn: string[] = [];
     for (const writer of writers) {
-      const bowl = await getPrayerBowl(writer, meetingId);
-      expect(bowl.status).toBe("drawn");
-      expect(bowl.drawn!.body).not.toBe(bodyOf(writer));
-      drawn.push(bowl.drawn!.body);
+      const wall = await getPrayerWall(writer, meetingId);
+      expect(wall.status).toBe("drawn");
+      expect(wall.assigned!.body).not.toBe(bodyOf(writer));
+      drawn.push(wall.assigned!.body);
     }
     expect(drawn.sort()).toEqual(writers.map(bodyOf).sort());
   });
@@ -217,9 +216,9 @@ describe("prayer bowl: the draw", () => {
   it("an assigned request always carries its writer's name, and never an id", async () => {
     const { meetingId, bodyOf } = await seedBowl("Names always", [alice, bob]);
     await assignPrayers(alice, meetingId);
-    const forBob = await getPrayerBowl(bob, meetingId);
-    expect(forBob.drawn).toEqual({ body: bodyOf(alice), authorName: "Alice" });
-    expect(JSON.stringify(forBob.drawn)).not.toContain(alice);
+    const forBob = await getPrayerWall(bob, meetingId);
+    expect(forBob.assigned).toEqual({ body: bodyOf(alice), authorName: "Alice", authorImage: null });
+    expect(JSON.stringify(forBob.assigned)).not.toContain(alice);
   });
 
   it("drawing with fewer than two requests is refused, and the bowl stays open", async () => {
@@ -227,7 +226,7 @@ describe("prayer bowl: the draw", () => {
     await expect(assignPrayers(alice, meetingId)).rejects.toThrow("too-few-requests");
 
     // The refusal rolled the transition back: the bowl still takes requests.
-    expect((await getPrayerBowl(alice, meetingId)).status).toBe("open");
+    expect((await getPrayerWall(alice, meetingId)).status).toBe("open");
     await postPrayerRequest(bob, meetingId, { body: "a second request" });
     expect(await assignPrayers(alice, meetingId)).toEqual({ assigned: true });
   });
@@ -243,7 +242,7 @@ describe("prayer bowl: the draw", () => {
     await expect(assignPrayers(alice, meetingId)).rejects.toThrow("still-writing");
 
     // The refusal rolled the transition back, so Carol can still write.
-    expect((await getPrayerBowl(alice, meetingId)).status).toBe("open");
+    expect((await getPrayerWall(alice, meetingId)).status).toBe("open");
     await postPrayerRequest(carol, meetingId, { body: "prayer 3" });
     expect(await assignPrayers(alice, meetingId)).toEqual({ assigned: true });
     expect(await countAssignments(meetingId)).toBe(3);
@@ -257,7 +256,7 @@ describe("prayer bowl: the draw", () => {
     await leavePrayerWall(carol, meetingId);
     expect(await assignPrayers(alice, meetingId)).toEqual({ assigned: true });
     expect(await countAssignments(meetingId)).toBe(2);
-    expect((await getPrayerBowl(carol, meetingId)).drawn).toBeNull();
+    expect((await getPrayerWall(carol, meetingId)).assigned).toBeNull();
   });
 
   it("someone removed from the group while still writing doesn't hold up the draw", async () => {

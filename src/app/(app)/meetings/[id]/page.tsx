@@ -6,7 +6,7 @@ import { saveNoteAction } from "@/app/(app)/notes/actions";
 import { formatMeetingDate } from "@/lib/utils";
 import { MeetingActionsMenu } from "@/components/meeting-actions-menu";
 import { MealSection } from "@/components/meal-section";
-import { PrayerSection } from "@/components/prayer-section";
+import { PrayerPreviewCard } from "@/components/prayer-preview-card";
 import { NoteCard } from "@/components/note-card";
 import { RefreshOnFocus } from "@/components/refresh-on-focus";
 
@@ -48,7 +48,7 @@ export default async function MeetingPage({ params }: { params: Promise<{ id: st
         currentUserId={user.id}
         isAdmin={role === "admin"}
       />
-      <PrayerSection meetingId={meeting.id} meetingDate={meeting.date} currentUserId={user.id} />
+      <PrayerPreviewCard meetingId={meeting.id} meetingDate={meeting.date} currentUserId={user.id} />
       <NoteCard key={meeting.id} initialBody={note} save={saveNoteAction.bind(null, meeting.id)} />
     </main>
   );

@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { createGroup, getInviteCode, requestToJoin, approveRequest } from "@/lib/groups";
+import { createGroup, getInviteCode, requestToJoin, approveRequest, removeMember } from "@/lib/groups";
+import { postPrayerRequest } from "@/lib/prayers";
 import {
   createMeeting, deleteMeeting, getMeeting, listMeetings, updateMeeting,
 } from "@/lib/meetings";
@@ -53,6 +54,18 @@ describe("meetings domain", () => {
 
     const titles = (await listMeetings(groupId)).map((m) => m.title);
     expect(titles).toEqual(["First", "Second", "Third"]);
+  });
+
+  it("listMeetings counts each meeting's prayer requests from current members", async () => {
+    const { groupId } = await createGroup(alice, "Prayer counts");
+    await addMember(alice, groupId, bob);
+    const { meetingId } = await createMeeting(alice, groupId, { title: "Counted", date: "2026-09-10" });
+    await postPrayerRequest(bob, meetingId, { body: "x" });
+    const [m] = (await listMeetings(groupId)).filter((x) => x.id === meetingId);
+    expect(m.prayerRequestCount).toBe(1);
+    await removeMember(alice, groupId, bob);
+    const [after] = (await listMeetings(groupId)).filter((x) => x.id === meetingId);
+    expect(after.prayerRequestCount).toBe(0);
   });
 
   it("the creator or an admin can edit and delete; another member cannot", async () => {
