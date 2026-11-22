@@ -42,6 +42,13 @@ const envSchema = z.object({
   BLOB_STORE_ID: z.string().optional(),
   VERCEL_OIDC_TOKEN: z.string().optional(),
   BLOB_READ_WRITE_TOKEN: z.string().optional(),
+
+  // Passkeys (src/lib/auth.ts). Unset, passkeys bind to the host of the auth
+  // URL. Set it only to keep an old domain as the passkey domain after a move.
+  PASSKEY_RP_ID: z
+    .string()
+    .regex(/^[a-z0-9.-]+$/i, { error: "A bare hostname, like smallgroup.example.org." })
+    .optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

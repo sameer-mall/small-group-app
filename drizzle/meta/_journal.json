@@ -71,6 +71,13 @@
       "when": 1791464490318,
       "tag": "0009_late_garia",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795379592683,
+      "tag": "0010_gorgeous_talisman",
+      "breakpoints": true
     }
   ]
 }

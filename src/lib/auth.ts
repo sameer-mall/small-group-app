@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware } from "better-auth/api";
+import { passkey } from "@better-auth/passkey";
 import { emailOTP, organization } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db/client";
@@ -8,6 +9,7 @@ import * as schema from "@/db/schema";
 import { sendAuthEmail } from "@/lib/auth-email";
 import { env } from "@/lib/env";
 import { largeGooglePhoto } from "@/lib/google-photo";
+import { passkeyRpID } from "@/lib/passkey-rp";
 import { LATEST_RELEASE_ID } from "@/lib/whats-new";
 
 // Vercel preview deployments get a fresh *.vercel.app URL per deploy, so a
@@ -104,6 +106,17 @@ export const auth = betterAuth({
       sendVerificationOTP: async ({ email, otp }) => {
         await sendAuthEmail({ to: email, otp });
       },
+    }),
+    // Face ID, fingerprint, or another platform passkey (spec:
+    // 2026-11-15-passkeys-design.md). Discoverable credentials with user
+    // verification required, so sign-in needs no email and always checks the
+    // face, finger, or device PIN. Listing and removing go through
+    // src/lib/passkeys.ts instead of the plugin's endpoints.
+    passkey({
+      rpID: passkeyRpID(authBaseURL ?? "http://localhost:3000", env.PASSKEY_RP_ID),
+      rpName: "Small Group",
+      origin: authBaseURL,
+      authenticatorSelection: { residentKey: "required", userVerification: "required" },
     }),
     nextCookies(), // must stay last in this array (Better Auth docs)
   ],

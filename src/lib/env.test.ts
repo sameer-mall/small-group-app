@@ -15,6 +15,19 @@ describe("parseEnv", () => {
     expect(() => parseEnv({})).toThrow(/DATABASE_URL[\s\S]*BETTER_AUTH_SECRET/);
   });
 
+  it("accepts an optional bare-hostname passkey domain", () => {
+    expect(parseEnv({ ...required, PASSKEY_RP_ID: "smallgroup.example.org" }).PASSKEY_RP_ID).toBe(
+      "smallgroup.example.org",
+    );
+    expect(parseEnv(required).PASSKEY_RP_ID).toBeUndefined();
+  });
+
+  it("refuses a passkey domain with a scheme or path", () => {
+    expect(() => parseEnv({ ...required, PASSKEY_RP_ID: "https://smallgroup.example.org/" })).toThrow(
+      /PASSKEY_RP_ID/,
+    );
+  });
+
   it("treats a blank .env line as unset", () => {
     expect(() => parseEnv({ ...required, DATABASE_URL: "" })).toThrow(/DATABASE_URL/);
     expect(parseEnv({ ...required, GOOGLE_CLIENT_ID: "" }).GOOGLE_CLIENT_ID).toBeUndefined();
