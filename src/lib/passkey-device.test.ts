@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  addedLabel,
   hasJustSignedIn,
   kindForDeviceName,
   markOffered,
@@ -159,5 +160,13 @@ describe("device storage", () => {
     expect(() => noteJustSignedIn(brokenStore)).not.toThrow();
     expect(hasJustSignedIn(brokenStore)).toBe(false);
     expect(takeJustSignedIn(brokenStore)).toBe(false);
+  });
+});
+
+// The server and the browser must print the same date, so it's in UTC.
+describe("addedLabel", () => {
+  it("prints the UTC date, whatever the machine's time zone", () => {
+    expect(addedLabel("2026-11-15T23:30:00Z")).toBe("Nov 15");
+    expect(addedLabel("2026-11-15T00:30:00Z")).toBe("Nov 15");
   });
 });

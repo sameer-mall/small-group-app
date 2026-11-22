@@ -15,6 +15,7 @@ import {
   passkeySupported,
   type PasskeyKind,
   type PasskeyMethod,
+  UNKNOWN_PASSKEY,
 } from "@/lib/passkey-device";
 
 export type PasskeyRow = { id: string; name: string | null; createdAt: string | null };
@@ -39,7 +40,7 @@ function PasskeyRowItem({ passkey, label, kind }: { passkey: PasskeyRow; label: 
         <div className="flex flex-1 flex-col gap-0.5">
           <p className="text-base font-semibold">{label}</p>
           {passkey.createdAt && (
-            <p className="text-muted-foreground text-sm" suppressHydrationWarning>
+            <p className="text-muted-foreground text-sm">
               Added {addedLabel(passkey.createdAt)}
             </p>
           )}
@@ -70,10 +71,10 @@ export function PasskeysCard({
   const supported = useSyncExternalStore(noSubscribe, passkeySupported, () => true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // UNKNOWN_PASSKEY ("unknown"): this device signed in with one of these
-  // passkeys, but the server couldn't tell which, so no row is "This iPhone"
-  // and there's no "turn on for this phone" either.
-  const hasThisDevice = thisDeviceId === "unknown" || passkeys.some((p) => p.id === thisDeviceId);
+  // UNKNOWN_PASSKEY: this device signed in with one of these passkeys, but the
+  // server couldn't tell which, so no row is "This iPhone" and there's no
+  // "turn on for this phone" either.
+  const hasThisDevice = thisDeviceId === UNKNOWN_PASSKEY || passkeys.some((p) => p.id === thisDeviceId);
 
   async function turnOn() {
     setPending(true);
@@ -87,7 +88,11 @@ export function PasskeysCard({
         if (passkeyErrorKind(error) !== "cancelled") setError(copy.turnOnFailed);
         return;
       }
-      await rememberPasskeyAction(data.id);
+      try {
+        await rememberPasskeyAction(data.id);
+      } catch {
+        // Best effort: the passkey is saved, so a lost cookie must not read as a failed turn-on.
+      }
       router.refresh();
     } catch {
       setError(UNREACHABLE_MESSAGE);

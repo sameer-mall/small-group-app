@@ -3,6 +3,15 @@
 // components use the browser checks and storage helpers.
 // Spec: docs/superpowers/specs/2026-11-15-passkeys-design.md
 
+// Which passkey this device created, so the server can show Welcome back and
+// "This iPhone". Here rather than in passkey-cookie.ts so client components can
+// read the names too.
+export const PASSKEY_COOKIE = "sg_passkey";
+
+// Set after a passkey sign-in when the server can't tell which passkey was
+// used: Welcome back still shows, but no Settings row is "This iPhone".
+export const UNKNOWN_PASSKEY = "unknown";
+
 export type PasskeyKind = "face-id" | "fingerprint" | "passkey";
 
 export type PasskeyMethod = {
@@ -177,8 +186,8 @@ export function takeJustSignedIn(store = session()): boolean {
   return had;
 }
 
-// "Nov 15", in the member's own time zone. Callers render it with
-// suppressHydrationWarning: the server's zone may differ.
+// "Nov 15", in UTC (as formatMeetingDate in src/lib/utils.ts), so the server
+// and the browser print the same date and hydration matches.
 export function addedLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }

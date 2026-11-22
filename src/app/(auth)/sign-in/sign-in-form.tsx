@@ -39,7 +39,11 @@ export function SignInForm({ next, notice = null }: { next: string; notice?: str
       try {
         const { error } = await authClient.signIn.passkey({ autoFill: true });
         if (error || cancelled) return;
-        await rememberSignedInPasskeyAction();
+        try {
+          await rememberSignedInPasskeyAction();
+        } catch {
+          // Best effort: the member is signed in either way, so don't strand them here.
+        }
         router.push(next);
       } catch {}
     })();

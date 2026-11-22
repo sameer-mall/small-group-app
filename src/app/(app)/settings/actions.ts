@@ -6,8 +6,8 @@ import { z } from "zod";
 import { requireAccount, requireUser } from "@/lib/dal";
 import { avatarForm, removeAvatar, saveAvatar, UNREADABLE_PHOTO } from "@/lib/avatars";
 import { logRefusal } from "@/lib/monitoring";
-import { ownsPasskey, removePasskey } from "@/lib/passkeys";
-import { PASSKEY_COOKIE, passkeyCookieOptions } from "@/lib/passkey-cookie";
+import { ownsPasskey, passkeysFor, removePasskey } from "@/lib/passkeys";
+import { PASSKEY_COOKIE, UNKNOWN_PASSKEY, passkeyCookieOptions } from "@/lib/passkey-cookie";
 import { deleteSubscription, pushSubscriptionInput, saveSubscription } from "@/lib/push";
 // Not re-exported: Next treats every export of a "use server" file as an
 // action, type-only ones included, and the client then fails at runtime
@@ -127,8 +127,17 @@ export async function removePasskeyAction(
   } catch (err) {
     return { error: mapPasskeyError(err), success: false };
   }
+  // Forget this device's passkey when it's the one removed, or when the device
+  // only knew "unknown" and the member has none left: Welcome back would offer
+  // a passkey that no longer exists.
   const jar = await cookies();
-  if (jar.get(PASSKEY_COOKIE)?.value === form.data.id) jar.delete(PASSKEY_COOKIE);
+  const remembered = jar.get(PASSKEY_COOKIE)?.value;
+  if (
+    remembered === form.data.id ||
+    (remembered === UNKNOWN_PASSKEY && (await passkeysFor(user.id)).length === 0)
+  ) {
+    jar.delete(PASSKEY_COOKIE);
+  }
   revalidatePath("/(app)", "layout");
   return { error: null, success: true };
 }

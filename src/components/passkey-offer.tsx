@@ -71,7 +71,11 @@ export function PasskeyOffer({
         else setError(copy.turnOnFailed);
         return;
       }
-      await rememberPasskeyAction(data.id);
+      try {
+        await rememberPasskeyAction(data.id);
+      } catch {
+        // Best effort: the passkey is saved, and a retry would be refused as a duplicate.
+      }
       setOpen(false);
       router.refresh();
     } catch {
