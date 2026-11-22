@@ -37,7 +37,7 @@ export async function PrayerPreviewCard({
       </div>
       {assigned ? (
         <>
-          <YouArePrayingFor assigned={wall.assigned} />
+          <YouArePrayingFor assigned={wall.assigned} posted={wall.mine !== null} />
           <Link href={href} className={cn(buttonVariants({ variant: "secondary", size: "pill" }), "self-start")}>
             See the whole wall ›
           </Link>

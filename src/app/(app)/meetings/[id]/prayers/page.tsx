@@ -50,7 +50,7 @@ export default async function PrayerWallPage({ params }: { params: Promise<{ id:
         </div>
         {assigned ? (
           <>
-            <YouArePrayingFor assigned={wall.assigned} />
+            <YouArePrayingFor assigned={wall.assigned} posted={wall.mine !== null} />
             <div className="bg-divider h-px" />
             <p className="text-muted-foreground tracking-label text-xs font-semibold uppercase">
               Everyone&apos;s requests

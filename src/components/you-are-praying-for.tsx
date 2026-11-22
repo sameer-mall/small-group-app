@@ -1,11 +1,20 @@
 import { Avatar } from "@/components/avatar";
 import type { PrayerWall } from "@/lib/prayers";
 
-export function YouArePrayingFor({ assigned }: { assigned: PrayerWall["assigned"] }) {
+export function YouArePrayingFor({
+  assigned,
+  posted,
+}: {
+  assigned: PrayerWall["assigned"];
+  posted: boolean;
+}) {
   if (!assigned) {
+    // Posted but unassigned: the author they were given has since left the group.
     return (
       <p className="text-muted-foreground text-center text-[14.5px]">
-        Prayers were assigned. You didn&apos;t post this time.
+        {posted
+          ? "Prayers were assigned. The request you were given is no longer on the wall."
+          : "Prayers were assigned. You didn't post this time."}
       </p>
     );
   }
