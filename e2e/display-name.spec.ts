@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { expectApp, memberContext, signIn } from "./helpers";
 
-test("a new display name shows on meal claims, the prayer bowl, and the member list", async ({ browser }) => {
+test("a new display name shows on meal claims, the prayer wall, and the member list", async ({ browser }) => {
   const run = Date.now();
   const recipeName = `Soup night ${run}`;
   const meetingTitle = `Week ${run}`;
   const newName = `Alicia ${run}`;
-  // Today, so the meeting page renders the open prayer bowl.
+  // Today, so the meeting page offers the open prayer wall.
   const today = new Date().toLocaleDateString("en-CA");
   // No service workers: their update checks fetch /serwist/sw.js on their
   // own, and would race the cache check below.
@@ -58,12 +58,18 @@ test("a new display name shows on meal claims, the prayer bowl, and the member l
   await expectApp(aliceMeal.getByText("added by Alice", { exact: true })).toBeVisible();
   const meetingPath = new URL(alice.url()).pathname;
 
-  // Bob sees her by name on the meal, in the bowl, and on the member list.
+  // Bob sees her by name on the meal, in the wall's Writing row, and on the member list.
   await bob.goto(meetingPath);
   const bobMeal = bob.locator("section").filter({ hasText: recipeName });
   await expectApp(bobMeal.getByText("Alice", { exact: true })).toBeVisible();
   await expectApp(bobMeal.getByText("added by Alice", { exact: true })).toBeVisible();
-  await expectApp(bob.getByText("You, Alice", { exact: true })).toBeVisible();
+  // Alice taps I'm in on the wall, so Bob sees her in the Writing row.
+  await alice.getByRole("link", { name: "Open the prayer wall" }).click();
+  await alice.getByRole("button", { name: "I'm in" }).click();
+  await expectApp(alice.getByRole("button", { name: "I'm out" })).toBeVisible();
+  const wallPath = new URL(alice.url()).pathname;
+  await bob.goto(wallPath);
+  await expectApp(bob.getByText("Alice", { exact: true })).toBeVisible();
   await bob.getByRole("link", { name: "Group" }).click();
   await expectApp(bob.getByTestId("member-row").filter({ hasText: "Alice" })).toBeVisible();
 
@@ -93,7 +99,8 @@ test("a new display name shows on meal claims, the prayer bowl, and the member l
   await bob.getByRole("link", { name: new RegExp(meetingTitle) }).click();
   await expectApp(bobMeal.getByText(newName, { exact: true })).toBeVisible();
   await expectApp(bobMeal.getByText(`added by ${newName}`, { exact: true })).toBeVisible();
-  await expectApp(bob.getByText(`You, ${newName}`, { exact: true })).toBeVisible();
+  await bob.getByRole("link", { name: "Open the prayer wall" }).click();
+  await expectApp(bob.getByText(newName, { exact: true })).toBeVisible();
   await bob.getByRole("link", { name: "Group" }).click();
   await expectApp(bob.getByTestId("member-row").filter({ hasText: newName })).toBeVisible();
 });
