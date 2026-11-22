@@ -1,13 +1,19 @@
 import type { ReactNode } from "react";
+import { cookies, headers } from "next/headers";
 import { requireUser } from "@/lib/dal";
 import { whatsNewPopup } from "@/lib/whats-new";
 import { TabBar } from "@/components/tab-bar";
 import { BackBar } from "@/components/back-bar";
 import { SentryUser } from "@/components/sentry-user";
 import { WhatsNewDialog } from "@/components/whats-new-dialog";
+import { PasskeyOffer } from "@/components/passkey-offer";
+import { PASSKEY_COOKIE } from "@/lib/passkey-cookie";
+import { passkeyMethod } from "@/lib/passkey-device";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await requireUser();
+  const popup = whatsNewPopup(user.whatsNewSeen);
+  const [jar, requestHeaders] = await Promise.all([cookies(), headers()]);
 
   return (
     <div className="min-h-dvh bg-background">
@@ -22,7 +28,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <TabBar />
       {/* Always mounted, so a dismissal survives the layout re-rendering.
           whatsNewSeen rides along on the session's user row: no extra query. */}
-      <WhatsNewDialog {...whatsNewPopup(user.whatsNewSeen)} />
+      <WhatsNewDialog {...popup} />
+      <PasskeyOffer
+        method={passkeyMethod(requestHeaders.get("user-agent") ?? "")}
+        hasPasskey={jar.has(PASSKEY_COOKIE)}
+        whatsNewShowing={popup.releases.length > 0}
+      />
     </div>
   );
 }
