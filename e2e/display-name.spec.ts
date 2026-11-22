@@ -69,7 +69,8 @@ test("a new display name shows on meal claims, the prayer wall, and the member l
   await expectApp(alice.getByRole("button", { name: "I'm out" })).toBeVisible();
   const wallPath = new URL(alice.url()).pathname;
   await bob.goto(wallPath);
-  await expectApp(bob.getByText("Alice", { exact: true })).toBeVisible();
+  const writingRow = (page: typeof bob) => page.getByText("Writing", { exact: true }).locator("..");
+  await expectApp(writingRow(bob).getByText("Alice", { exact: true })).toBeVisible();
   await bob.getByRole("link", { name: "Group" }).click();
   await expectApp(bob.getByTestId("member-row").filter({ hasText: "Alice" })).toBeVisible();
 
@@ -100,7 +101,8 @@ test("a new display name shows on meal claims, the prayer wall, and the member l
   await expectApp(bobMeal.getByText(newName, { exact: true })).toBeVisible();
   await expectApp(bobMeal.getByText(`added by ${newName}`, { exact: true })).toBeVisible();
   await bob.getByRole("link", { name: "Open the prayer wall" }).click();
-  await expectApp(bob.getByText(newName, { exact: true })).toBeVisible();
+  await bob.waitForURL(/\/prayers$/);
+  await expectApp(writingRow(bob).getByText(newName, { exact: true })).toBeVisible();
   await bob.getByRole("link", { name: "Group" }).click();
   await expectApp(bob.getByTestId("member-row").filter({ hasText: newName })).toBeVisible();
 });
