@@ -35,11 +35,11 @@ export async function removePasskey(userId: string, id: string): Promise<void> {
 
 // Which of the member's passkeys this device most likely holds, for setting
 // the sg_passkey cookie again after a passkey sign-in. Only a guess that
-// can't be wrong: the member's only passkey, or the only one named for this
-// kind of device. Otherwise null.
+// can't be wrong: the only one named for this kind of device. Otherwise null.
+// Not "the member's only passkey": a laptop can sign in with the phone's
+// passkey through another device's QR code, and Settings on the laptop would
+// then call the phone's passkey "This computer" and let Remove delete it.
 export async function passkeyForDevice(userId: string, deviceName: string): Promise<string | null> {
-  const all = await passkeysFor(userId);
-  if (all.length === 1) return all[0].id;
-  const named = all.filter((p) => p.name === deviceName);
+  const named = (await passkeysFor(userId)).filter((p) => p.name === deviceName);
   return named.length === 1 ? named[0].id : null;
 }

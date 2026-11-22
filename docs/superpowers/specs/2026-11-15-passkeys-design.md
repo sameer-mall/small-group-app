@@ -159,9 +159,10 @@ migration. Nothing secret is stored.
   the phone's password manager. The plain form shows, and the passkey is
   offered from the email field's suggestions. After a passkey sign-in from
   there, the server sets the cookie again, so Welcome back returns from the
-  next visit. It can't see which passkey was used, so it stores the member's
-  only passkey, or the only one named for this kind of device
-  (`passkeyForDevice`). Otherwise it stores `unknown`: Welcome back shows, no
+  next visit. It can't see which passkey was used, so it stores the only one
+  named for this kind of device (`passkeyForDevice`). Not simply the member's
+  only passkey: a laptop can sign in with the phone's passkey through another
+  device's QR code. Otherwise it stores `unknown`: Welcome back shows, no
   Settings row is marked "This iPhone", and there's no "Turn on for this
   phone" button.
 - Sign-in form: conditional UI on the email field, the removed notice, and the

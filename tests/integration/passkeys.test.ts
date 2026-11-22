@@ -66,10 +66,18 @@ describe("passkeys domain", () => {
 // After a passkey sign-in the server can't see which credential was used.
 // passkeyForDevice guesses only when the guess can't be wrong.
 describe("passkeyForDevice", () => {
-  it("picks the member's only passkey, whatever it's named", async () => {
+  // A laptop can sign in with the phone's passkey (another device's QR code).
+  // Naming that phone passkey "This computer" would let Remove delete it.
+  it("won't guess a passkey named for another device", async () => {
     const cal = await mkUser(`u_cal_${crypto.randomUUID()}`);
-    const only = await mkPasskey(cal, "Mac", new Date());
-    expect(await passkeyForDevice(cal, "iPhone")).toBe(only);
+    await mkPasskey(cal, "Mac", new Date());
+    expect(await passkeyForDevice(cal, "iPhone")).toBeNull();
+  });
+
+  it("picks the member's only passkey when it's named for this device", async () => {
+    const fay = await mkUser(`u_fay_${crypto.randomUUID()}`);
+    const only = await mkPasskey(fay, "iPhone", new Date());
+    expect(await passkeyForDevice(fay, "iPhone")).toBe(only);
   });
 
   it("picks the only one named for this kind of device", async () => {
