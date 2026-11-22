@@ -2,7 +2,7 @@
 // generated into auth-schema.ts by `@better-auth/cli generate` — regenerate
 // there, never hand-edit. App tables are defined below in this file.
 import { sql } from "drizzle-orm";
-import { date, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { boolean, date, index, integer, pgTable, primaryKey, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth-schema";
 
 export * from "./auth-schema";
@@ -125,6 +125,10 @@ export const prayerRequests = pgTable(
       .references(() => prayerSessions.meetingId, { onDelete: "cascade" }),
     authorId: text("author_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
+    // Unused since the prayer wall (every request shows its author's name).
+    // Dropped in a follow-up PR once this code is live: dropping it in the same
+    // deploy would break the previous deployment while the migration runs.
+    includeName: boolean("include_name").notNull().default(false),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
   // One request per person per bowl.
