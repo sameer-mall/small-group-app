@@ -6,6 +6,13 @@ import { passkey } from "@/db/schema";
 // endpoints, so ownership is checked in our code (and tested) and the public
 // key never leaves the server. Registration and sign-in stay with the plugin.
 
+// Which passkey this device created (its row id), so the server can show
+// Welcome back and "This iPhone". Set by the after hook in src/lib/auth.ts on
+// a platform-passkey registration or sign-in, as a response header: Safari
+// caps cookies written from JavaScript at 7 days. Survives sign-out on
+// purpose. A row id is useless without the device's private key.
+export const PASSKEY_COOKIE = "sg_passkey";
+
 export type PasskeySummary = { id: string; name: string | null; createdAt: Date | null };
 
 export async function passkeysFor(userId: string): Promise<PasskeySummary[]> {
@@ -16,12 +23,14 @@ export async function passkeysFor(userId: string): Promise<PasskeySummary[]> {
     .orderBy(asc(passkey.createdAt));
 }
 
-export async function ownsPasskey(userId: string, id: string): Promise<boolean> {
-  const rows = await db
+// The row for a WebAuthn credential id, which the plugin has just verified.
+export async function passkeyIdForCredential(credentialID: string): Promise<string | null> {
+  const [row] = await db
     .select({ id: passkey.id })
     .from(passkey)
-    .where(and(eq(passkey.id, id), eq(passkey.userId, userId)));
-  return rows.length > 0;
+    .where(eq(passkey.credentialID, credentialID))
+    .limit(1);
+  return row?.id ?? null;
 }
 
 // Takes effect at once: the next sign-in with this credential is refused.
@@ -31,15 +40,4 @@ export async function removePasskey(userId: string, id: string): Promise<void> {
     .where(and(eq(passkey.id, id), eq(passkey.userId, userId)))
     .returning({ id: passkey.id });
   if (rows.length === 0) throw new Error("not-found");
-}
-
-// Which of the member's passkeys this device most likely holds, for setting
-// the sg_passkey cookie again after a passkey sign-in. Only a guess that
-// can't be wrong: the only one named for this kind of device. Otherwise null.
-// Not "the member's only passkey": a laptop can sign in with the phone's
-// passkey through another device's QR code, and Settings on the laptop would
-// then call the phone's passkey "This computer" and let Remove delete it.
-export async function passkeyForDevice(userId: string, deviceName: string): Promise<string | null> {
-  const named = (await passkeysFor(userId)).filter((p) => p.name === deviceName);
-  return named.length === 1 ? named[0].id : null;
 }

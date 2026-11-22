@@ -1,17 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PasskeyIcon } from "@/components/passkey-icon";
-import { rememberPasskeyAction } from "@/app/(app)/settings/actions";
-import { authClient, UNREACHABLE_MESSAGE } from "@/lib/auth-client";
+import { useTurnOnPasskey } from "@/components/use-turn-on-passkey";
 import {
   hasJustSignedIn,
   markOffered,
   passkeyCopy,
-  passkeyErrorKind,
   platformPasskeyAvailable,
   takeJustSignedIn,
   wasOffered,
@@ -30,11 +27,9 @@ export function PasskeyOffer({
   hasPasskey: boolean;
   whatsNewShowing: boolean;
 }) {
-  const router = useRouter();
   const copy = passkeyCopy(method);
   const [open, setOpen] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { turnOn, pending, error } = useTurnOnPasskey(method);
 
   useEffect(() => {
     if (!hasJustSignedIn()) return;
@@ -57,31 +52,9 @@ export function PasskeyOffer({
     };
   }, [hasPasskey, whatsNewShowing]);
 
-  async function turnOn() {
-    setPending(true);
-    setError(null);
-    try {
-      const { data, error } = await authClient.passkey.addPasskey({
-        name: method.deviceName,
-        authenticatorAttachment: "platform",
-      });
-      if (error || !data) {
-        setPending(false);
-        if (passkeyErrorKind(error) === "cancelled") setOpen(false);
-        else setError(copy.turnOnFailed);
-        return;
-      }
-      try {
-        await rememberPasskeyAction(data.id);
-      } catch {
-        // Best effort: the passkey is saved, and a retry would be refused as a duplicate.
-      }
-      setOpen(false);
-      router.refresh();
-    } catch {
-      setPending(false);
-      setError(UNREACHABLE_MESSAGE);
-    }
+  // A cancelled prompt closes the sheet too; a failure stays open to show why.
+  async function turnOnAndClose() {
+    if ((await turnOn()) !== "failed") setOpen(false);
   }
 
   return (
@@ -96,7 +69,7 @@ export function PasskeyOffer({
             <DialogDescription className="text-muted-foreground text-base">{copy.offerBody}</DialogDescription>
           </div>
           <div className="mt-2 flex w-full flex-col gap-2">
-            <Button size="block" onClick={turnOn} disabled={pending}>
+            <Button size="block" onClick={turnOnAndClose} disabled={pending}>
               {copy.turnOn}
             </Button>
             <Button variant="outline" size="block" onClick={() => setOpen(false)} disabled={pending}>

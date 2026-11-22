@@ -1,7 +1,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { PASSKEY_COOKIE } from "@/lib/passkey-cookie";
+import { PASSKEY_COOKIE } from "@/lib/passkeys";
 import { passkeyMethod } from "@/lib/passkey-device";
 import { safeNextPath } from "@/lib/utils";
 import { SignInScreen } from "./sign-in-screen";

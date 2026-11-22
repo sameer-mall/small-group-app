@@ -21,9 +21,9 @@ export function SignInScreen({
   hasPasskey: boolean;
 }) {
   const supported = useSyncExternalStore(noSubscribe, passkeySupported, () => true);
-  const [view, setView] = useState<"welcome" | "form">(hasPasskey ? "welcome" : "form");
+  const [useEmail, setUseEmail] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const welcome = view === "welcome" && supported;
+  const welcome = hasPasskey && supported && !useEmail;
 
   return (
     <>
@@ -37,10 +37,10 @@ export function SignInScreen({
         <WelcomeBack
           next={next}
           method={method}
-          onUseEmail={() => setView("form")}
+          onUseEmail={() => setUseEmail(true)}
           onRemoved={() => {
             setNotice(passkeyCopy(method).removedNotice);
-            setView("form");
+            setUseEmail(true);
           }}
         />
       ) : (

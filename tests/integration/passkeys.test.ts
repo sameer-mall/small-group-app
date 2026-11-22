@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { passkey } from "@/db/schema";
-import { ownsPasskey, passkeyForDevice, passkeysFor, removePasskey } from "@/lib/passkeys";
+import { passkeyIdForCredential, passkeysFor, removePasskey } from "@/lib/passkeys";
 
 async function mkUser(id: string) {
   await db.execute(sql`insert into "user" (id, name, email, email_verified, created_at, updated_at)
@@ -10,14 +10,14 @@ async function mkUser(id: string) {
   return id;
 }
 
-async function mkPasskey(userId: string, name: string, createdAt: Date) {
+async function mkPasskey(userId: string, name: string, createdAt: Date, credentialID = `cred_${crypto.randomUUID()}`) {
   const id = `pk_${crypto.randomUUID()}`;
   await db.insert(passkey).values({
     id,
     name,
     publicKey: "public-key",
     userId,
-    credentialID: `cred_${crypto.randomUUID()}`,
+    credentialID,
     counter: 0,
     deviceType: "multiDevice",
     backedUp: true,
@@ -43,11 +43,6 @@ describe("passkeys domain", () => {
     expect(Object.keys(list[0]).sort()).toEqual(["createdAt", "id", "name"]);
   });
 
-  it("knows who owns a passkey", async () => {
-    expect(await ownsPasskey(ada, adaPhone)).toBe(true);
-    expect(await ownsPasskey(ada, benPhone)).toBe(false);
-  });
-
   it("refuses to remove someone else's passkey and leaves it in place", async () => {
     await expect(removePasskey(ada, benPhone)).rejects.toThrow("not-found");
     expect((await passkeysFor(ben)).map((p) => p.id)).toEqual([benPhone]);
@@ -63,35 +58,17 @@ describe("passkeys domain", () => {
   });
 });
 
-// After a passkey sign-in the server can't see which credential was used.
-// passkeyForDevice guesses only when the guess can't be wrong.
-describe("passkeyForDevice", () => {
-  // A laptop can sign in with the phone's passkey (another device's QR code).
-  // Naming that phone passkey "This computer" would let Remove delete it.
-  it("won't guess a passkey named for another device", async () => {
+// The after hook in src/lib/auth.ts turns the credential the plugin just
+// verified into the row id it remembers in the "this device" cookie.
+describe("passkeyIdForCredential", () => {
+  it("finds the row for a credential", async () => {
     const cal = await mkUser(`u_cal_${crypto.randomUUID()}`);
-    await mkPasskey(cal, "Mac", new Date());
-    expect(await passkeyForDevice(cal, "iPhone")).toBeNull();
+    const credentialID = `cred_${crypto.randomUUID()}`;
+    const id = await mkPasskey(cal, "iPhone", new Date(), credentialID);
+    expect(await passkeyIdForCredential(credentialID)).toBe(id);
   });
 
-  it("picks the member's only passkey when it's named for this device", async () => {
-    const fay = await mkUser(`u_fay_${crypto.randomUUID()}`);
-    const only = await mkPasskey(fay, "iPhone", new Date());
-    expect(await passkeyForDevice(fay, "iPhone")).toBe(only);
-  });
-
-  it("picks the only one named for this kind of device", async () => {
-    const dee = await mkUser(`u_dee_${crypto.randomUUID()}`);
-    await mkPasskey(dee, "Mac", new Date());
-    const phone = await mkPasskey(dee, "iPhone", new Date());
-    expect(await passkeyForDevice(dee, "iPhone")).toBe(phone);
-  });
-
-  it("gives up when two could be this device, or none", async () => {
-    const eve = await mkUser(`u_eve_${crypto.randomUUID()}`);
-    await mkPasskey(eve, "iPhone", new Date());
-    await mkPasskey(eve, "iPhone", new Date());
-    expect(await passkeyForDevice(eve, "iPhone")).toBeNull();
-    expect(await passkeyForDevice(eve, "Android phone")).toBeNull();
+  it("finds nothing for an unknown credential", async () => {
+    expect(await passkeyIdForCredential(`cred_${crypto.randomUUID()}`)).toBeNull();
   });
 });

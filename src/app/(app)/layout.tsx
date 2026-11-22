@@ -7,7 +7,7 @@ import { BackBar } from "@/components/back-bar";
 import { SentryUser } from "@/components/sentry-user";
 import { WhatsNewDialog } from "@/components/whats-new-dialog";
 import { PasskeyOffer } from "@/components/passkey-offer";
-import { PASSKEY_COOKIE } from "@/lib/passkey-cookie";
+import { PASSKEY_COOKIE } from "@/lib/passkeys";
 import { passkeyMethod } from "@/lib/passkey-device";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {

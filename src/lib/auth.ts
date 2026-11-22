@@ -10,6 +10,7 @@ import { sendAuthEmail } from "@/lib/auth-email";
 import { env } from "@/lib/env";
 import { largeGooglePhoto } from "@/lib/google-photo";
 import { passkeyRpID } from "@/lib/passkey-rp";
+import { PASSKEY_COOKIE, passkeyIdForCredential } from "@/lib/passkeys";
 import { LATEST_RELEASE_ID } from "@/lib/whats-new";
 
 // Vercel preview deployments get a fresh *.vercel.app URL per deploy, so a
@@ -32,19 +33,19 @@ const previewHost = env.VERCEL_BRANCH_URL ?? env.VERCEL_URL;
 export const authBaseURL =
   isPreview && previewHost ? `https://${previewHost}` : env.BETTER_AUTH_URL;
 
+const passkeyCookieOptions = {
+  httpOnly: true,
+  secure: (authBaseURL ?? "").startsWith("https://"),
+  sameSite: "lax",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 400, // browsers' upper limit
+} as const;
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
   baseURL: authBaseURL,
   trustedOrigins: isPreview ? ["https://*.vercel.app"] : undefined,
   secret: env.BETTER_AUTH_SECRET,
-  session: {
-    // 0 turns off Better Auth's fresh-session check (it skips the check when
-    // freshAge is 0). The passkey plugin puts that check on registration, and
-    // members turn on Face ID from Settings on sessions days or weeks old; the
-    // default 24 hours refused them all. The session cookie is already full
-    // account access, so a re-sign-in adds nothing here.
-    freshAge: 0,
-  },
   // The passkey plugin's list, rename, and delete endpoints. The app lists and
   // removes passkeys through src/lib/passkeys.ts instead: the plugin's list
   // returns the public key, and members can't rename passkeys (spec).
@@ -75,6 +76,24 @@ export const auth = betterAuth({
       if (ctx.path === "/update-user" && ctx.body && "image" in ctx.body) {
         throw new APIError("BAD_REQUEST", { message: "Photos are changed from Settings." });
       }
+    }),
+    // Remember which passkey this device holds (PASSKEY_COOKIE), set where the
+    // exact credential is known: a registration (always a platform passkey,
+    // src/components/use-turn-on-passkey.ts) or a sign-in with a platform
+    // passkey. A sign-in through another device's QR code is cross-platform:
+    // that passkey lives on the phone, so the laptop isn't told it holds one.
+    after: createAuthMiddleware(async (ctx) => {
+      const returned = ctx.context.returned as Record<string, unknown> | undefined;
+      let id: string | null = null;
+      if (ctx.path === "/passkey/verify-registration" && typeof returned?.credentialID === "string") {
+        id = typeof returned.id === "string" ? returned.id : null;
+      } else if (ctx.path === "/passkey/verify-authentication" && returned?.session) {
+        const response = ctx.body?.response as { id?: unknown; authenticatorAttachment?: unknown } | undefined;
+        if (response?.authenticatorAttachment === "platform" && typeof response.id === "string") {
+          id = await passkeyIdForCredential(response.id);
+        }
+      }
+      if (id) ctx.setCookie(PASSKEY_COOKIE, id, passkeyCookieOptions);
     }),
   },
   databaseHooks: {
@@ -131,6 +150,12 @@ export const auth = betterAuth({
       // slash or path a BETTER_AUTH_URL might carry.
       origin: authBaseURL ? new URL(authBaseURL).origin : undefined,
       authenticatorSelection: { residentKey: "required", userVerification: "required" },
+      // The plugin requires a "fresh" session (Better Auth's 24 hours) to
+      // register, and members turn on Face ID from Settings on sessions days
+      // old. Without requireSession it still needs a signed-in member: with no
+      // session and no resolveUser, generating options is refused. Scoped to
+      // passkeys, so every other fresh-session check stays on.
+      registration: { requireSession: false },
     }),
     nextCookies(), // must stay last in this array (Better Auth docs)
   ],

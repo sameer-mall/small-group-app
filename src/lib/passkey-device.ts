@@ -3,15 +3,6 @@
 // components use the browser checks and storage helpers.
 // Spec: docs/superpowers/specs/2026-11-15-passkeys-design.md
 
-// Which passkey this device created, so the server can show Welcome back and
-// "This iPhone". Here rather than in passkey-cookie.ts so client components can
-// read the names too.
-export const PASSKEY_COOKIE = "sg_passkey";
-
-// Set after a passkey sign-in when the server can't tell which passkey was
-// used: Welcome back still shows, but no Settings row is "This iPhone".
-export const UNKNOWN_PASSKEY = "unknown";
-
 export type PasskeyKind = "face-id" | "fingerprint" | "passkey";
 
 export type PasskeyMethod = {
@@ -46,40 +37,50 @@ export function kindForDeviceName(name: string | null): PasskeyKind {
   return "passkey";
 }
 
-const NAMES: Record<PasskeyKind, { feature: string; with: string; unlocks: string }> = {
-  "face-id": { feature: "Face ID", with: "Face ID", unlocks: "Your face unlocks Small Group on this phone." },
-  fingerprint: { feature: "Fingerprint sign-in", with: "fingerprint", unlocks: "" },
-  passkey: { feature: "Passkey sign-in", with: "a passkey", unlocks: "Your device's screen lock signs you in." },
+// Per-kind wording. `feature` is the name in a sentence: Face ID is a proper
+// noun, so it keeps its capitals. `unlocks` names the device for fingerprint
+// (a tablet is not a phone); Face ID is always an iPhone.
+const NAMES: Record<
+  PasskeyKind,
+  { title: string; feature: string; with: string; explainer: string; unlocks: (device: string) => string }
+> = {
+  "face-id": {
+    title: "Face ID",
+    feature: "Face ID",
+    with: "Face ID",
+    explainer: "Sign in with a glance instead of waiting for an email code.",
+    unlocks: () => "Your face unlocks Small Group on this phone.",
+  },
+  fingerprint: {
+    title: "Fingerprint sign-in",
+    feature: "fingerprint sign-in",
+    with: "fingerprint",
+    explainer: "Sign in with your fingerprint instead of waiting for an email code.",
+    unlocks: (device) => `Your fingerprint unlocks Small Group on this ${device}.`,
+  },
+  passkey: {
+    title: "Passkey sign-in",
+    feature: "passkey sign-in",
+    with: "a passkey",
+    explainer: "Sign in with your device's screen lock instead of waiting for an email code.",
+    unlocks: () => "Your device's screen lock signs you in.",
+  },
 };
-
-export type PasskeyCopy = ReturnType<typeof passkeyCopy>;
 
 export function passkeyCopy(method: PasskeyMethod) {
   const n = NAMES[method.kind];
-  // Face ID is a proper noun: keep it capitalized wherever the feature name appears.
-  const featureLower = method.kind === "face-id" ? "Face ID" : n.feature.toLowerCase();
-  // The fingerprint line names the device: a tablet is not a phone.
-  const unlocks =
-    method.kind === "fingerprint"
-      ? `Your fingerprint unlocks Small Group on this ${method.device}.`
-      : n.unlocks;
-  const turnOn = method.kind === "face-id" ? "Turn on Face ID" : `Turn on ${featureLower}`;
+  const turnOn = `Turn on ${n.feature}`;
   return {
     signInButton: `Sign in with ${n.with}`,
     signInFailed: `Couldn't sign in with ${n.with}. Try again, or use email instead.`,
-    cardTitle: method.kind === "passkey" ? "Passkeys" : n.feature,
-    explainer:
-      method.kind === "face-id"
-        ? "Sign in with a glance instead of waiting for an email code."
-        : method.kind === "fingerprint"
-          ? "Sign in with your fingerprint instead of waiting for an email code."
-          : "Sign in with your device's screen lock instead of waiting for an email code.",
+    cardTitle: method.kind === "passkey" ? "Passkeys" : n.title,
+    explainer: n.explainer,
     turnOn,
     turnOnHere: `${turnOn} for this ${method.device}`,
-    turnOnFailed: `Couldn't turn on ${featureLower}. Try again from Settings.`,
+    turnOnFailed: `Couldn't turn on ${n.feature}. Try again from Settings.`,
     offerTitle: `Sign in with ${method.kind === "fingerprint" ? "your fingerprint" : n.with} next time?`,
-    offerBody: `Skip the email code. ${unlocks}`,
-    removedNotice: `${n.feature} was turned off for this ${method.device}. Sign in with an email code, then you can turn it back on in Settings.`,
+    offerBody: `Skip the email code. ${n.unlocks(method.device)}`,
+    removedNotice: `${n.title} was turned off for this ${method.device}. Sign in with an email code, then you can turn it back on in Settings.`,
   };
 }
 
@@ -128,28 +129,25 @@ type Store = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const OFFERED = "sg:passkey-offered";
 const JUST_SIGNED_IN = "sg:just-signed-in";
 
-function local(): Store | undefined {
+// Storage can be missing (the server) or throw on access (Safari with site
+// data blocked): either way, undefined.
+function safely(get: () => Storage): Store | undefined {
   try {
-    return window.localStorage;
+    return get();
   } catch {
     return undefined;
   }
 }
 
-function session(): Store | undefined {
-  try {
-    return window.sessionStorage;
-  } catch {
-    return undefined;
-  }
-}
+const local = () => safely(() => window.localStorage);
+const session = () => safely(() => window.sessionStorage);
 
 // Storage that throws or is missing counts as "already offered": better to
 // skip the sheet than to show it on every sign-in.
 export function wasOffered(store = local()): boolean {
   if (!store) return true;
   try {
-    return store?.getItem(OFFERED) === "1";
+    return store.getItem(OFFERED) === "1";
   } catch {
     return true;
   }
@@ -184,10 +182,4 @@ export function takeJustSignedIn(store = session()): boolean {
     store?.removeItem(JUST_SIGNED_IN);
   } catch {}
   return had;
-}
-
-// "Nov 15", in UTC (as formatMeetingDate in src/lib/utils.ts), so the server
-// and the browser print the same date and hydration matches.
-export function addedLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }

@@ -6,8 +6,7 @@ import { z } from "zod";
 import { requireAccount, requireUser } from "@/lib/dal";
 import { avatarForm, removeAvatar, saveAvatar, UNREADABLE_PHOTO } from "@/lib/avatars";
 import { logRefusal } from "@/lib/monitoring";
-import { ownsPasskey, passkeysFor, removePasskey } from "@/lib/passkeys";
-import { PASSKEY_COOKIE, UNKNOWN_PASSKEY, passkeyCookieOptions } from "@/lib/passkey-cookie";
+import { PASSKEY_COOKIE, removePasskey } from "@/lib/passkeys";
 import { deleteSubscription, pushSubscriptionInput, saveSubscription } from "@/lib/push";
 // Not re-exported: Next treats every export of a "use server" file as an
 // action, type-only ones included, and the client then fails at runtime
@@ -94,17 +93,6 @@ export async function removeAvatarAction(
   return { error: null, success: true };
 }
 
-const passkeyIdInput = z.string().min(1);
-
-// Called by the offer sheet and the Settings card right after the browser
-// creates a passkey. Only a passkey the member owns is remembered.
-export async function rememberPasskeyAction(id: unknown): Promise<void> {
-  const user = await requireUser();
-  const parsed = passkeyIdInput.safeParse(id);
-  if (!parsed.success || !(await ownsPasskey(user.id, parsed.data))) return;
-  (await cookies()).set(PASSKEY_COOKIE, parsed.data, passkeyCookieOptions);
-}
-
 const removePasskeyForm = z.object({ id: z.string({ error: "That sign-in wasn't found." }).min(1) });
 
 function mapPasskeyError(err: unknown): string {
@@ -127,17 +115,9 @@ export async function removePasskeyAction(
   } catch (err) {
     return { error: mapPasskeyError(err), success: false };
   }
-  // Forget this device's passkey when it's the one removed, or when the device
-  // only knew "unknown" and the member has none left: Welcome back would offer
-  // a passkey that no longer exists.
+  // Removing this device's own passkey: stop offering it on Welcome back.
   const jar = await cookies();
-  const remembered = jar.get(PASSKEY_COOKIE)?.value;
-  if (
-    remembered === form.data.id ||
-    (remembered === UNKNOWN_PASSKEY && (await passkeysFor(user.id)).length === 0)
-  ) {
-    jar.delete(PASSKEY_COOKIE);
-  }
+  if (jar.get(PASSKEY_COOKIE)?.value === form.data.id) jar.delete(PASSKEY_COOKIE);
   revalidatePath("/(app)", "layout");
   return { error: null, success: true };
 }

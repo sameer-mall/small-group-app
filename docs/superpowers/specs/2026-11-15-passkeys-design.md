@@ -150,21 +150,25 @@ migration. Nothing secret is stored.
   - Device storage, every access in try/catch: `localStorage` holds only the
     "offered" flag; `sessionStorage` holds the "just signed in" note.
 - **Which passkey this device created** lives in an httpOnly `sg_passkey`
-  cookie (the passkey's row id), set by a server action after registration and
-  read by the server for Welcome back and "This iPhone". A server-set cookie,
-  because Safari caps cookies written from JavaScript at 7 days. It survives
-  sign-out on purpose.
+  cookie (the passkey's row id), read by the server for Welcome back and "This
+  iPhone". A Better Auth `hooks.after` in `src/lib/auth.ts` sets it on the
+  plugin's own responses, where the exact credential is known: after a
+  registration (always a platform passkey), and after a sign-in whose
+  credential is a platform passkey (`authenticatorAttachment: "platform"`). A
+  sign-in through another device's QR code is cross-platform, so a laptop is
+  never told it holds the phone's passkey. A response header rather than
+  JavaScript, because Safari caps cookies written from JavaScript at 7 days. It
+  survives sign-out on purpose.
 - **Losing the cookie doesn't lose Face ID.** Clearing site data, or deleting
   and re-adding the home-screen app, drops the cookie, but the passkey lives in
   the phone's password manager. The plain form shows, and the passkey is
-  offered from the email field's suggestions. After a passkey sign-in from
-  there, the server sets the cookie again, so Welcome back returns from the
-  next visit. It can't see which passkey was used, so it stores the only one
-  named for this kind of device (`passkeyForDevice`). Not simply the member's
-  only passkey: a laptop can sign in with the phone's passkey through another
-  device's QR code. Otherwise it stores `unknown`: Welcome back shows, no
-  Settings row is marked "This iPhone", and there's no "Turn on for this
-  phone" button.
+  offered from the email field's suggestions. That sign-in's response sets the
+  cookie again, so Welcome back returns from the next visit.
+- **Registration doesn't need a "fresh" session.** The plugin normally wants a
+  session under Better Auth's 24 hours old to register, which would refuse
+  members turning it on from Settings. `registration: { requireSession: false }`
+  lifts that for passkeys only; generating options still needs a signed-in
+  member.
 - Sign-in form: conditional UI on the email field, the removed notice, and the
   "just signed in" note after code and Google sign-ins.
 - `(app)` layout: a client `PasskeyOffer` bottom sheet.

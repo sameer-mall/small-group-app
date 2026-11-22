@@ -8,9 +8,8 @@ import { ReportProblemDialog } from "@/components/report-problem-dialog";
 import { SignOutButton } from "@/components/sign-out-button";
 import { WhatsNewCard } from "@/components/whats-new-card";
 import { avatarsEnabled } from "@/lib/avatar-storage";
-import { PASSKEY_COOKIE } from "@/lib/passkey-cookie";
 import { passkeyMethod } from "@/lib/passkey-device";
-import { passkeysFor } from "@/lib/passkeys";
+import { PASSKEY_COOKIE, passkeysFor } from "@/lib/passkeys";
 import { releases } from "@/lib/whats-new";
 
 // What is personal to the member, as opposed to the group's (see /group),

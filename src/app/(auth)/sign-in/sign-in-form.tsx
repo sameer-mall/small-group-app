@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { authClient, UNREACHABLE_MESSAGE } from "@/lib/auth-client";
 import { conditionalMediationAvailable, noteJustSignedIn } from "@/lib/passkey-device";
-import { rememberSignedInPasskeyAction } from "./actions";
 
 const inputClass =
   "bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none";
@@ -30,21 +29,16 @@ export function SignInForm({ next, notice = null }: { next: string; notice?: str
   // A passkey that synced to this device (a new phone, or a re-added app that
   // lost its cookie) is offered from the email field's keyboard suggestions.
   // Waits silently until the member focuses the field; failures leave the
-  // form as it was. After it signs in, the cookie is set again so this device
-  // opens to Welcome back from the next visit.
+  // form as it was. The sign-in response sets the passkey cookie again (the
+  // after hook in src/lib/auth.ts), so this device opens to Welcome back
+  // from the next visit.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!(await conditionalMediationAvailable())) return;
       try {
         const { error } = await authClient.signIn.passkey({ autoFill: true });
-        if (error || cancelled) return;
-        try {
-          await rememberSignedInPasskeyAction();
-        } catch {
-          // Best effort: the member is signed in either way, so don't strand them here.
-        }
-        router.push(next);
+        if (!error && !cancelled) router.push(next);
       } catch {}
     })();
     return () => {

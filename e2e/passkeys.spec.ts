@@ -1,7 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { config } from "dotenv";
-import { Pool } from "pg";
-import { expectApp, memberContext, signIn } from "./helpers";
+import { deletePasskeysFor, expectApp, memberContext, signIn } from "./helpers";
 
 // Chromium's user agent follows the host OS, so the device is "This computer"
 // on Linux CI and "This Mac" on a Mac.
@@ -23,18 +21,6 @@ async function addVirtualAuthenticator(context: BrowserContext, page: Page) {
       automaticPresenceSimulation: true,
     },
   });
-}
-
-// Removing the passkey from another device: the server forgets it while this
-// device still holds the credential and the cookie.
-async function deletePasskeysFor(email: string) {
-  config({ quiet: true });
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  try {
-    await pool.query(`delete from passkey where user_id = (select id from "user" where email = $1)`, [email]);
-  } finally {
-    await pool.end();
-  }
 }
 
 async function signOut(page: Page) {
