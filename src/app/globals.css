@@ -56,6 +56,7 @@
 
   --success: #6b7e5a;          /* "submitted ✓", approve, all-claimed */
   --success-tint: #eff2e7;     /* drawn-state pill background */
+  --success-strong: #56664a;   /* sage text on --success-tint (the "On" pill); 5.5:1 */
   --success-contrast: #ffffff;  /* text on --success (approve pill) */
   --danger: #b3563b;           /* remove member, delete recipe */
   --warning-surface: #fff4e6;  /* "wants to join" callout bg */
@@ -115,6 +116,7 @@
 
   --success: #9baf7e;
   --success-tint: #2e3324;
+  --success-strong: #b5c79a;
   --success-contrast: #201914;  /* dark text: white on light sage is too faint */
   --danger: #d97757;
   --warning-surface: #33281c;
@@ -185,6 +187,7 @@
   --color-accent-tint: var(--accent-tint);
   --color-success: var(--success);
   --color-success-tint: var(--success-tint);
+  --color-success-strong: var(--success-strong);
   --color-success-contrast: var(--success-contrast);
   --color-warning-surface: var(--warning-surface);
   --color-warning-border: var(--warning-border);
