@@ -18,7 +18,7 @@ the way in for anyone without a passkey and as account recovery.
 | Question | Decision |
 |---|---|
 | How members turn it on | Offered once per device right after an emailed-code or Google sign-in ("Sign in with Face ID next time?"), and always available from Settings. |
-| Wording | Per device: "Face ID" on iPhone, "fingerprint" on Android, "a passkey" everywhere else (iPad, Mac, Windows, Linux). Chosen from the user agent; a wrong guess only mislabels the button, because the OS shows its own prompt. |
+| Wording | Per device: "Face ID" on iPhone, "fingerprint" on Android, "a passkey" everywhere else (Mac and iPad, Windows, Linux). Chosen from the user agent; a wrong guess only mislabels the button, because the OS shows its own prompt. |
 | Sign-in screen | The passkey button shows only on a device that set one up. Shown to everyone beside email and Google, it read as a third way to create an account (owner review of the first mockups). A device with a passkey opens to a "Welcome back" screen where the passkey is the main action and "Use email instead" leads to today's form. Every other device sees today's form unchanged, with the passkey offered from the email field's keyboard suggestions (conditional UI) for members whose passkey synced to a new phone. This follows Google's guidance that a standalone passkey button suits users known to have passkeys, while a mixed user base keeps the form and adds autofill. |
 | Session length | Unchanged (Better Auth default, 7 days sliding). 90-day sessions were discussed and deferred. |
 | Passkey domain | Defaults to the host of `authBaseURL`, overridable with `PASSKEY_RP_ID`, so a future move to a custom domain can keep existing passkeys working through WebAuthn related origins (`/.well-known/webauthn` on the old domain). |
@@ -32,14 +32,14 @@ the way in for anyone without a passkey and as account recovery.
 Mockups: the "Face ID sign-in screens" design canvas
 (https://claude.ai/artifact/FY1HUAZMnNkyttZo2sdc5C), top row.
 
-**Device without a passkey** (no `passkeyId` in device storage): today's
+**Device without a passkey** (no `sg_passkey` cookie): today's
 screen, unchanged to the eye. Email form, "or", Continue with Google. No
 passkey button. The email input gets `autocomplete="username webauthn"` and the
 page starts a conditional passkey request on mount, so a member whose passkey
 synced to this device (a new iPhone restored from iCloud, or a re-added
 home-screen app that lost its storage) still gets it from the keyboard.
 
-**Device with a passkey** (`passkeyId` set): a "Welcome back" screen.
+**Device with a passkey** (`sg_passkey` cookie set): a "Welcome back" screen.
 
 - "Small Group", "Welcome back.", and the method icon in a 72px tinted circle.
 - A primary `Button` with icon and label per device:
@@ -51,13 +51,13 @@ home-screen app that lost its storage) still gets it from the keyboard.
   | Anything else | `KeyRound` icon, "Sign in with a passkey" |
 
 - An outline `Button`, "Use email instead", which swaps to the form above
-  (conditional request included) without clearing `passkeyId`.
+  (conditional request included) without clearing the cookie.
 - No automatic prompt on load. The member taps the button; a prompt that pops
   on its own is easy to dismiss by accident.
 
 Icons are lucide (already a dependency); Apple's Face ID glyph is not licensed
 for the web. If the browser has no `PublicKeyCredential`, the form shows even
-when `passkeyId` is set.
+when the cookie is set.
 
 A successful passkey sign-in goes to `next`, the same as a code sign-in.
 
@@ -139,23 +139,33 @@ migration. Nothing secret is stored.
 - `src/lib/auth-client.ts`: add `passkeyClient()`.
 - `src/lib/passkey-device.ts` (no zod, browser-safe):
   - `passkeyMethod(userAgent)` returns `{ kind: "face-id" | "fingerprint" |
-    "passkey", label, deviceName }`. iPhone is face-id; Android is fingerprint;
-    iPad, Mac, and everything else is passkey (they may be Touch ID).
-    `deviceName` ("iPhone", "Android phone", "iPad", "Computer") names new
-    passkeys; members cannot rename them.
+    "passkey", deviceName, thisDevice }`. iPhone is face-id; Android is
+    fingerprint; everything else is passkey. `deviceName` ("iPhone", "Android
+    phone", "Android tablet", "Mac", "Computer") names new passkeys; members
+    cannot rename them. iPadOS Safari sends a Mac user agent, so an iPad's
+    passkey is named "Mac". The server calls this with the request's user
+    agent, so pages render the right wording with no flash.
   - `passkeySupported()` and `platformPasskeyAvailable()` wrap the browser
     checks.
-  - Device storage in `localStorage`, every access in try/catch:
-    `passkeyId` (the id this device created) and `passkeyOffered` (prompt
-    shown). Plus the `sessionStorage` "just signed in" note.
-- Sign-in form: the passkey button, conditional UI on the email field, and the
+  - Device storage, every access in try/catch: `localStorage` holds only the
+    "offered" flag; `sessionStorage` holds the "just signed in" note.
+- **Which passkey this device created** lives in an httpOnly `sg_passkey`
+  cookie (the passkey's row id), set by a server action after registration and
+  read by the server for Welcome back and "This iPhone". A server-set cookie,
+  because Safari caps cookies written from JavaScript at 7 days. It survives
+  sign-out on purpose.
+- Sign-in form: conditional UI on the email field, the removed notice, and the
   "just signed in" note after code and Google sign-ins.
 - `(app)` layout: a client `PasskeyOffer` bottom sheet.
-- Settings: a server component lists passkeys with `auth.api.listPasskeys`.
-  Turn on is a client button (registration must run in the browser). Remove is
-  a server action that parses `{ id }` with zod, calls
-  `auth.api.deletePasskey`, and calls `logRefusal` first in its refusal
-  mapping. Removing the passkey this device created also clears `passkeyId`.
+- Settings: the server lists passkeys with `passkeysFor(userId)` in
+  `src/lib/passkeys.ts` (id, name, and date only; the public key never leaves
+  the server). Turn on is a client button (registration must run in the
+  browser). Remove is a server action that parses `{ id }` with zod, calls
+  `removePasskey(userId, id)` (deletes only the member's own, else
+  `not-found`), and calls `logRefusal` first in its refusal mapping. Listing
+  and removing use our domain module rather than the plugin's endpoints so the
+  owner check is ours and tested. Removing the passkey this device created
+  also clears the cookie.
 
 ## Errors
 
@@ -163,14 +173,15 @@ migration. Nothing secret is stored.
 |---|---|
 | Cancels the Face ID prompt on Welcome back (`NotAllowedError`) | Nothing. The screen stays, ready to try again or use email. |
 | Cancels while turning it on | Sheet closes, or Settings stays as it was. No error. |
-| Passkey removed on the server but still offered by the phone | Switches to the form with a notice above it: "Face ID was turned off for this phone. Sign in with an email code, then you can turn it back on in Settings." (per-device wording). Clears `passkeyId`, so the next visit shows the form. |
+| Passkey removed on the server but still offered by the phone | Switches to the form with a notice above it: "Face ID was turned off for this phone. Sign in with an email code, then you can turn it back on in Settings." (per-device wording). Clears the `sg_passkey` cookie, so the next visit shows the form. |
 | Offline or no response | `UNREACHABLE_MESSAGE` |
 | No passkey support | Sign-in shows the form; Settings says "Not available in this browser." |
 
 No em dashes in any of this copy.
 
-Monitoring: a cancelled prompt is normal and is not reported. Unexpected client
-errors report the error name only. Nothing sent to Sentry includes passkey
+Monitoring: a cancelled prompt is normal and is not reported. Passkey errors
+the client handles are shown inline and not reported; anything that throws
+reaches Sentry through the existing global handlers. Nothing sent to Sentry includes passkey
 names, emails, or credential ids.
 
 ## Testing
