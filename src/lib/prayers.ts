@@ -30,6 +30,28 @@ export type PrayerBowl = {
   drawn: { body: string; authorName: string } | null;
 };
 
+export type WallPerson = { userId: string; name: string };
+export type WallRequest = {
+  id: string;
+  authorId: string;
+  name: string;
+  image: string | null;
+  body: string;
+  updatedAt: Date;
+  isMine: boolean;
+};
+export type PrayerWall = {
+  meetingId: string;
+  status: "open" | "drawn";
+  requests: WallRequest[]; // newest first, current members only
+  writing: WallPerson[]; // joined, no request; current members; by name
+  notJoined: WallPerson[]; // current members neither joined nor posted; by name
+  viewerJoined: boolean;
+  mine: { body: string } | null;
+  assigned: { body: string; authorName: string; authorImage: string | null } | null;
+  myRequestIsAssigned: boolean;
+};
+
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 // Loads the meeting and confirms the actor belongs to its group. Every entry
@@ -293,6 +315,89 @@ export async function getPrayerBowl(viewerId: string, meetingId: string): Promis
     notJoined: people.filter((p) => !joined.has(p.userId)),
     viewer: { joined: joined.has(viewerId), request: own[0] ?? null },
     drawn,
+  };
+}
+
+// The read model behind the wall page and the meeting card. Every request is
+// group-visible by design; what stays private is who was assigned whose, so
+// the only assignment read here is filtered to the viewer.
+export async function getPrayerWall(viewerId: string, meetingId: string): Promise<PrayerWall> {
+  const meeting = await requireMeetingMember(viewerId, meetingId);
+
+  const [[session], members, participants, requestRows, [assignedRow]] = await Promise.all([
+    db
+      .select({ status: prayerSessions.status })
+      .from(prayerSessions)
+      .where(eq(prayerSessions.meetingId, meetingId)),
+    listMembers(meeting.groupId),
+    db
+      .select({ userId: prayerParticipants.userId })
+      .from(prayerParticipants)
+      .where(eq(prayerParticipants.meetingId, meetingId)),
+    db
+      .select({
+        id: prayerRequests.id,
+        authorId: prayerRequests.authorId,
+        body: prayerRequests.body,
+        updatedAt: prayerRequests.updatedAt,
+      })
+      .from(prayerRequests)
+      .where(eq(prayerRequests.meetingId, meetingId))
+      .orderBy(desc(prayerRequests.updatedAt), asc(prayerRequests.id)),
+    db
+      .select({ body: prayerRequests.body, authorName: user.name, authorImage: user.image })
+      .from(prayerAssignments)
+      .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
+      .innerJoin(user, eq(user.id, prayerRequests.authorId))
+      .where(
+        and(eq(prayerAssignments.meetingId, meetingId), eq(prayerAssignments.assigneeId, viewerId)),
+      ),
+  ]);
+
+  // Current members only: a removed member drops out of every list and their
+  // words leave the wall.
+  const byId = new Map(members.map((m) => [m.userId, m]));
+  const requests: WallRequest[] = requestRows
+    .filter((r) => byId.has(r.authorId))
+    .map((r) => {
+      const author = byId.get(r.authorId)!;
+      return {
+        id: r.id,
+        authorId: r.authorId,
+        name: author.name,
+        image: author.image,
+        body: r.body,
+        updatedAt: r.updatedAt,
+        isMine: r.authorId === viewerId,
+      };
+    });
+
+  const joined = new Set(participants.map((p) => p.userId));
+  const wrote = new Set(requests.map((r) => r.authorId));
+  const people = members
+    .map((m) => ({ userId: m.userId, name: m.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const mineRow = requests.find((r) => r.isMine);
+
+  let myRequestIsAssigned = false;
+  if (mineRow) {
+    const [row] = await db
+      .select({ requestId: prayerAssignments.requestId })
+      .from(prayerAssignments)
+      .where(eq(prayerAssignments.requestId, mineRow.id));
+    myRequestIsAssigned = Boolean(row);
+  }
+
+  return {
+    meetingId,
+    status: session?.status ?? "open",
+    requests,
+    writing: people.filter((p) => joined.has(p.userId) && !wrote.has(p.userId)),
+    notJoined: people.filter((p) => !joined.has(p.userId) && !wrote.has(p.userId)),
+    viewerJoined: joined.has(viewerId) || wrote.has(viewerId),
+    mine: mineRow ? { body: mineRow.body } : null,
+    assigned: assignedRow ?? null,
+    myRequestIsAssigned,
   };
 }
 

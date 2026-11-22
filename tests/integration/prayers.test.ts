@@ -7,6 +7,7 @@ import {
   assignPrayers,
   deletePrayerRequest,
   getPrayerBowl,
+  getPrayerWall,
   joinPrayerWall,
   leavePrayerWall,
   listMyAssignedPrayers,
@@ -444,5 +445,80 @@ describe("my prayers", () => {
 
     const titles = (await listMyAssignedPrayers(alice, groupId)).map((p) => p.meetingTitle);
     expect(titles).toEqual(["Evening", "Morning"]);
+  });
+});
+
+describe("prayer wall: what members read", () => {
+  let alice: string, bob: string, carol: string, outsider: string;
+  beforeAll(async () => {
+    alice = await mkUser(`u_w_alice_${crypto.randomUUID()}`, "Alice");
+    bob = await mkUser(`u_w_bob_${crypto.randomUUID()}`, "Bob");
+    carol = await mkUser(`u_w_carol_${crypto.randomUUID()}`, "Carol");
+    outsider = await mkUser(`u_w_out_${crypto.randomUUID()}`, "Outsider");
+  });
+
+  async function seedMeeting(name: string) {
+    const { groupId } = await createGroup(alice, name);
+    await addMember(alice, groupId, bob);
+    await addMember(alice, groupId, carol);
+    const { meetingId } = await createMeeting(alice, groupId, { title: name, date: "2026-11-26" });
+    return { groupId, meetingId };
+  }
+
+  it("every member reads every request, newest first, with names", async () => {
+    const { meetingId } = await seedMeeting("Wall read");
+    await postPrayerRequest(alice, meetingId, { body: "A" });
+    await postPrayerRequest(bob, meetingId, { body: "B" });
+    const wall = await getPrayerWall(carol, meetingId);
+    expect(wall.requests.map((r) => [r.name, r.body, r.isMine])).toEqual([
+      ["Bob", "B", false],
+      ["Alice", "A", false],
+    ]);
+    expect(wall.mine).toBeNull();
+  });
+
+  it("splits members into writing and not joined, and marks the viewer's own request", async () => {
+    const { meetingId } = await seedMeeting("Wall buckets");
+    await postPrayerRequest(alice, meetingId, { body: "A" });
+    await joinPrayerWall(bob, meetingId);
+    const wall = await getPrayerWall(alice, meetingId);
+    expect(names(wall.writing)).toEqual(["Bob"]);
+    expect(names(wall.notJoined)).toEqual(["Carol"]);
+    expect(wall.viewerJoined).toBe(true);
+    expect(wall.mine).toEqual({ body: "A" });
+    expect(wall.requests[0].isMine).toBe(true);
+  });
+
+  it("a removed member's request leaves the wall", async () => {
+    const { groupId, meetingId } = await seedMeeting("Wall removed");
+    await postPrayerRequest(bob, meetingId, { body: "B" });
+    await removeMember(alice, groupId, bob);
+    const wall = await getPrayerWall(alice, meetingId);
+    expect(wall.requests).toEqual([]);
+  });
+
+  it("after assigning, the viewer sees their own assignment and nobody else's", async () => {
+    const { meetingId } = await seedMeeting("Wall assigned");
+    await postPrayerRequest(alice, meetingId, { body: "A" });
+    await postPrayerRequest(bob, meetingId, { body: "B" });
+    await assignPrayers(alice, meetingId);
+    const wall = await getPrayerWall(alice, meetingId);
+    expect(wall.status).toBe("drawn");
+    expect(wall.assigned).toEqual({ body: "B", authorName: "Bob", authorImage: null });
+    expect(wall.myRequestIsAssigned).toBe(true);
+    // Bob is Alice's assignee; that pairing must not reach Alice.
+    const assigneeRows = (await db.execute(
+      sql`select assignee_id from prayer_assignments where meeting_id = ${meetingId}`,
+    )).rows as { assignee_id: string }[];
+    expect(assigneeRows).toHaveLength(2);
+    expect(JSON.stringify({ ...wall, requests: wall.requests.map(({ authorId: _, ...r }) => r) })).not.toContain(bob);
+    const carolWall = await getPrayerWall(carol, meetingId);
+    expect(carolWall.assigned).toBeNull();
+    expect(carolWall.myRequestIsAssigned).toBe(false);
+  });
+
+  it("non-members cannot read the wall", async () => {
+    const { meetingId } = await seedMeeting("Wall outsider");
+    await expect(getPrayerWall(outsider, meetingId)).rejects.toThrow("forbidden");
   });
 });
