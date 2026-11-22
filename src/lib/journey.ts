@@ -44,6 +44,7 @@ function parentOf(path: string): string {
   if (path.startsWith("/recipes/")) return "/recipes";
   if (path.startsWith("/notes/")) return "/notes";
   if (path.startsWith("/settings/")) return "/settings";
+  if (/^\/meetings\/[^/]+\/prayers$/.test(path)) return path.slice(0, -"/prayers".length);
   // Meetings, My notes, Create a group, and an invite link.
   return "/";
 }

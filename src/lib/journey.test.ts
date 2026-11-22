@@ -95,4 +95,8 @@ describe("backTarget", () => {
       label: "Back",
     });
   });
+
+  it("the prayer wall goes back to its meeting after a cold launch", () => {
+    expect(backTarget(walk("/meetings/m1/prayers"))).toEqual({ href: "/meetings/m1", label: "Meeting" });
+  });
 });
