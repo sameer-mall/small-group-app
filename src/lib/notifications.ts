@@ -1,6 +1,15 @@
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db/client";
-import { mealPlans, meetings, member, organization, recipes, user } from "@/db/schema";
+import {
+  mealPlans,
+  meetings,
+  member,
+  organization,
+  prayerAssignments,
+  prayerRequests,
+  recipes,
+  user,
+} from "@/db/schema";
 import { logPushSent, reportPushFailure } from "@/lib/monitoring";
 import { sendToUsers, type PushPayload } from "@/lib/push";
 import { formatMeetingDate } from "@/lib/utils";
@@ -54,6 +63,20 @@ export function mealSetCopy(i: {
     // Only the latest meal for a meeting matters, so a change replaces the
     // earlier notification on the phone.
     tag: `meal-${i.meetingId}`,
+  };
+}
+
+export function prayersAssignedCopy(i: {
+  groupId: string;
+  groupName: string;
+  authorName: string;
+  meetingId: string;
+}): PushPayload {
+  return {
+    title: i.groupName,
+    body: `Prayers are assigned. You're praying for ${i.authorName}'s request this week.`,
+    url: inGroup(i.groupId, `/meetings/${i.meetingId}/prayers`),
+    tag: `prayers-${i.meetingId}`,
   };
 }
 
@@ -190,6 +213,45 @@ export async function notifyMealSet(i: { actorId: string; meetingId: string }): 
       }),
     };
   });
+}
+
+// One push per assignee, since each names a different author. The request
+// text never goes in a push: lock screens are not the wall.
+export async function notifyPrayersAssigned(i: { actorId: string; meetingId: string }): Promise<void> {
+  let groupId: string;
+  let name: string;
+  let rows: { assigneeId: string; authorName: string }[];
+  try {
+    const [meeting] = await db
+      .select({ groupId: meetings.groupId })
+      .from(meetings)
+      .where(eq(meetings.id, i.meetingId));
+    if (!meeting) throw new Error("not-found");
+    groupId = meeting.groupId;
+    [name, rows] = await Promise.all([
+      groupName(groupId),
+      db
+        .select({ assigneeId: prayerAssignments.assigneeId, authorName: user.name })
+        .from(prayerAssignments)
+        .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
+        .innerJoin(user, eq(user.id, prayerRequests.authorId))
+        .where(and(eq(prayerAssignments.meetingId, i.meetingId), ne(prayerAssignments.assigneeId, i.actorId))),
+    ]);
+  } catch (err) {
+    reportPushFailure(err);
+    return;
+  }
+  for (const row of rows) {
+    await deliver("prayers-assigned", async () => ({
+      recipients: [row.assigneeId],
+      payload: prayersAssignedCopy({
+        groupId,
+        groupName: name,
+        authorName: row.authorName,
+        meetingId: i.meetingId,
+      }),
+    }));
+  }
 }
 
 export async function notifyRecipeAdded(i: { actorId: string; recipeId: string }): Promise<void> {
