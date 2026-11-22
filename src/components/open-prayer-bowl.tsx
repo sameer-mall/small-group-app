@@ -9,10 +9,52 @@ import {
   type ActionState,
 } from "@/app/(app)/prayers/actions";
 import type { BowlMember, PrayerBowl } from "@/lib/prayers";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { DrawBowlButton } from "@/components/draw-bowl-button";
-import { PrayerBuckets } from "@/components/prayer-buckets";
 import { PrayerCompose } from "@/components/prayer-compose";
+
+// The bowl's three-row buckets, kept here (not in prayer-buckets.tsx, which
+// now serves the wall) until this file goes with the rest of the bowl.
+function namesFor(list: BowlMember[], currentUserId: string) {
+  const includesMe = list.some((m) => m.userId === currentUserId);
+  const others = list.filter((m) => m.userId !== currentUserId).map((m) => m.name);
+  return (includesMe ? ["You", ...others] : others).join(", ");
+}
+
+function BowlBuckets({
+  submitted,
+  waiting,
+  notJoined,
+  currentUserId,
+}: {
+  submitted: BowlMember[];
+  waiting: BowlMember[];
+  notJoined: BowlMember[];
+  currentUserId: string;
+}) {
+  const rows = [
+    { glyph: "✓", glyphClass: "text-success font-bold", label: "Submitted", members: submitted, namesClass: "font-semibold" },
+    { glyph: "…", glyphClass: "text-primary font-bold", label: "Waiting on", members: waiting, namesClass: "" },
+    { glyph: "○", glyphClass: "text-slot-dashed", label: "Not joined", members: notJoined, namesClass: "text-tertiary" },
+  ].filter((row) => row.members.length > 0);
+
+  return (
+    <div className="flex flex-col gap-2.5 text-[14.5px]">
+      {rows.map((row) => (
+        <div key={row.label} className="flex flex-wrap items-center gap-2">
+          <span aria-hidden className={row.glyphClass}>
+            {row.glyph}
+          </span>
+          <span className="text-muted-foreground w-[82px] shrink-0 text-[13px]">{row.label}</span>
+          <span className={cn("min-w-0 break-words", row.namesClass)}>
+            {namesFor(row.members, currentUserId)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const initialState: ActionState = { error: null, success: false };
 
@@ -118,7 +160,7 @@ export function OpenPrayerBowl({
 
   return (
     <div className="flex flex-col gap-3.5">
-      <PrayerBuckets {...buckets} currentUserId={currentUserId} />
+      <BowlBuckets {...buckets} currentUserId={currentUserId} />
       {stage === "not-joined" ? (
         <Button
           type="button"

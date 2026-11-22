@@ -1,28 +1,29 @@
 import { cn } from "@/lib/utils";
-import type { BowlMember } from "@/lib/prayers";
+import type { WallPerson } from "@/lib/prayers";
 
-// The viewer reads as "You", first in whichever bucket they're in — 3n shows
-// "You, Sarah, Dan, Ruth".
-function namesFor(list: BowlMember[], currentUserId: string) {
+// The viewer reads as "You", first in whichever bucket they're in, so a row
+// shows "You, Sarah, Dan, Ruth".
+export function displayNames(list: WallPerson[], currentUserId: string) {
   const includesMe = list.some((m) => m.userId === currentUserId);
   const others = list.filter((m) => m.userId !== currentUserId).map((m) => m.name);
-  return (includesMe ? ["You", ...others] : others).join(", ");
+  return includesMe ? ["You", ...others] : others;
+}
+
+function namesFor(list: WallPerson[], currentUserId: string) {
+  return displayNames(list, currentUserId).join(", ");
 }
 
 export function PrayerBuckets({
-  submitted,
-  waiting,
+  writing,
   notJoined,
   currentUserId,
 }: {
-  submitted: BowlMember[];
-  waiting: BowlMember[];
-  notJoined: BowlMember[];
+  writing: WallPerson[];
+  notJoined: WallPerson[];
   currentUserId: string;
 }) {
   const rows = [
-    { glyph: "✓", glyphClass: "text-success font-bold", label: "Submitted", members: submitted, namesClass: "font-semibold" },
-    { glyph: "…", glyphClass: "text-primary font-bold", label: "Waiting on", members: waiting, namesClass: "" },
+    { glyph: "…", glyphClass: "text-primary font-bold", label: "Writing", members: writing, namesClass: "" },
     { glyph: "○", glyphClass: "text-slot-dashed", label: "Not joined", members: notJoined, namesClass: "text-tertiary" },
   ].filter((row) => row.members.length > 0);
 
