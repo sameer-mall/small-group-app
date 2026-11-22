@@ -7,11 +7,13 @@ const THIS_DEVICE = /^This (computer|Mac)$/;
 const REMOVE_THIS_DEVICE = /^Remove This (computer|Mac)$/;
 
 // A platform authenticator that always verifies the user, like Face ID that
-// recognizes you. Chromium only.
+// recognizes you. Chromium only. Returns a switch for "the face isn't
+// recognized", which the browser reports as NotAllowedError, the same as
+// closing the Face ID sheet.
 async function addVirtualAuthenticator(context: BrowserContext, page: Page) {
   const cdp = await context.newCDPSession(page);
   await cdp.send("WebAuthn.enable");
-  await cdp.send("WebAuthn.addVirtualAuthenticator", {
+  const { authenticatorId } = await cdp.send("WebAuthn.addVirtualAuthenticator", {
     options: {
       protocol: "ctap2",
       transport: "internal",
@@ -21,6 +23,9 @@ async function addVirtualAuthenticator(context: BrowserContext, page: Page) {
       automaticPresenceSimulation: true,
     },
   });
+  return {
+    setVerifies: (isUserVerified: boolean) => cdp.send("WebAuthn.setUserVerified", { authenticatorId, isUserVerified }),
+  };
 }
 
 async function signOut(page: Page) {
@@ -71,7 +76,7 @@ test("dismiss the offer, turn it on from Settings, then remove it there", async 
   const email = `passkey-settings-${Date.now()}@example.com`;
   const context = await memberContext(browser);
   const page = await context.newPage();
-  await addVirtualAuthenticator(context, page);
+  const authenticator = await addVirtualAuthenticator(context, page);
 
   await signIn(page, email, "Lee");
   const offer = page.getByRole("dialog", { name: "Sign in with a passkey next time?" });
@@ -80,7 +85,17 @@ test("dismiss the offer, turn it on from Settings, then remove it there", async 
 
   await page.getByRole("link", { name: "Settings", exact: true }).click();
   await expect(offer).toHaveCount(0); // once per device
-  await page.getByRole("button", { name: "Turn on passkey sign-in" }).click();
+
+  // Backing out of the prompt is not an error: Settings stays as it was.
+  await authenticator.setVerifies(false);
+  const turnOn = page.getByRole("button", { name: "Turn on passkey sign-in" });
+  await turnOn.click();
+  await expectApp(turnOn).toBeEnabled();
+  await expect(page.getByText(/Couldn't turn on/)).toHaveCount(0);
+  await expect(page.getByText(THIS_DEVICE)).toHaveCount(0);
+
+  await authenticator.setVerifies(true);
+  await turnOn.click();
   await expectApp(page.getByText(THIS_DEVICE)).toBeVisible();
 
   await page.getByRole("button", { name: REMOVE_THIS_DEVICE }).click();

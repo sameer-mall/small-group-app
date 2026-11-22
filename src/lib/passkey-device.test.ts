@@ -73,6 +73,12 @@ describe("passkeyCopy", () => {
     );
   });
 
+  it("says when it is already on", () => {
+    expect(passkeyCopy(passkeyMethod(UA.iphone)).alreadyOn).toBe(
+      "Face ID is already on for this phone. Use it the next time you sign in.",
+    );
+  });
+
   it("never uses an em dash", () => {
     for (const ua of Object.values(UA)) {
       for (const line of Object.values(passkeyCopy(passkeyMethod(ua)))) expect(line).not.toContain("—");
@@ -96,6 +102,23 @@ describe("passkeyErrorKind", () => {
     expect(passkeyErrorKind({ message: "NotAllowedError: The operation either timed out or was not allowed." })).toBe(
       "cancelled",
     );
+  });
+
+  it("treats SimpleWebAuthn's passed-through NotAllowedError as cancelled", () => {
+    // What closing the sheet really returns, on registration and on sign-in.
+    expect(
+      passkeyErrorKind({
+        code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY",
+        message: "The operation either timed out or was not allowed. See: https://www.w3.org/TR/webauthn-2/#sctn-privacy-considerations-client.",
+      }),
+    ).toBe("cancelled");
+    expect(passkeyErrorKind({ code: "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY", message: "Auth cancelled" })).toBe(
+      "cancelled",
+    );
+  });
+
+  it("knows this device already holds a passkey", () => {
+    expect(passkeyErrorKind({ code: "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED" })).toBe("already");
   });
 
   it("knows a passkey the server no longer has", () => {

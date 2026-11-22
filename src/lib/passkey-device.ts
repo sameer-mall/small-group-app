@@ -81,23 +81,29 @@ export function passkeyCopy(method: PasskeyMethod) {
     offerTitle: `Sign in with ${method.kind === "fingerprint" ? "your fingerprint" : n.with} next time?`,
     offerBody: `Skip the email code. ${n.unlocks(method.device)}`,
     removedNotice: `${n.title} was turned off for this ${method.device}. Sign in with an email code, then you can turn it back on in Settings.`,
+    alreadyOn: `${n.title} is already on for this ${method.device}. Use it the next time you sign in.`,
   };
 }
 
-// Better Auth's passkey client returns `{ error: { code, message } }`.
-// Cancelling the OS sheet surfaces as AUTH_CANCELLED on sign-in and a
-// ceremony-aborted or NotAllowedError on registration. iOS also reports "no
+// Better Auth's passkey client returns `{ error: { code, message } }`, with
+// SimpleWebAuthn's codes for anything the browser refused. Closing the OS
+// sheet (or letting it time out) is a NotAllowedError, which SimpleWebAuthn
+// passes through as ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY; the plugin uses
+// AUTH_CANCELLED and ERROR_CEREMONY_ABORTED for the rest. iOS also reports "no
 // passkey for this site" as NotAllowedError, which is why a device without one
-// never shows the button.
+// never shows the button. PREVIOUSLY_REGISTERED means this device already
+// holds a passkey for the member (synced, or the cookie was lost).
 export function passkeyErrorKind(
   error: { code?: string; message?: string } | null | undefined,
-): "cancelled" | "removed" | "other" {
+): "cancelled" | "removed" | "already" | "other" {
   if (!error) return "other";
   if (error.code === "PASSKEY_NOT_FOUND") return "removed";
+  if (error.code === "ERROR_AUTHENTICATOR_PREVIOUSLY_REGISTERED") return "already";
   if (
     error.code === "AUTH_CANCELLED" ||
     error.code === "ERROR_CEREMONY_ABORTED" ||
-    /NotAllowedError|AbortError/.test(error.message ?? "")
+    error.code === "ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY" ||
+    /NotAllowedError|AbortError|not allowed/i.test(error.message ?? "")
   ) {
     return "cancelled";
   }

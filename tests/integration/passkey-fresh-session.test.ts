@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { auth } from "@/lib/auth";
+import { auth, passkeyChecks } from "@/lib/auth";
 
 // A fresh account with a live session, and the Cookie header a browser would
 // send for it (copied from auth-update-user.test.ts). Returns the session id
@@ -49,5 +49,30 @@ describe("the plugin's list, rename, and delete endpoints", () => {
     const body = method === "POST" ? "{}" : undefined;
     const res = await auth.handler(new Request(`${ctx.baseURL}${path}`, { method, headers, body }));
     expect(res.status).toBe(404);
+  });
+});
+
+// The plugin itself verifies with requireUserVerification: false. These checks
+// run inside its verify endpoints, before a passkey is saved or a session made.
+describe("passkey user verification", () => {
+  it("refuses a registration made without Face ID, a fingerprint, or the PIN", async () => {
+    await expect(
+      passkeyChecks.registration({
+        ctx: {} as never,
+        verification: { registrationInfo: { userVerified: false } },
+      }),
+    ).rejects.toThrow("User verification is required.");
+  });
+
+  it("refuses a sign-in made without it", async () => {
+    await expect(
+      passkeyChecks.authentication({ verification: { authenticationInfo: { userVerified: false } } }),
+    ).rejects.toThrow("User verification is required.");
+  });
+
+  it("lets a verified sign-in through", async () => {
+    await expect(
+      passkeyChecks.authentication({ verification: { authenticationInfo: { userVerified: true } } }),
+    ).resolves.toBeUndefined();
   });
 });

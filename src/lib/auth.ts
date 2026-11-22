@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
+import type { GenericEndpointContext } from "better-auth";
 import { passkey } from "@better-auth/passkey";
 import { emailOTP, organization } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
@@ -40,6 +41,37 @@ const passkeyCookieOptions = {
   path: "/",
   maxAge: 60 * 60 * 24 * 400, // browsers' upper limit
 } as const;
+
+// The passkey plugin verifies with requireUserVerification: false, so the
+// "required" in authenticatorSelection is only a request to the browser.
+// These refuse a passkey made or used without Face ID, a fingerprint, or the
+// device PIN; they run before the plugin saves the passkey or creates a
+// session. Exported for tests.
+export const passkeyChecks = {
+  registration: async ({
+    ctx,
+    verification,
+  }: {
+    ctx: GenericEndpointContext;
+    verification: { registrationInfo?: { userVerified: boolean } };
+  }) => {
+    if (!verification.registrationInfo?.userVerified) {
+      throw new APIError("BAD_REQUEST", { message: "User verification is required." });
+    }
+    // registration.requireSession: false (below) also lets verify go through
+    // with no session, within the challenge's few minutes (say, signed out
+    // mid-prompt). Turning it on is always from a signed-in member, and the
+    // plugin checks that member against the one the challenge was made for.
+    if (!(await getSessionFromCtx(ctx))) {
+      throw new APIError("UNAUTHORIZED", { message: "Sign in to turn this on." });
+    }
+  },
+  authentication: async ({ verification }: { verification: { authenticationInfo: { userVerified: boolean } } }) => {
+    if (!verification.authenticationInfo.userVerified) {
+      throw new APIError("UNAUTHORIZED", { message: "User verification is required." });
+    }
+  },
+};
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
@@ -89,8 +121,9 @@ export const auth = betterAuth({
         id = typeof returned.id === "string" ? returned.id : null;
       } else if (ctx.path === "/passkey/verify-authentication" && returned?.session) {
         const response = ctx.body?.response as { id?: unknown; authenticatorAttachment?: unknown } | undefined;
-        if (response?.authenticatorAttachment === "platform" && typeof response.id === "string") {
-          id = await passkeyIdForCredential(response.id);
+        const user = returned.user as { id?: unknown } | undefined;
+        if (response?.authenticatorAttachment === "platform" && typeof response.id === "string" && typeof user?.id === "string") {
+          id = await passkeyIdForCredential(user.id, response.id);
         }
       }
       if (id) ctx.setCookie(PASSKEY_COOKIE, id, passkeyCookieOptions);
@@ -155,7 +188,11 @@ export const auth = betterAuth({
       // old. Without requireSession it still needs a signed-in member: with no
       // session and no resolveUser, generating options is refused. Scoped to
       // passkeys, so every other fresh-session check stays on.
-      registration: { requireSession: false },
+      registration: {
+        requireSession: false,
+        afterVerification: passkeyChecks.registration,
+      },
+      authentication: { afterVerification: passkeyChecks.authentication },
     }),
     nextCookies(), // must stay last in this array (Better Auth docs)
   ],

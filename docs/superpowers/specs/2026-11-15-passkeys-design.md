@@ -120,6 +120,10 @@ in Settings."
   - `origin`: `authBaseURL`
   - registration `authenticatorSelection`: `residentKey: "required"`,
     `userVerification: "required"`
+  - The plugin verifies with `requireUserVerification: false`, so that
+    setting only asks the browser. `afterVerification` callbacks on
+    registration and authentication refuse a response without the user
+    verified flag, and registration also refuses a request with no session.
 - `src/lib/env.ts`: optional `PASSKEY_RP_ID` (a bare hostname).
 - Previews use the branch alias as both origin and passkey domain. Passkeys made
   on a preview work only on that preview, and only from the branch alias URL.
@@ -187,7 +191,8 @@ migration. Nothing secret is stored.
 | Case | Member sees |
 |---|---|
 | Cancels the Face ID prompt on Welcome back (`NotAllowedError`) | Nothing. The screen stays, ready to try again or use email. |
-| Cancels while turning it on | Sheet closes, or Settings stays as it was. No error. |
+| Cancels while turning it on | Sheet closes, or Settings stays as it was. No error. (SimpleWebAuthn reports a closed sheet as `ERROR_PASSTHROUGH_SEE_CAUSE_PROPERTY`.) |
+| Turns it on where the phone already holds a passkey for them (synced, or the cookie was cleared) | "Face ID is already on for this phone. Use it the next time you sign in." The next passkey sign-in sets the cookie. |
 | Passkey removed on the server but still offered by the phone | Switches to the form with a notice above it: "Face ID was turned off for this phone. Sign in with an email code, then you can turn it back on in Settings." (per-device wording). Clears the `sg_passkey` cookie, so the next visit shows the form. |
 | Offline or no response | `UNREACHABLE_MESSAGE` |
 | No passkey support | Sign-in shows the form; Settings says "Not available in this browser." |

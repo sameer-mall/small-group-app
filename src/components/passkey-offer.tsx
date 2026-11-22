@@ -29,7 +29,7 @@ export function PasskeyOffer({
 }) {
   const copy = passkeyCopy(method);
   const [open, setOpen] = useState(false);
-  const { turnOn, pending, error } = useTurnOnPasskey(method);
+  const { turnOn, pending, error, notice } = useTurnOnPasskey(method);
 
   useEffect(() => {
     if (!hasJustSignedIn()) return;
@@ -52,9 +52,11 @@ export function PasskeyOffer({
     };
   }, [hasPasskey, whatsNewShowing]);
 
-  // A cancelled prompt closes the sheet too; a failure stays open to show why.
+  // A cancelled prompt closes the sheet too. A failure, or a passkey this
+  // device already holds, stays open to say so.
   async function turnOnAndClose() {
-    if ((await turnOn()) !== "failed") setOpen(false);
+    const result = await turnOn();
+    if (result === "added" || result === "cancelled") setOpen(false);
   }
 
   return (
@@ -69,13 +71,22 @@ export function PasskeyOffer({
             <DialogDescription className="text-muted-foreground text-base">{copy.offerBody}</DialogDescription>
           </div>
           <div className="mt-2 flex w-full flex-col gap-2">
-            <Button size="block" onClick={turnOnAndClose} disabled={pending}>
-              {copy.turnOn}
-            </Button>
-            <Button variant="outline" size="block" onClick={() => setOpen(false)} disabled={pending}>
-              Not now
-            </Button>
+            {notice ? (
+              <Button size="block" onClick={() => setOpen(false)}>
+                Done
+              </Button>
+            ) : (
+              <>
+                <Button size="block" onClick={turnOnAndClose} disabled={pending}>
+                  {copy.turnOn}
+                </Button>
+                <Button variant="outline" size="block" onClick={() => setOpen(false)} disabled={pending}>
+                  Not now
+                </Button>
+              </>
+            )}
           </div>
+          {notice && <p className="text-sm">{notice}</p>}
           {error && <p className="text-destructive text-sm">{error}</p>}
           <p className="text-tertiary text-xs">You can change this any time in Settings.</p>
         </div>

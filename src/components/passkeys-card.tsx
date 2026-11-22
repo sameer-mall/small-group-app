@@ -66,7 +66,7 @@ export function PasskeysCard({
 }) {
   const copy = passkeyCopy(method);
   const supported = useSyncExternalStore(noSubscribe, passkeySupported, () => true);
-  const { turnOn, pending, error } = useTurnOnPasskey(method);
+  const { turnOn, pending, error, notice } = useTurnOnPasskey(method);
   const hasThisDevice = passkeys.some((p) => p.id === thisDeviceId);
 
   return (
@@ -105,13 +105,14 @@ export function PasskeysCard({
               </p>
             </>
           )}
-          {!hasThisDevice && (
+          {!hasThisDevice && !notice && (
             <Button variant="secondary" size="block" onClick={turnOn} disabled={pending}>
               {passkeys.length === 0 ? copy.turnOn : copy.turnOnHere}
             </Button>
           )}
         </>
       )}
+      {notice && <p className="text-sm">{notice}</p>}
       {error && <p className="text-destructive text-sm">{error}</p>}
     </section>
   );

@@ -65,10 +65,22 @@ describe("passkeyIdForCredential", () => {
     const cal = await mkUser(`u_cal_${crypto.randomUUID()}`);
     const credentialID = `cred_${crypto.randomUUID()}`;
     const id = await mkPasskey(cal, "iPhone", new Date(), credentialID);
-    expect(await passkeyIdForCredential(credentialID)).toBe(id);
+    expect(await passkeyIdForCredential(cal, credentialID)).toBe(id);
   });
 
   it("finds nothing for an unknown credential", async () => {
-    expect(await passkeyIdForCredential(`cred_${crypto.randomUUID()}`)).toBeNull();
+    const dee = await mkUser(`u_dee_${crypto.randomUUID()}`);
+    expect(await passkeyIdForCredential(dee, `cred_${crypto.randomUUID()}`)).toBeNull();
+  });
+
+  // credentialID isn't unique in the table, so the lookup stays inside the
+  // member the plugin just signed in.
+  it("never returns another member's row for the same credential id", async () => {
+    const eve = await mkUser(`u_eve_${crypto.randomUUID()}`);
+    const fay = await mkUser(`u_fay_${crypto.randomUUID()}`);
+    const credentialID = `cred_${crypto.randomUUID()}`;
+    await mkPasskey(eve, "iPhone", new Date("2026-11-01T12:00:00Z"), credentialID);
+    const fays = await mkPasskey(fay, "iPhone", new Date("2026-11-02T12:00:00Z"), credentialID);
+    expect(await passkeyIdForCredential(fay, credentialID)).toBe(fays);
   });
 });

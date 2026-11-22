@@ -23,12 +23,13 @@ export async function passkeysFor(userId: string): Promise<PasskeySummary[]> {
     .orderBy(asc(passkey.createdAt));
 }
 
-// The row for a WebAuthn credential id, which the plugin has just verified.
-export async function passkeyIdForCredential(credentialID: string): Promise<string | null> {
+// The member's row for a WebAuthn credential id the plugin has just verified.
+// Scoped to the member because the column isn't unique.
+export async function passkeyIdForCredential(userId: string, credentialID: string): Promise<string | null> {
   const [row] = await db
     .select({ id: passkey.id })
     .from(passkey)
-    .where(eq(passkey.credentialID, credentialID))
+    .where(and(eq(passkey.userId, userId), eq(passkey.credentialID, credentialID)))
     .limit(1);
   return row?.id ?? null;
 }
