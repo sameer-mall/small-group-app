@@ -345,7 +345,12 @@ export async function getPrayerWall(viewerId: string, meetingId: string): Promis
       .where(eq(prayerRequests.meetingId, meetingId))
       .orderBy(desc(prayerRequests.updatedAt), asc(prayerRequests.id)),
     db
-      .select({ body: prayerRequests.body, authorName: user.name, authorImage: user.image })
+      .select({
+        authorId: prayerRequests.authorId,
+        body: prayerRequests.body,
+        authorName: user.name,
+        authorImage: user.image,
+      })
       .from(prayerAssignments)
       .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
       .innerJoin(user, eq(user.id, prayerRequests.authorId))
@@ -396,7 +401,14 @@ export async function getPrayerWall(viewerId: string, meetingId: string): Promis
     notJoined: people.filter((p) => !joined.has(p.userId) && !wrote.has(p.userId)),
     viewerJoined: joined.has(viewerId) || wrote.has(viewerId),
     mine: mineRow ? { body: mineRow.body } : null,
-    assigned: assignedRow ?? null,
+    assigned:
+      assignedRow && byId.has(assignedRow.authorId)
+        ? {
+            body: assignedRow.body,
+            authorName: assignedRow.authorName,
+            authorImage: assignedRow.authorImage,
+          }
+        : null,
     myRequestIsAssigned,
   };
 }

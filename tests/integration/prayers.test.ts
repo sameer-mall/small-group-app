@@ -517,6 +517,16 @@ describe("prayer wall: what members read", () => {
     expect(carolWall.myRequestIsAssigned).toBe(false);
   });
 
+  it("an assigned request disappears once its author leaves the group", async () => {
+    const { groupId, meetingId } = await seedMeeting("Wall assigned removed");
+    await postPrayerRequest(alice, meetingId, { body: "A" });
+    await postPrayerRequest(bob, meetingId, { body: "B" });
+    await assignPrayers(alice, meetingId);
+    expect((await getPrayerWall(alice, meetingId)).assigned).not.toBeNull();
+    await removeMember(alice, groupId, bob);
+    expect((await getPrayerWall(alice, meetingId)).assigned).toBeNull();
+  });
+
   it("non-members cannot read the wall", async () => {
     const { meetingId } = await seedMeeting("Wall outsider");
     await expect(getPrayerWall(outsider, meetingId)).rejects.toThrow("forbidden");
