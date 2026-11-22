@@ -14,17 +14,17 @@ The bowl hides every request until a random draw, so nobody sees what the group 
 2. **Names always show.** The "Include my name" toggle is removed. Posting means posting under your name.
 3. **Assign prayers** replaces **Draw the bowl.** When the group is done posting, any member taps Assign prayers. Everyone who posted gets one request to pray for, never their own. Who got whose stays private: you see only your own assignment, and on your own request, "Someone in the group is praying for this".
 4. **The wall locks once assigned** and stays readable as that week's record.
-5. **"I'm in" / "I'm out" go away.** Posting a request is how you take part.
+5. **"I'm in" stays.** Tapping I'm in tells the group you're writing, and Assign prayers waits until everyone who's in has posted (or tapped I'm out). Posting directly also counts as being in.
 
 ## Decisions
 
 | # | Decision | Why |
 |---|----------|-----|
 | 1 | **Every existing request becomes visible on its meeting's wall, with the author's name, past drawn bowls included.** No migration of request data, no legacy view. | Chosen for least work (option 2 in review). Accepted consequence: requests written as unsigned under the bowl's "sealed" promise become readable by the group. Mitigated only by the What's new entry (below). |
-| 2 | **Keep the data model.** `prayer_sessions`, `prayer_requests`, `prayer_assignments` are reused; no new table. | The model already fits: one request per author per meeting, one assignment per assignee, guarded `open → drawn` transition. |
+| 2 | **Keep the data model.** `prayer_sessions`, `prayer_participants`, `prayer_requests`, `prayer_assignments` are reused; no new table. | The model already fits: one request per author per meeting, one assignment per assignee, guarded `open → drawn` transition. |
 | 3 | `prayer_sessions.status` keeps the values `open` / `drawn`; in code and copy `drawn` means **assigned**. Columns `drawn_by` / `drawn_at` keep their names. | Avoids a rename migration. A comment on the schema records the meaning. |
-| 4 | **Drop** `prayer_requests.include_name` and the `prayer_participants` table in one migration. | Both are dead after decisions 1 and 5; leaving them invites code to read them. Their data has no further use. |
-| 5 | Assign needs **at least 2 requests**, and no longer waits on anyone. Members who have not posted get no assignment. | The "still writing" gate existed only because of "I'm in". The confirm sheet names who hasn't posted, so the person assigning can wait for them. |
+| 4 | **Drop** `prayer_requests.include_name`. | Dead after decision 1; leaving it invites code to read it. |
+| 5 | Assign needs **at least 2 requests** and **waits for everyone who's in** (joined without posting) to post or tap I'm out. Members who never joined or posted get no assignment. | Stops someone assigning while another member is mid-request. Reuses today's `still-writing` check unchanged. I'm out keeps one stray tap from holding up the group. |
 | 6 | Any member can assign (unchanged from draw). | Matches today; small groups self-organise. |
 | 7 | Edit and delete your own request until assigned; after that, nothing changes. | Unchanged from the bowl. |
 | 8 | Only requests from **current** group members are shown or assigned. | Unchanged rule from the draw; also stops a removed member's words staying on the wall. |
@@ -44,11 +44,12 @@ The meeting row gains a chip when its wall has requests: `Prayer wall · N reque
 
 ### Prayer wall (`/meetings/[id]/prayers`) — artboards 1–4
 Page title "Prayer wall", subtitle "{meeting title} · {short date}". Back pill goes to the meeting (journey parent; label "Meeting").
-- **Not posted (1):** "Share a request" textarea (1000 chars, required) with hint "Your name shows with it. Everyone in the group can see the wall." and primary **Post to the wall**. Feed of requests below.
+- **Not in (1a):** a primary **I'm in** button above the feed ("Tap when you're ready to write one, so the group waits for you."). Tapping it opens the compose form.
+- **Writing (1):** "Share a request" textarea (1000 chars, required) with hint "Your name shows with it. Everyone in the group can see the wall." and primary **Post to the wall**, plus an outline **I'm out** under it. Feed of requests below. The compose form is also reachable without tapping I'm in first: posting joins you.
 - **Posted (2):** compose form hidden; the viewer's request is first, tinted, with an **Edit** pill (opens the textarea prefilled, with **Save** and a destructive **Delete my request**).
 - Feed rows: `<Avatar>`, name, relative time ("2 min ago", from `updated_at`), body in Lora, wrapping, never truncated.
-- Under the feed: `Not posted yet: {names}` (current members without a request; "You" first), then **Assign prayers** (outline until the viewer has posted, primary after) with caption `N people posted · you'll each get one to pray for`. Under 2 requests: caption "Prayers can be assigned once two requests are in." and no button.
-- **Confirm sheet (3):** title "Assign prayers?", "{N} requests are on the wall. Everyone who posted gets one to pray for this week, never their own." A tinted callout when anyone hasn't posted: "{names} hasn't/haven't posted. They can still see the wall, but won't get a prayer this week." Then "The wall locks once prayers are assigned. Nothing can be edited afterwards." Cancel (outline, autofocus) then **Assign prayers** (primary).
+- Under the feed: `Writing: {names}` (joined, no request yet; "You" first) and `Not joined: {names}` (tertiary), then **Assign prayers** (primary) with caption `N people posted · you'll each get one to pray for`. While anyone is writing: no button, caption "Waiting on {names} to post." Under 2 requests: caption "Prayers can be assigned once two requests are in." and no button.
+- **Confirm sheet (3):** title "Assign prayers?", "{N} requests are on the wall. Everyone who posted gets one to pray for this week, never their own." A tinted callout when anyone hasn't joined: "{names} hasn't/haven't joined. They can still see the wall, but won't get a prayer this week." Then "The wall locks once prayers are assigned. Nothing can be edited afterwards." Cancel (outline, autofocus) then **Assign prayers** (primary).
 - **Assigned (4):** "You're praying for" block (as the old drawn view, name always shown) then "Everyone's requests", the full feed, read-only. The viewer's own request carries "Someone in the group is praying for this" (success colour). No other assignment information is rendered or sent to the client.
 - `RefreshWhileOpen` stays on the wall page while status is open, so new posts appear.
 
@@ -59,26 +60,27 @@ Unchanged structure. Subtitle "Requests you've been assigned, week by week"; emp
 
 `src/lib/prayers.ts` (DAL guards unchanged; every read checks membership itself):
 
-- `postPrayerRequest(userId, meetingId, body)` — upsert own request while open (replaces join + submit). Creates the session on first post as today.
+- `joinPrayerWall` / `leavePrayerWall` — today's `joinPrayerBowl` / `leavePrayerBowl`, renamed.
+- `postPrayerRequest(userId, meetingId, body)` — today's `submitPrayerRequest` without `includeName`: upsert own request while open, joining if not already in. Creates the session on first write as today.
 - `deletePrayerRequest(userId, meetingId)` — replaces withdraw.
-- `assignPrayers(userId, meetingId)` — today's `drawPrayerBowl` minus the participants check. Same guarded UPDATE, same current-member filter, same `derangement`. Errors: `too-few-requests`.
-- `getPrayerWall(viewerId, meetingId)` → `{ status, requests: {id, authorId, name, image, body, updatedAt, isMine}[], notPosted: {userId, name}[], mine: {body} | null, assigned: {body, authorName, authorImage} | null, myRequestIsAssigned: boolean }`. Requests from current members only, newest first. **Never returns assignee ids** for anything but the viewer's own assignment.
+- `assignPrayers(userId, meetingId)` — today's `drawPrayerBowl`, renamed. Same guarded UPDATE, current-member filter, `still-writing` check and `derangement`. Errors: `too-few-requests`, `still-writing`.
+- `getPrayerWall(viewerId, meetingId)` → `{ status, requests: {id, authorId, name, image, body, updatedAt, isMine}[], writing: {userId, name}[], notJoined: {userId, name}[], viewerJoined: boolean, mine: {body} | null, assigned: {body, authorName, authorImage} | null, myRequestIsAssigned: boolean }`. Requests from current members only, newest first. **Never returns assignee ids** for anything but the viewer's own assignment.
 - The meeting card reuses `getPrayerWall` and takes the newest two, the count, whether the viewer posted, and their assignment. No separate preview query (groups are small).
 - `listMyDrawnPrayers` → rename `listMyAssignedPrayers`; drop the `includeName` masking.
-- Removed: `joinPrayerBowl`, `leavePrayerBowl`, `withdrawPrayerRequest`, `submitPrayerRequest`, `getPrayerBowl`, `BowlMember`/`PrayerBowl` types.
+- Removed: `getPrayerBowl` and the `PrayerBowl` type (replaced by `getPrayerWall`).
 
-`src/app/(app)/prayers/actions.ts`: `postPrayerRequestAction`, `deletePrayerRequestAction`, `assignPrayersAction`, each zod-parsed, `logRefusal(err)` first in refusal mapping, and `revalidatePath` for the wall, the meeting and `/`. Assign schedules `notifyPrayersAssigned({ actorId, meetingId })` with `after()`.
+`src/app/(app)/prayers/actions.ts`: `joinPrayerWallAction`, `leavePrayerWallAction`, `postPrayerRequestAction`, `deletePrayerRequestAction`, `assignPrayersAction`, each zod-parsed, `logRefusal(err)` first in refusal mapping, and `revalidatePath` for the wall, the meeting and `/`. Assign schedules `notifyPrayersAssigned({ actorId, meetingId })` with `after()`.
 
 `src/lib/notifications.ts`: `prayersAssignedCopy` + `notifyPrayersAssigned`, recipients = assignees minus the actor, url `inGroup(groupId, /meetings/{id}/prayers)`, tag `prayers-{meetingId}`. Body includes only the author's name (no request text in a push).
 
 `src/lib/journey.ts`: `parentOf("/meetings/x/prayers")` → `/meetings/x`; labels unchanged (meeting already labels "Meeting").
 
-Migration (drizzle, next number): `ALTER TABLE prayer_requests DROP COLUMN include_name; DROP TABLE prayer_participants;`.
+Migration (drizzle, next number): `ALTER TABLE prayer_requests DROP COLUMN include_name;`.
 
 ## Components
 
 New: the route `src/app/(app)/meetings/[id]/prayers/page.tsx`, `prayer-wall-feed`, `prayer-post-form`, `assign-prayers-button` (from `draw-bowl-button`), `prayer-preview-card`, `you-are-praying-for` (from `drawn-prayer-bowl`).
-Removed: `open-prayer-bowl`, `prayer-buckets`, `prayer-compose` (folded into `prayer-post-form`), `draw-bowl-button`, `drawn-prayer-bowl`.
+Kept and restyled: `prayer-buckets` (Writing / Not joined rows). Removed: `open-prayer-bowl`, `prayer-compose` (folded into `prayer-post-form`), `draw-bowl-button`, `drawn-prayer-bowl`.
 All buttons through `Button` / `buttonVariants` (guard test). No em dashes in any copy.
 
 ## Privacy and monitoring
@@ -94,7 +96,7 @@ Entry id 7, at the top of `src/lib/whats-new.ts`:
 
 ## Testing
 
-- `tests/integration/prayers.test.ts` rewritten around post / edit / delete / assign: only members read the wall; removed members' requests disappear; assign needs 2; nobody gets their own; concurrent assigns produce one set; the wall returns no assignee ids except the viewer's; posting after assign is refused.
+- `tests/integration/prayers.test.ts` rewritten around post / edit / delete / assign: only members read the wall; removed members' requests disappear; assign needs 2; assign refused while a joined member hasn't posted, allowed after they post or leave; posting joins; nobody gets their own; concurrent assigns produce one set; the wall returns no assignee ids except the viewer's; posting after assign is refused.
 - `src/lib/notifications.test.ts` + `tests/integration/notifications.test.ts`: assign push copy and recipients (assignees minus actor), url points at the wall.
 - `journey` unit test: wall's parent is its meeting.
 - `e2e/prayers.spec.ts`: two members post, both see both on the wall, one assigns, each sees the other's request under "You're praying for"; home chip count; meeting preview card links to the wall. Update `meals.spec.ts` / `display-name.spec.ts` where they touch the bowl.
