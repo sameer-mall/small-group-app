@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { authClient, UNREACHABLE_MESSAGE } from "@/lib/auth-client";
+import { conditionalMediationAvailable, noteJustSignedIn } from "@/lib/passkey-device";
+import { rememberSignedInPasskeyAction } from "./actions";
 
 const inputClass =
   "bg-card border-border focus:border-primary rounded-input min-h-tap w-full border-[1.5px] px-4 py-3.5 text-[16px] outline-none";
@@ -16,7 +18,7 @@ const CODE_ERRORS: Record<string, string> = {
   TOO_MANY_ATTEMPTS: "Too many tries. Send a new code.",
 };
 
-export function SignInForm({ next }: { next: string }) {
+export function SignInForm({ next, notice = null }: { next: string; notice?: string | null }) {
   const router = useRouter();
   const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState("");
@@ -24,6 +26,27 @@ export function SignInForm({ next }: { next: string }) {
   const [pending, setPending] = useState(false);
   const [resent, setResent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // A passkey that synced to this device (a new phone, or a re-added app that
+  // lost its cookie) is offered from the email field's keyboard suggestions.
+  // Waits silently until the member focuses the field; failures leave the
+  // form as it was. After it signs in, the cookie is set again so this device
+  // opens to Welcome back from the next visit.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!(await conditionalMediationAvailable())) return;
+      try {
+        const { error } = await authClient.signIn.passkey({ autoFill: true });
+        if (error || cancelled) return;
+        await rememberSignedInPasskeyAction();
+        router.push(next);
+      } catch {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [next, router]);
 
   async function sendCode() {
     setPending(true);
@@ -63,6 +86,7 @@ export function SignInForm({ next }: { next: string }) {
         setError(CODE_ERRORS[error?.code ?? ""] ?? "Couldn't sign you in. Try again.");
         return;
       }
+      noteJustSignedIn();
       // Stay pending through the navigation so the button can't double-submit.
       // A first-time email has no name yet: /welcome collects it, then forwards.
       router.push(data.user.name.trim() ? next : `/welcome?next=${encodeURIComponent(next)}`);
@@ -74,6 +98,7 @@ export function SignInForm({ next }: { next: string }) {
 
   async function signInWithGoogle() {
     setError(null);
+    noteJustSignedIn();
     try {
       const { error } = await authClient.signIn.social({ provider: "google", callbackURL: next });
       if (error) setError("Couldn't sign in with Google. Try again.");
@@ -143,6 +168,11 @@ export function SignInForm({ next }: { next: string }) {
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col gap-4">
+      {notice && (
+        <p role="status" className="bg-warning-surface border-warning-border text-strong rounded-chip border p-3 text-sm">
+          {notice}
+        </p>
+      )}
       <form onSubmit={submitEmail} className="flex flex-col gap-3">
         <label className="text-strong text-sm font-medium" htmlFor="email">
           Email address
@@ -151,7 +181,7 @@ export function SignInForm({ next }: { next: string }) {
           id="email"
           type="email"
           required
-          autoComplete="email"
+          autoComplete="username webauthn"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
