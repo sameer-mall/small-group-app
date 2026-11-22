@@ -21,6 +21,12 @@ export type Release = {
 
 export const releases: Release[] = [
   {
+    id: 7,
+    date: "2026-11-22",
+    title: "The prayer bowl is now a prayer wall",
+    body: "Everyone in your group can now see prayer requests as they come in, with names, including past weeks. When you're done sharing, tap Assign prayers and each of you gets one to pray for.",
+  },
+  {
     id: 6,
     date: "2026-10-11",
     title: "Put a face to your name",

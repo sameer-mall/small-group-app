@@ -25,13 +25,13 @@ export default async function PrayersPage() {
     <main className="flex flex-col gap-2.5 px-4 pt-6 pb-6">
       <div className="flex flex-col gap-1 px-1 pb-1.5">
         <h1 className="font-serif text-[28px] font-semibold">My prayers</h1>
-        <p className="text-muted-foreground text-sm">Requests you&apos;ve drawn, week by week</p>
+        <p className="text-muted-foreground text-sm">Requests you&apos;ve been assigned, week by week</p>
       </div>
       {prayers.length === 0 ? (
         <div className="flex flex-col gap-2 py-8 text-center">
-          <p className="font-serif text-xl font-semibold">Nothing drawn yet</p>
+          <p className="font-serif text-xl font-semibold">Nothing assigned yet</p>
           <p className="text-muted-foreground text-sm">
-            When your group draws the prayer bowl, the request you draw lands here.
+            When your group assigns prayers, the one you get lands here.
           </p>
         </div>
       ) : (
