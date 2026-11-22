@@ -138,5 +138,10 @@ test("Edit my request stays disabled while the submit is in flight", async ({ br
   await editButton.click();
   await expect(alice.getByLabel("Share a request")).toHaveValue(request);
 
+  // Cancel leaves edit mode without saving.
+  await alice.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(alice.getByLabel("Share a request")).toHaveCount(0);
+  await expect(editButton).toBeVisible();
+
   await alice.unrouteAll({ behavior: "wait" });
 });

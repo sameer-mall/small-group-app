@@ -355,6 +355,12 @@ export async function listMyAssignedPrayers(
     .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
     .innerJoin(meetings, eq(meetings.id, prayerAssignments.meetingId))
     .innerJoin(user, eq(user.id, prayerRequests.authorId))
+    // Current members only, as on the wall: once an author leaves the group,
+    // their words leave My prayers too.
+    .innerJoin(
+      member,
+      and(eq(member.userId, prayerRequests.authorId), eq(member.organizationId, meetings.groupId)),
+    )
     .where(and(eq(prayerAssignments.assigneeId, userId), eq(meetings.groupId, groupId)))
     .orderBy(desc(meetings.date), desc(meetings.createdAt));
 }

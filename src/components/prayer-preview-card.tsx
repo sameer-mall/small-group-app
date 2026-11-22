@@ -5,6 +5,7 @@ import { YouArePrayingFor } from "@/components/you-are-praying-for";
 import { getPrayerWall } from "@/lib/prayers";
 import { cn } from "@/lib/utils";
 import { WallStatusPill } from "@/components/wall-status-pill";
+import { RefreshWhileOpen } from "@/components/refresh-while-open";
 
 export async function PrayerPreviewCard({
   meetingId,
@@ -23,6 +24,10 @@ export async function PrayerPreviewCard({
 
   return (
     <section className="bg-card rounded-card shadow-card flex flex-col gap-3 p-[18px]">
+      {/* New posts reach the card while the group sits on the meeting page. */}
+      {!assigned && (
+        <RefreshWhileOpen meetingDate={meetingDate} serverToday={new Date().toISOString().slice(0, 10)} />
+      )}
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-serif text-[19px] font-semibold">Prayer wall</h2>
         <WallStatusPill assigned={assigned} requestCount={wall.requests.length} meetingDate={meetingDate} />

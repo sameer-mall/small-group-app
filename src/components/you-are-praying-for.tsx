@@ -9,11 +9,13 @@ export function YouArePrayingFor({
   posted: boolean;
 }) {
   if (!assigned) {
-    // Posted but unassigned: the author they were given has since left the group.
+    // Posted but holding no assignment: either the author they were given has
+    // since left the group, or their own request was left out because they
+    // weren't in the group when prayers were assigned. One line covers both.
     return (
       <p className="text-muted-foreground text-center text-[14.5px]">
         {posted
-          ? "Prayers were assigned. The request you were given is no longer on the wall."
+          ? "Prayers were assigned. There isn't a request for you to pray for this week."
           : "Prayers were assigned. You didn't post this time."}
       </p>
     );

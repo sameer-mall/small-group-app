@@ -45,6 +45,7 @@ function PostForm({
   onSubmit,
   onDelete,
   onLeave,
+  onCancel,
 }: {
   initialBody?: string;
   editing: boolean;
@@ -52,6 +53,7 @@ function PostForm({
   onSubmit: (formData: FormData) => void;
   onDelete: () => void;
   onLeave: () => void;
+  onCancel: () => void;
 }) {
   const [body, setBody] = useState(initialBody);
 
@@ -85,9 +87,14 @@ function PostForm({
         {editing ? "Save" : "Post to the wall"}
       </Button>
       {editing ? (
-        <Button type="button" variant="destructive" onClick={onDelete} className="self-center">
-          Delete my request
-        </Button>
+        <>
+          <Button type="button" variant="outline" onClick={onCancel} className="self-center">
+            Cancel
+          </Button>
+          <Button type="button" variant="destructive" onClick={onDelete} className="self-center">
+            Delete my request
+          </Button>
+        </>
       ) : (
         // Assigning waits for everyone who's in, so joining has to be
         // undoable or one stray "I'm in" would hold up the whole group.
@@ -172,6 +179,7 @@ export function PrayerWall({
             leave(new FormData());
           })
         }
+        onCancel={() => setEditing(false)}
       />
     );
   } else if (stage === "not-in") {
@@ -219,7 +227,9 @@ export function PrayerWall({
       <PrayerBuckets {...buckets} currentUserId={currentUserId} />
       <AssignPrayersButton
         meetingId={meetingId}
-        requestCount={wall.requests.length}
+        // An optimistic post counts at once, so the caption doesn't lag the
+        // screen while the server answers.
+        requestCount={wall.requests.length + (stage === "posted" && !wall.mine ? 1 : 0)}
         writing={buckets.writing}
         notJoined={buckets.notJoined}
         currentUserId={currentUserId}

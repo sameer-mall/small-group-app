@@ -42,11 +42,12 @@ export function NoteCard({
     }),
   );
 
-  // The page re-renders under this card — on focus and after each save's own
-  // revalidation — and each render may bring a different server value. It
-  // replaces the field only while the field isn't focused and nothing is
-  // unsaved: that is how an edit made on another device shows up, without ever
-  // stealing keystrokes. Adjusted during render rather than in an effect.
+  // The page re-renders under this card — on focus, from the prayer wall
+  // card's polling, and after each save's own revalidation — and each render
+  // may bring a different server value. It replaces the field only while the
+  // field isn't focused and nothing is unsaved: that is how an edit made on
+  // another device shows up, without ever stealing keystrokes. Adjusted during
+  // render rather than in an effect.
   const [seenInitial, setSeenInitial] = useState(initialBody);
   if (initialBody !== seenInitial) {
     setSeenInitial(initialBody);

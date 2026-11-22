@@ -436,6 +436,15 @@ describe("my prayers", () => {
     await expect(listMyAssignedPrayers(outsider, groupId)).rejects.toThrow("forbidden");
   });
 
+  it("drops a request once its author leaves the group", async () => {
+    const { groupId } = await createGroup(alice, "Author left");
+    await addMember(alice, groupId, bob);
+    await drawnMeeting(groupId, "Week 1", "2026-10-01");
+    expect(await listMyAssignedPrayers(alice, groupId)).toHaveLength(1);
+    await removeMember(alice, groupId, bob);
+    expect(await listMyAssignedPrayers(alice, groupId)).toEqual([]);
+  });
+
   it("breaks ties on the same meeting date by createdAt, newer meeting first", async () => {
     const { groupId } = await createGroup(alice, "Same day");
     await addMember(alice, groupId, bob);
