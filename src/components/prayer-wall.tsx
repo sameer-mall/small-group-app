@@ -11,7 +11,7 @@ import {
 import type { PrayerWall as Wall, WallPerson } from "@/lib/prayers";
 import { Button } from "@/components/ui/button";
 import { AssignPrayersButton } from "@/components/assign-prayers-button";
-import { displayNames, PrayerBuckets } from "@/components/prayer-buckets";
+import { PrayerBuckets } from "@/components/prayer-buckets";
 
 const initialState: ActionState = { error: null, success: false };
 
@@ -220,8 +220,9 @@ export function PrayerWall({
       <AssignPrayersButton
         meetingId={meetingId}
         requestCount={wall.requests.length}
-        writingNames={displayNames(buckets.writing, currentUserId)}
-        notJoinedNames={displayNames(buckets.notJoined, currentUserId)}
+        writing={buckets.writing}
+        notJoined={buckets.notJoined}
+        currentUserId={currentUserId}
       />
     </>
   );

@@ -1,28 +1,28 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
+import type { WallPerson } from "@/lib/prayers";
 import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+import { notJoinedCallout, waitingCaption } from "@/components/assign-prayers-copy";
 import { assignPrayersAction, type ActionState } from "@/app/(app)/prayers/actions";
 
 const initialState: ActionState = { error: null, success: false };
 
-function list(names: string[]) {
-  return names.length <= 2 ? names.join(" and ") : `${names.slice(0, -1).join(", ")}, and ${names.at(-1)}`;
-}
-
 export function AssignPrayersButton({
   meetingId,
   requestCount,
-  writingNames,
-  notJoinedNames,
+  writing,
+  notJoined,
+  currentUserId,
 }: {
   meetingId: string;
   requestCount: number;
-  writingNames: string[];
-  notJoinedNames: string[];
+  writing: WallPerson[];
+  notJoined: WallPerson[];
+  currentUserId: string;
 }) {
   const [open, setOpen] = useState(false);
   const [state, assign, pending] = useActionState(assignPrayersAction.bind(null, meetingId), initialState);
@@ -31,13 +31,15 @@ export function AssignPrayersButton({
   if (requestCount < 2) {
     return <p className="text-muted-foreground text-center text-[12.5px]">Prayers can be assigned once two requests are in.</p>;
   }
-  if (writingNames.length > 0) {
+  if (writing.length > 0) {
     return (
       <p className="text-muted-foreground text-center text-[12.5px]">
-        {`Waiting on ${list(writingNames)} to post. Prayers can be assigned once everyone who's in has posted.`}
+        {waitingCaption(writing, currentUserId)}
       </p>
     );
   }
+
+  const callout = notJoinedCallout(notJoined, currentUserId);
 
   return (
     <>
@@ -50,9 +52,9 @@ export function AssignPrayersButton({
               {`${requestCount} requests are on the wall. Everyone who posted gets one to pray for this week, never their own.`}
             </DialogDescription>
           </DialogHeader>
-          {notJoinedNames.length > 0 && (
+          {callout && (
             <p className="bg-surface-tint text-strong rounded-chip px-3.5 py-3 text-[13.5px] leading-normal">
-              {`${list(notJoinedNames)} ${notJoinedNames.length === 1 ? "hasn't" : "haven't"} joined. They can still see the wall, but won't get a prayer this week.`}
+              {callout}
             </p>
           )}
           <p className="text-muted-foreground text-[13.5px]">
