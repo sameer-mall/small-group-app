@@ -154,6 +154,16 @@ migration. Nothing secret is stored.
   read by the server for Welcome back and "This iPhone". A server-set cookie,
   because Safari caps cookies written from JavaScript at 7 days. It survives
   sign-out on purpose.
+- **Losing the cookie doesn't lose Face ID.** Clearing site data, or deleting
+  and re-adding the home-screen app, drops the cookie, but the passkey lives in
+  the phone's password manager. The plain form shows, and the passkey is
+  offered from the email field's suggestions. After a passkey sign-in from
+  there, the server sets the cookie again, so Welcome back returns from the
+  next visit. It can't see which passkey was used, so it stores the member's
+  only passkey, or the only one named for this kind of device
+  (`passkeyForDevice`). Otherwise it stores `unknown`: Welcome back shows, no
+  Settings row is marked "This iPhone", and there's no "Turn on for this
+  phone" button.
 - Sign-in form: conditional UI on the email field, the removed notice, and the
   "just signed in" note after code and Google sign-ins.
 - `(app)` layout: a client `PasskeyOffer` bottom sheet.
