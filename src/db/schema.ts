@@ -97,7 +97,7 @@ export const prayerSessions = pgTable("prayer_sessions", {
   // avoid a rename migration.
   meetingId: text("meeting_id").primaryKey().references(() => meetings.id, { onDelete: "cascade" }),
   status: text("status", { enum: ["open", "drawn"] }).notNull().default("open"),
-  // Whoever joined or wrote first: the bowl starts itself on that first write.
+  // Whoever joined or wrote first: the wall starts itself on that first write.
   startedBy: text("started_by").notNull().references(() => user.id),
   startedAt: timestamp("started_at").notNull().defaultNow(),
   drawnBy: text("drawn_by").references(() => user.id),
@@ -131,14 +131,14 @@ export const prayerRequests = pgTable(
     includeName: boolean("include_name").notNull().default(false),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  // One request per person per bowl.
+  // One request per person per wall.
   (t) => [uniqueIndex("prayer_requests_one_per_author").on(t.meetingId, t.authorId)],
 );
 
 export const prayerAssignments = pgTable(
   "prayer_assignments",
   {
-    // Each request is drawn by exactly one person…
+    // Each request is assigned to exactly one person…
     requestId: text("request_id")
       .primaryKey()
       .references(() => prayerRequests.id, { onDelete: "cascade" }),
@@ -147,7 +147,7 @@ export const prayerAssignments = pgTable(
       .references(() => prayerSessions.meetingId, { onDelete: "cascade" }),
     assigneeId: text("assignee_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   },
-  // …and each person draws exactly one.
+  // …and each person is assigned exactly one.
   (t) => [uniqueIndex("prayer_assignments_one_per_assignee").on(t.meetingId, t.assigneeId)],
 );
 

@@ -9,12 +9,12 @@ import { useRouter } from "next/navigation";
 // the parent spec rules those out for v1. It uses router.refresh() rather
 // than SWR: SWR would need a GET endpoint, an API layer the same spec rules
 // out. Skipped while the tab is hidden (RefreshOnFocus catches up when it
-// returns), and mounted only while the bowl is open, so polling stops by
-// itself once the bowl is drawn.
+// returns), and mounted only while the wall is open, so polling stops by
+// itself once prayers are assigned.
 //
-// A meeting that was never drawn still mounts this (no bowl row reads as
-// "open"), so without a further guard every undrawn meeting — past or
-// future, visited or merely left open in a tab — would poll forever. The
+// A meeting whose prayers were never assigned still mounts this (no wall row
+// reads as "open"), so without a further guard every such meeting, past or
+// future, visited or merely left open in a tab, would poll forever. The
 // guard below starts the interval only when the meeting is within a day of
 // the *viewer's* local today, same pattern as meeting-list.tsx: the server
 // can't know the viewer's timezone, so getLocalToday reads the browser's

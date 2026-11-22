@@ -53,7 +53,8 @@ function revalidateWall(meetingId: string) {
 
 // A refused write revalidates too. The parent spec asks for "a plain-language
 // message and refreshed data" on rejection — and the commonest rejection here
-// is a bowl that was drawn a moment ago, which the refreshed page then shows.
+// is a wall whose prayers were assigned a moment ago, which the refreshed page
+// then shows.
 function refused(err: unknown, meetingId: string): ActionState {
   const error = mapError(err);
   revalidateWall(meetingId);

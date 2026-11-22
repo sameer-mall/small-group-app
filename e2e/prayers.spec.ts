@@ -49,7 +49,7 @@ test("members post to the wall, I'm in holds assigning, and each poster gets the
   await meetingLink.click();
   await expectApp(alice.getByRole("link", { name: "Open the prayer wall" })).toBeVisible();
 
-  // Home shows nothing yet; the meeting card links to the wall.
+  // The meeting page links to the wall.
   await alice.getByRole("link", { name: "Open the prayer wall" }).click();
   // The meeting card has a "Prayer wall" heading too, so wait for the URL.
   await alice.waitForURL(/\/prayers$/);
@@ -61,7 +61,7 @@ test("members post to the wall, I'm in holds assigning, and each poster gets the
   await alice.getByRole("button", { name: "Post to the wall" }).click();
   await expectApp(alice.getByTestId("wall-request").filter({ hasText: aliceRequest })).toBeVisible();
 
-  // Bob posts directly; both requests show for both.
+  // Bob taps I'm in and posts; both requests show for both.
   await bob.goto(wallPath);
   await bob.getByRole("button", { name: "I'm in" }).click();
   await bob.getByLabel("Share a request").fill(bobRequest);
