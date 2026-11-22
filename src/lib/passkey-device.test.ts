@@ -64,6 +64,15 @@ describe("passkeyCopy", () => {
     );
   });
 
+  it("names the device in the fingerprint offer", () => {
+    expect(passkeyCopy(passkeyMethod(UA.androidTablet)).offerBody).toBe(
+      "Skip the email code. Your fingerprint unlocks Small Group on this tablet.",
+    );
+    expect(passkeyCopy(passkeyMethod(UA.androidPhone)).offerBody).toBe(
+      "Skip the email code. Your fingerprint unlocks Small Group on this phone.",
+    );
+  });
+
   it("never uses an em dash", () => {
     for (const ua of Object.values(UA)) {
       for (const line of Object.values(passkeyCopy(passkeyMethod(ua)))) expect(line).not.toContain("—");
@@ -126,6 +135,13 @@ describe("device storage", () => {
     expect(wasOffered(store)).toBe(false);
     markOffered(store);
     expect(wasOffered(store)).toBe(true);
+  });
+
+  it("counts missing storage as already offered", () => {
+    // In node there is no window, so the default store is unavailable and
+    // wasOffered() must treat that as offered rather than show the sheet.
+    expect(wasOffered()).toBe(true);
+    expect(wasOffered(undefined)).toBe(true);
   });
 
   it("hands out the just-signed-in note once", () => {

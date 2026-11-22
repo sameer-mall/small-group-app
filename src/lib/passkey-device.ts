@@ -39,16 +39,8 @@ export function kindForDeviceName(name: string | null): PasskeyKind {
 
 const NAMES: Record<PasskeyKind, { feature: string; with: string; unlocks: string }> = {
   "face-id": { feature: "Face ID", with: "Face ID", unlocks: "Your face unlocks Small Group on this phone." },
-  fingerprint: {
-    feature: "Fingerprint sign-in",
-    with: "fingerprint",
-    unlocks: "Your fingerprint unlocks Small Group on this phone.",
-  },
-  passkey: {
-    feature: "Passkey sign-in",
-    with: "a passkey",
-    unlocks: "Your device's screen lock signs you in.",
-  },
+  fingerprint: { feature: "Fingerprint sign-in", with: "fingerprint", unlocks: "" },
+  passkey: { feature: "Passkey sign-in", with: "a passkey", unlocks: "Your device's screen lock signs you in." },
 };
 
 export type PasskeyCopy = ReturnType<typeof passkeyCopy>;
@@ -57,6 +49,11 @@ export function passkeyCopy(method: PasskeyMethod) {
   const n = NAMES[method.kind];
   // Face ID is a proper noun: keep it capitalized wherever the feature name appears.
   const featureLower = method.kind === "face-id" ? "Face ID" : n.feature.toLowerCase();
+  // The fingerprint line names the device: a tablet is not a phone.
+  const unlocks =
+    method.kind === "fingerprint"
+      ? `Your fingerprint unlocks Small Group on this ${method.device}.`
+      : n.unlocks;
   const turnOn = method.kind === "face-id" ? "Turn on Face ID" : `Turn on ${featureLower}`;
   return {
     signInButton: `Sign in with ${n.with}`,
@@ -72,7 +69,7 @@ export function passkeyCopy(method: PasskeyMethod) {
     turnOnHere: `${turnOn} for this ${method.device}`,
     turnOnFailed: `Couldn't turn on ${featureLower}. Try again from Settings.`,
     offerTitle: `Sign in with ${method.kind === "fingerprint" ? "your fingerprint" : n.with} next time?`,
-    offerBody: `Skip the email code. ${n.unlocks}`,
+    offerBody: `Skip the email code. ${unlocks}`,
     removedNotice: `${n.feature} was turned off for this ${method.device}. Sign in with an email code, then you can turn it back on in Settings.`,
   };
 }
@@ -141,6 +138,7 @@ function session(): Store | undefined {
 // Storage that throws or is missing counts as "already offered": better to
 // skip the sheet than to show it on every sign-in.
 export function wasOffered(store = local()): boolean {
+  if (!store) return true;
   try {
     return store?.getItem(OFFERED) === "1";
   } catch {
