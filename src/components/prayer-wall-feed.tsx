@@ -6,13 +6,15 @@ import { Avatar } from "@/components/avatar";
 export function PrayerWallFeed({
   requests,
   now,
-  assigned,
-  myRequestIsAssigned,
+  assigned = false,
+  myRequestIsAssigned = false,
 }: {
   requests: WallRequest[];
   now: Date;
-  assigned: boolean;
-  myRequestIsAssigned: boolean;
+  // Read-only record after assigning: times hidden, and the viewer's own
+  // request says whether someone is praying for it.
+  assigned?: boolean;
+  myRequestIsAssigned?: boolean;
 }) {
   if (requests.length === 0) {
     return (
@@ -48,7 +50,7 @@ export function PrayerWallFeed({
           <p className="text-prayer font-serif text-base leading-[1.55] break-words whitespace-pre-line">
             {request.body}
           </p>
-          {assigned && request.isMine && myRequestIsAssigned && (
+          {request.isMine && myRequestIsAssigned && (
             <p className="text-success text-[12.5px] font-semibold">
               Someone in the group is praying for this
             </p>

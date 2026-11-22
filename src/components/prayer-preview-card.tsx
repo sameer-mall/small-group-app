@@ -3,7 +3,8 @@ import { buttonVariants } from "@/components/ui/button";
 import { Avatar } from "@/components/avatar";
 import { YouArePrayingFor } from "@/components/you-are-praying-for";
 import { getPrayerWall } from "@/lib/prayers";
-import { cn, formatMeetingDate } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { WallStatusPill } from "@/components/wall-status-pill";
 
 export async function PrayerPreviewCard({
   meetingId,
@@ -24,16 +25,7 @@ export async function PrayerPreviewCard({
     <section className="bg-card rounded-card shadow-card flex flex-col gap-3 p-[18px]">
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="font-serif text-[19px] font-semibold">Prayer wall</h2>
-        <span
-          className={cn(
-            "shrink-0 rounded-full px-2.5 py-1 text-xs",
-            assigned ? "bg-success-tint text-success" : "bg-surface-tint text-muted-foreground",
-          )}
-        >
-          {assigned
-            ? `Assigned · ${formatMeetingDate(meetingDate, { month: "short", day: "numeric" })}`
-            : `${wall.requests.length} ${wall.requests.length === 1 ? "request" : "requests"}`}
-        </span>
+        <WallStatusPill assigned={assigned} requestCount={wall.requests.length} meetingDate={meetingDate} />
       </div>
       {assigned ? (
         <>

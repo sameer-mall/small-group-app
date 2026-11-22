@@ -241,17 +241,21 @@ export async function notifyPrayersAssigned(i: { actorId: string; meetingId: str
     reportPushFailure(err);
     return;
   }
-  for (const row of rows) {
-    await deliver("prayers-assigned", async () => ({
-      recipients: [row.assigneeId],
-      payload: prayersAssignedCopy({
-        groupId,
-        groupName: name,
-        authorName: row.authorName,
-        meetingId: i.meetingId,
-      }),
-    }));
-  }
+  // Each assignee's payload names a different author, so each is its own send;
+  // deliver() catches its own failures, so they can all go at once.
+  await Promise.all(
+    rows.map((row) =>
+      deliver("prayers-assigned", async () => ({
+        recipients: [row.assigneeId],
+        payload: prayersAssignedCopy({
+          groupId,
+          groupName: name,
+          authorName: row.authorName,
+          meetingId: i.meetingId,
+        }),
+      })),
+    ),
+  );
 }
 
 export async function notifyRecipeAdded(i: { actorId: string; recipeId: string }): Promise<void> {

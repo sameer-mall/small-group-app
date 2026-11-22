@@ -1,17 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { WallPerson } from "@/lib/prayers";
-
-// The viewer reads as "You", first in whichever bucket they're in, so a row
-// shows "You, Sarah, Dan, Ruth".
-export function displayNames(list: WallPerson[], currentUserId: string) {
-  const includesMe = list.some((m) => m.userId === currentUserId);
-  const others = list.filter((m) => m.userId !== currentUserId).map((m) => m.name);
-  return includesMe ? ["You", ...others] : others;
-}
-
-function namesFor(list: WallPerson[], currentUserId: string) {
-  return displayNames(list, currentUserId).join(", ");
-}
+import { viewerFirst } from "@/components/assign-prayers-copy";
 
 export function PrayerBuckets({
   writing,
@@ -37,7 +26,7 @@ export function PrayerBuckets({
           <span className="text-muted-foreground w-[82px] shrink-0 text-[13px]">{row.label}</span>
           {/* A long list of names wraps onto further lines; it never truncates. */}
           <span className={cn("min-w-0 break-words", row.namesClass)}>
-            {namesFor(row.members, currentUserId)}
+            {viewerFirst(row.members, currentUserId, "You").join(", ")}
           </span>
         </div>
       ))}
