@@ -28,11 +28,7 @@ export function DrawnPrayerBowl({ drawn }: { drawn: PrayerBowl["drawn"] }) {
       <blockquote className="text-prayer px-1.5 text-center font-serif text-[20px] leading-[1.6] break-words whitespace-pre-line">
         &quot;{drawn.body}&quot;
       </blockquote>
-      {drawn.authorName ? (
-        <p className="text-muted-foreground text-center text-[14.5px]">From {drawn.authorName}</p>
-      ) : (
-        <p className="text-tertiary text-center text-[14.5px] italic">Name not shared</p>
-      )}
+      <p className="text-muted-foreground text-center text-[14.5px]">From {drawn.authorName}</p>
       <div className="bg-divider h-px" />
       <div className="flex flex-col items-center text-center text-[13px] leading-normal">
         <p className="text-muted-foreground">Carry this with you through the week.</p>

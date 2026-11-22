@@ -2,10 +2,10 @@
 
 import { startTransition, useActionState, useOptimistic, useState } from "react";
 import {
-  joinPrayerBowlAction,
-  leavePrayerBowlAction,
-  submitPrayerRequestAction,
-  withdrawPrayerRequestAction,
+  deletePrayerRequestAction,
+  joinPrayerWallAction,
+  leavePrayerWallAction,
+  postPrayerRequestAction,
   type ActionState,
 } from "@/app/(app)/prayers/actions";
 import type { BowlMember, PrayerBowl } from "@/lib/prayers";
@@ -51,17 +51,17 @@ export function OpenPrayerBowl({
   meetingId: string;
   currentUserId: string;
 }) {
-  const [joinState, join] = useActionState(joinPrayerBowlAction.bind(null, meetingId), initialState);
+  const [joinState, join] = useActionState(joinPrayerWallAction.bind(null, meetingId), initialState);
   const [submitState, submit, submitPending] = useActionState(
-    submitPrayerRequestAction.bind(null, meetingId),
+    postPrayerRequestAction.bind(null, meetingId),
     initialState,
   );
   const [withdrawState, withdraw] = useActionState(
-    withdrawPrayerRequestAction.bind(null, meetingId),
+    deletePrayerRequestAction.bind(null, meetingId),
     initialState,
   );
   const [leaveState, leave] = useActionState(
-    leavePrayerBowlAction.bind(null, meetingId),
+    leavePrayerWallAction.bind(null, meetingId),
     initialState,
   );
 
@@ -90,7 +90,6 @@ export function OpenPrayerBowl({
       <PrayerCompose
         key={editing ? "edit" : "new"}
         initialBody={editing ? bowl.viewer.request?.body : ""}
-        initialIncludeName={editing ? bowl.viewer.request?.includeName : false}
         editing={editing}
         error={submitState.error ?? withdrawState.error ?? leaveState.error}
         // A form action already runs inside a transition, which is what lets

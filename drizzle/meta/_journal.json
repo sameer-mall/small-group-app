@@ -71,6 +71,13 @@
       "when": 1791464490318,
       "tag": "0009_late_garia",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795379959552,
+      "tag": "0010_orange_toxin",
+      "breakpoints": true
     }
   ]
 }

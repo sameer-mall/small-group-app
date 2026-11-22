@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { drawPrayerBowlAction, type ActionState } from "@/app/(app)/prayers/actions";
+import { assignPrayersAction, type ActionState } from "@/app/(app)/prayers/actions";
 
 const initialState: ActionState = { error: null, success: false };
 
@@ -27,7 +27,7 @@ export function DrawBowlButton({
 }) {
   const [open, setOpen] = useState(false);
   const [state, draw, pending] = useActionState(
-    drawPrayerBowlAction.bind(null, meetingId),
+    assignPrayersAction.bind(null, meetingId),
     initialState,
   );
 

@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { getSession, requireUser, resolveActiveGroup } from "@/lib/dal";
-import { listMyDrawnPrayers } from "@/lib/prayers";
+import { listMyAssignedPrayers } from "@/lib/prayers";
 import { DrawnPrayerList } from "@/components/drawn-prayer-list";
 
 export default async function PrayersPage() {
@@ -19,7 +19,7 @@ export default async function PrayersPage() {
     organizations,
   );
   // Checks membership itself — no separate requireMember needed here.
-  const prayers = await listMyDrawnPrayers(user.id, activeGroup.id);
+  const prayers = await listMyAssignedPrayers(user.id, activeGroup.id);
 
   return (
     <main className="flex flex-col gap-2.5 px-4 pt-6 pb-6">

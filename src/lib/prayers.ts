@@ -24,10 +24,10 @@ export type PrayerBowl = {
   viewer: {
     joined: boolean;
     // The viewer's own request, so they can edit it. Nobody else's, ever.
-    request: { body: string; includeName: boolean } | null;
+    request: { body: string } | null;
   };
   // After the draw, the one request the viewer drew (Task 3).
-  drawn: { body: string; authorName: string | null } | null;
+  drawn: { body: string; authorName: string } | null;
 };
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -85,7 +85,7 @@ async function lockOpenBowl(tx: Tx, meetingId: string) {
   if (bowl?.status === "drawn") throw new Error("session-closed");
 }
 
-export async function joinPrayerBowl(userId: string, meetingId: string): Promise<void> {
+export async function joinPrayerWall(userId: string, meetingId: string): Promise<void> {
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
     await ensureBowl(tx, meetingId, userId);
@@ -94,12 +94,12 @@ export async function joinPrayerBowl(userId: string, meetingId: string): Promise
   });
 }
 
-// One request per person per bowl, so writing again edits it. Writing also
-// joins you — putting a request in is the clearest possible "I'm in".
-export async function submitPrayerRequest(
+// One request per person per meeting, so posting again edits it. Posting also
+// joins you: a request on the wall is the clearest possible "I'm in".
+export async function postPrayerRequest(
   userId: string,
   meetingId: string,
-  input: { body: string; includeName: boolean },
+  input: { body: string },
 ): Promise<void> {
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
@@ -108,17 +108,17 @@ export async function submitPrayerRequest(
     await ensureParticipant(tx, meetingId, userId);
     await tx
       .insert(prayerRequests)
-      .values({ meetingId, authorId: userId, body: input.body, includeName: input.includeName })
+      .values({ meetingId, authorId: userId, body: input.body })
       .onConflictDoUpdate({
         target: [prayerRequests.meetingId, prayerRequests.authorId],
-        set: { body: input.body, includeName: input.includeName, updatedAt: new Date() },
+        set: { body: input.body, updatedAt: new Date() },
       });
   });
 }
 
 // Takes your request back out. You stay in the bowl — you're just not holding
 // a request any more — and doing it twice is harmless.
-export async function withdrawPrayerRequest(userId: string, meetingId: string): Promise<void> {
+export async function deletePrayerRequest(userId: string, meetingId: string): Promise<void> {
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
     // No bowl means nothing to withdraw; lockOpenBowl lets that through.
@@ -133,7 +133,7 @@ export async function withdrawPrayerRequest(userId: string, meetingId: string): 
 // Since the bowl can't be drawn while anyone who's in is still writing, this
 // is how someone who tapped "I'm in" and changed their mind stops holding
 // everyone else up. Doing it twice is harmless.
-export async function leavePrayerBowl(userId: string, meetingId: string): Promise<void> {
+export async function leavePrayerWall(userId: string, meetingId: string): Promise<void> {
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
     // No bowl means nothing to leave; lockOpenBowl lets that through.
@@ -149,10 +149,10 @@ export async function leavePrayerBowl(userId: string, meetingId: string): Promis
   });
 }
 
-export async function drawPrayerBowl(
+export async function assignPrayers(
   userId: string,
   meetingId: string,
-): Promise<{ drew: boolean }> {
+): Promise<{ assigned: boolean }> {
   const meeting = await requireMeetingMember(userId, meetingId);
 
   return db.transaction(async (tx) => {
@@ -172,7 +172,7 @@ export async function drawPrayerBowl(
         .where(eq(prayerSessions.meetingId, meetingId));
       // Already drawn — by someone else, a moment ago. What the tap asked for
       // has happened, so this is a no-op rather than an error.
-      if (bowl?.status === "drawn") return { drew: false };
+      if (bowl?.status === "drawn") return { assigned: false };
       // No bowl at all: nobody has joined, so there is nothing to draw.
       throw new Error("too-few-requests");
     }
@@ -225,7 +225,7 @@ export async function drawPrayerBowl(
         assigneeId: requests[p[i]].authorId,
       })),
     );
-    return { drew: true };
+    return { assigned: true };
   });
 }
 
@@ -253,7 +253,7 @@ export async function getPrayerBowl(viewerId: string, meetingId: string): Promis
       .from(prayerRequests)
       .where(eq(prayerRequests.meetingId, meetingId)),
     db
-      .select({ body: prayerRequests.body, includeName: prayerRequests.includeName })
+      .select({ body: prayerRequests.body })
       .from(prayerRequests)
       .where(and(eq(prayerRequests.meetingId, meetingId), eq(prayerRequests.authorId, viewerId))),
   ]);
@@ -271,7 +271,6 @@ export async function getPrayerBowl(viewerId: string, meetingId: string): Promis
     const [assigned] = await db
       .select({
         body: prayerRequests.body,
-        includeName: prayerRequests.includeName,
         authorName: user.name,
       })
       .from(prayerAssignments)
@@ -281,12 +280,8 @@ export async function getPrayerBowl(viewerId: string, meetingId: string): Promis
         and(eq(prayerAssignments.meetingId, meetingId), eq(prayerAssignments.assigneeId, viewerId)),
       );
     if (assigned) {
-      // The writer's name leaves the server only if they signed it — and no
-      // author id is returned at all, signed or not.
-      drawn = {
-        body: assigned.body,
-        authorName: assigned.includeName ? assigned.authorName : null,
-      };
+      // The writer's name is always shown; no author id is ever returned.
+      drawn = { body: assigned.body, authorName: assigned.authorName };
     }
   }
 
@@ -301,26 +296,28 @@ export async function getPrayerBowl(viewerId: string, meetingId: string): Promis
   };
 }
 
-export type DrawnPrayer = {
+export type AssignedPrayer = {
   meetingId: string;
   meetingTitle: string;
   meetingDate: string;
   body: string;
-  authorName: string | null;
+  authorName: string;
 };
 
-// Every request this member has drawn in this group, newest meeting first, so
-// past weeks stay prayable. The assignee filter is the whole privacy story:
-// this can only ever return requests drawn *by* the caller.
-export async function listMyDrawnPrayers(userId: string, groupId: string): Promise<DrawnPrayer[]> {
+// Every request this member has been assigned in this group, newest meeting
+// first, so past weeks stay prayable. The assignee filter keeps it to the
+// caller's own assignments.
+export async function listMyAssignedPrayers(
+  userId: string,
+  groupId: string,
+): Promise<AssignedPrayer[]> {
   await requireMembership(userId, groupId);
-  const rows = await db
+  return db
     .select({
       meetingId: meetings.id,
       meetingTitle: meetings.title,
       meetingDate: meetings.date,
       body: prayerRequests.body,
-      includeName: prayerRequests.includeName,
       authorName: user.name,
     })
     .from(prayerAssignments)
@@ -329,10 +326,4 @@ export async function listMyDrawnPrayers(userId: string, groupId: string): Promi
     .innerJoin(user, eq(user.id, prayerRequests.authorId))
     .where(and(eq(prayerAssignments.assigneeId, userId), eq(meetings.groupId, groupId)))
     .orderBy(desc(meetings.date), desc(meetings.createdAt));
-
-  // Same rule as the meeting page: a name leaves the server only if signed.
-  return rows.map(({ includeName, authorName, ...prayer }) => ({
-    ...prayer,
-    authorName: includeName ? authorName : null,
-  }));
 }

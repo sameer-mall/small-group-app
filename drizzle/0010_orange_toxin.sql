@@ -1,0 +1,1 @@
+ALTER TABLE "prayer_requests" DROP COLUMN "include_name";
