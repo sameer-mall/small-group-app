@@ -70,10 +70,22 @@ export async function signIn(page: Page, email: string, name: string) {
 // test can't see the popup any other way. CI sets DATABASE_URL; locally it
 // comes from .env unless already exported.
 export async function resetWhatsNewSeen(email: string) {
+  await query(`update "user" set whats_new_seen = 0 where email = $1`, [email]);
+}
+
+// Removing a member's passkeys as if from another device: the server forgets
+// them while this browser still holds the credential and the cookie.
+export async function deletePasskeysFor(email: string) {
+  await query(`delete from passkey where user_id = (select id from "user" where email = $1)`, [email]);
+}
+
+// One statement against the test database. CI sets DATABASE_URL; locally it
+// comes from .env unless already exported.
+async function query(text: string, params: unknown[]) {
   config({ quiet: true });
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   try {
-    await pool.query(`update "user" set whats_new_seen = 0 where email = $1`, [email]);
+    await pool.query(text, params);
   } finally {
     await pool.end();
   }

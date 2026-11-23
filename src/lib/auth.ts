@@ -1,6 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
+import type { GenericEndpointContext } from "better-auth";
+import { passkey } from "@better-auth/passkey";
 import { emailOTP, organization } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db/client";
@@ -8,6 +10,8 @@ import * as schema from "@/db/schema";
 import { sendAuthEmail } from "@/lib/auth-email";
 import { env } from "@/lib/env";
 import { largeGooglePhoto } from "@/lib/google-photo";
+import { passkeyRpID } from "@/lib/passkey-rp";
+import { PASSKEY_COOKIE, passkeyIdForCredential } from "@/lib/passkeys";
 import { LATEST_RELEASE_ID } from "@/lib/whats-new";
 
 // Vercel preview deployments get a fresh *.vercel.app URL per deploy, so a
@@ -30,11 +34,54 @@ const previewHost = env.VERCEL_BRANCH_URL ?? env.VERCEL_URL;
 export const authBaseURL =
   isPreview && previewHost ? `https://${previewHost}` : env.BETTER_AUTH_URL;
 
+const passkeyCookieOptions = {
+  httpOnly: true,
+  secure: (authBaseURL ?? "").startsWith("https://"),
+  sameSite: "lax",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 400, // browsers' upper limit
+} as const;
+
+// The passkey plugin verifies with requireUserVerification: false, so the
+// "required" in authenticatorSelection is only a request to the browser.
+// These refuse a passkey made or used without Face ID, a fingerprint, or the
+// device PIN; they run before the plugin saves the passkey or creates a
+// session. Exported for tests.
+export const passkeyChecks = {
+  registration: async ({
+    ctx,
+    verification,
+  }: {
+    ctx: GenericEndpointContext;
+    verification: { registrationInfo?: { userVerified: boolean } };
+  }) => {
+    if (!verification.registrationInfo?.userVerified) {
+      throw new APIError("BAD_REQUEST", { message: "User verification is required." });
+    }
+    // registration.requireSession: false (below) also lets verify go through
+    // with no session, within the challenge's few minutes (say, signed out
+    // mid-prompt). Turning it on is always from a signed-in member, and the
+    // plugin checks that member against the one the challenge was made for.
+    if (!(await getSessionFromCtx(ctx))) {
+      throw new APIError("UNAUTHORIZED", { message: "Sign in to turn this on." });
+    }
+  },
+  authentication: async ({ verification }: { verification: { authenticationInfo: { userVerified: boolean } } }) => {
+    if (!verification.authenticationInfo.userVerified) {
+      throw new APIError("UNAUTHORIZED", { message: "User verification is required." });
+    }
+  },
+};
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg", schema }),
   baseURL: authBaseURL,
   trustedOrigins: isPreview ? ["https://*.vercel.app"] : undefined,
   secret: env.BETTER_AUTH_SECRET,
+  // The passkey plugin's list, rename, and delete endpoints. The app lists and
+  // removes passkeys through src/lib/passkeys.ts instead: the plugin's list
+  // returns the public key, and members can't rename passkeys (spec).
+  disabledPaths: ["/passkey/list-user-passkeys", "/passkey/update-passkey", "/passkey/delete-passkey"],
   user: {
     additionalFields: {
       // The highest What's new entry this member has dismissed (see
@@ -61,6 +108,25 @@ export const auth = betterAuth({
       if (ctx.path === "/update-user" && ctx.body && "image" in ctx.body) {
         throw new APIError("BAD_REQUEST", { message: "Photos are changed from Settings." });
       }
+    }),
+    // Remember which passkey this device holds (PASSKEY_COOKIE), set where the
+    // exact credential is known: a registration (always a platform passkey,
+    // src/components/use-turn-on-passkey.ts) or a sign-in with a platform
+    // passkey. A sign-in through another device's QR code is cross-platform:
+    // that passkey lives on the phone, so the laptop isn't told it holds one.
+    after: createAuthMiddleware(async (ctx) => {
+      const returned = ctx.context.returned as Record<string, unknown> | undefined;
+      let id: string | null = null;
+      if (ctx.path === "/passkey/verify-registration" && typeof returned?.credentialID === "string") {
+        id = typeof returned.id === "string" ? returned.id : null;
+      } else if (ctx.path === "/passkey/verify-authentication" && returned?.session) {
+        const response = ctx.body?.response as { id?: unknown; authenticatorAttachment?: unknown } | undefined;
+        const user = returned.user as { id?: unknown } | undefined;
+        if (response?.authenticatorAttachment === "platform" && typeof response.id === "string" && typeof user?.id === "string") {
+          id = await passkeyIdForCredential(user.id, response.id);
+        }
+      }
+      if (id) ctx.setCookie(PASSKEY_COOKIE, id, passkeyCookieOptions);
     }),
   },
   databaseHooks: {
@@ -104,6 +170,29 @@ export const auth = betterAuth({
       sendVerificationOTP: async ({ email, otp }) => {
         await sendAuthEmail({ to: email, otp });
       },
+    }),
+    // Face ID, fingerprint, or another platform passkey (spec:
+    // 2026-11-15-passkeys-design.md). Discoverable credentials with user
+    // verification required, so sign-in needs no email and always checks the
+    // face, finger, or device PIN. Listing and removing go through
+    // src/lib/passkeys.ts instead of the plugin's endpoints.
+    passkey({
+      rpID: passkeyRpID(authBaseURL ?? "http://localhost:3000", env.PASSKEY_RP_ID),
+      rpName: "Small Group",
+      // SimpleWebAuthn compares origins as exact strings, so drop any trailing
+      // slash or path a BETTER_AUTH_URL might carry.
+      origin: authBaseURL ? new URL(authBaseURL).origin : undefined,
+      authenticatorSelection: { residentKey: "required", userVerification: "required" },
+      // The plugin requires a "fresh" session (Better Auth's 24 hours) to
+      // register, and members turn on Face ID from Settings on sessions days
+      // old. Without requireSession it still needs a signed-in member: with no
+      // session and no resolveUser, generating options is refused. Scoped to
+      // passkeys, so every other fresh-session check stays on.
+      registration: {
+        requireSession: false,
+        afterVerification: passkeyChecks.registration,
+      },
+      authentication: { afterVerification: passkeyChecks.authentication },
     }),
     nextCookies(), // must stay last in this array (Better Auth docs)
   ],

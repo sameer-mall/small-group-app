@@ -1,8 +1,9 @@
+import { passkeyClient } from "@better-auth/passkey/client";
 import { createAuthClient } from "better-auth/react";
 import { emailOTPClient, organizationClient } from "better-auth/client/plugins";
 
 export const authClient = createAuthClient({
-  plugins: [emailOTPClient(), organizationClient()],
+  plugins: [emailOTPClient(), organizationClient(), passkeyClient()],
 });
 
 // authClient calls resolve `{ data, error }` when the server answers with an

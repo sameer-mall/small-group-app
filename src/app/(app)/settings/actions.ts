@@ -1,10 +1,12 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAccount, requireUser } from "@/lib/dal";
 import { avatarForm, removeAvatar, saveAvatar, UNREADABLE_PHOTO } from "@/lib/avatars";
 import { logRefusal } from "@/lib/monitoring";
+import { PASSKEY_COOKIE, removePasskey } from "@/lib/passkeys";
 import { deleteSubscription, pushSubscriptionInput, saveSubscription } from "@/lib/push";
 // Not re-exported: Next treats every export of a "use server" file as an
 // action, type-only ones included, and the client then fails at runtime
@@ -88,5 +90,34 @@ export async function removeAvatarAction(
     return { error: mapAvatarError(err), success: false };
   }
   revalidateAvatars();
+  return { error: null, success: true };
+}
+
+const removePasskeyForm = z.object({ id: z.string({ error: "That sign-in wasn't found." }).min(1) });
+
+function mapPasskeyError(err: unknown): string {
+  logRefusal(err);
+  if (err instanceof Error && err.message === "not-found") {
+    return "That sign-in was already removed. Refresh to see the current list.";
+  }
+  throw err;
+}
+
+export async function removePasskeyAction(
+  _prevState: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const user = await requireUser();
+  const form = removePasskeyForm.safeParse(Object.fromEntries(formData));
+  if (!form.success) return { error: form.error.issues[0].message, success: false };
+  try {
+    await removePasskey(user.id, form.data.id);
+  } catch (err) {
+    return { error: mapPasskeyError(err), success: false };
+  }
+  // Removing this device's own passkey: stop offering it on Welcome back.
+  const jar = await cookies();
+  if (jar.get(PASSKEY_COOKIE)?.value === form.data.id) jar.delete(PASSKEY_COOKIE);
+  revalidatePath("/(app)", "layout");
   return { error: null, success: true };
 }

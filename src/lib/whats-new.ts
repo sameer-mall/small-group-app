@@ -21,6 +21,12 @@ export type Release = {
 
 export const releases: Release[] = [
   {
+    id: 7,
+    date: "2026-11-22",
+    title: "Sign in with Face ID",
+    body: "Turn on Face ID or fingerprint sign-in in Settings, and next time your phone signs you in without an email code.",
+  },
+  {
     id: 6,
     date: "2026-10-11",
     title: "Put a face to your name",
