@@ -43,11 +43,12 @@ describe("the plugin's list, rename, and delete endpoints", () => {
   ])("%s %s is not found", async (method, path) => {
     const { headers } = await signedInHeaders(`paths-${crypto.randomUUID()}@example.com`);
     headers.set("content-type", "application/json");
-    const ctx = await auth.$context;
+    // An absolute URL of our own: ctx.baseURL is empty where BETTER_AUTH_URL
+    // isn't set (CI's checks job), and the handler routes on the path anyway.
     // An empty body: with the endpoint on, it answers 400, not a "no such
     // passkey" 404 that would look the same as switched off.
     const body = method === "POST" ? "{}" : undefined;
-    const res = await auth.handler(new Request(`${ctx.baseURL}${path}`, { method, headers, body }));
+    const res = await auth.handler(new Request(`http://localhost:3000/api/auth${path}`, { method, headers, body }));
     expect(res.status).toBe(404);
   });
 });
