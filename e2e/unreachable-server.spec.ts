@@ -8,6 +8,11 @@ import { expectApp, latestCode, memberContext, requestCode, signIn } from "./hel
 
 const UNREACHABLE = "Couldn't reach the server. Check your connection and try again.";
 
+// page.route() doesn't see requests that go through a service worker, and the
+// app's worker claims the page as soon as it installs. Once it has, a "failed"
+// request reaches the real server instead (sign-out actually signed out in CI).
+const NO_SERVICE_WORKER = { serviceWorkers: "block" as const };
+
 // The unhandled rejection is how SMALL-GROUP-8 reached Sentry.
 function pageErrors(page: Page) {
   const errors: string[] = [];
@@ -17,7 +22,7 @@ function pageErrors(page: Page) {
 
 test("sign-in recovers when the code check can't reach the server", async ({ browser }) => {
   const email = `offline-code-${Date.now()}@example.com`;
-  const page = await (await memberContext(browser)).newPage();
+  const page = await (await memberContext(browser, NO_SERVICE_WORKER)).newPage();
   const errors = pageErrors(page);
 
   await requestCode(page, email);
@@ -37,7 +42,7 @@ test("sign-in recovers when the code check can't reach the server", async ({ bro
 });
 
 test("sending a code says when it can't reach the server", async ({ browser }) => {
-  const page = await (await memberContext(browser)).newPage();
+  const page = await (await memberContext(browser, NO_SERVICE_WORKER)).newPage();
   const errors = pageErrors(page);
 
   await page.route("**/api/auth/email-otp/send-verification-otp", (route) =>
@@ -54,7 +59,7 @@ test("sending a code says when it can't reach the server", async ({ browser }) =
 });
 
 test("Google sign-in says when it can't reach the server", async ({ browser }) => {
-  const page = await (await memberContext(browser)).newPage();
+  const page = await (await memberContext(browser, NO_SERVICE_WORKER)).newPage();
   const errors = pageErrors(page);
 
   await page.route("**/api/auth/sign-in/social", (route) => route.abort("failed"));
@@ -67,7 +72,7 @@ test("Google sign-in says when it can't reach the server", async ({ browser }) =
 
 test("welcome stays put until the name is saved", async ({ browser }) => {
   const email = `offline-welcome-${Date.now()}@example.com`;
-  const page = await (await memberContext(browser)).newPage();
+  const page = await (await memberContext(browser, NO_SERVICE_WORKER)).newPage();
   const errors = pageErrors(page);
 
   await requestCode(page, email);
@@ -98,7 +103,7 @@ test("welcome stays put until the name is saved", async ({ browser }) => {
 });
 
 test("sign out says when it can't reach the server", async ({ browser }) => {
-  const page = await (await memberContext(browser)).newPage();
+  const page = await (await memberContext(browser, NO_SERVICE_WORKER)).newPage();
   const errors = pageErrors(page);
   await signIn(page, `offline-signout-${Date.now()}@example.com`, "Ash");
 
@@ -126,7 +131,7 @@ test("sign out says when it can't reach the server", async ({ browser }) => {
 
 test("switching groups says when it can't reach the server", async ({ browser }) => {
   const run = Date.now();
-  const page = await (await memberContext(browser)).newPage();
+  const page = await (await memberContext(browser, NO_SERVICE_WORKER)).newPage();
   const errors = pageErrors(page);
   await signIn(page, `offline-switch-${run}@example.com`, "Rue");
 
