@@ -5,6 +5,7 @@ import { approveRequest, createGroup, getInviteCode, requestToJoin } from "@/lib
 import { createMeeting } from "@/lib/meetings";
 import { setMeal } from "@/lib/meals";
 import { createRecipe } from "@/lib/recipes";
+import { assignPrayers, postPrayerRequest } from "@/lib/prayers";
 
 // Who gets told is the point of these tests; the transport is mocked.
 const push = vi.hoisted(() => ({
@@ -22,6 +23,7 @@ import {
   notifyJoinRequested,
   notifyMealSet,
   notifyMeetingCreated,
+  notifyPrayersAssigned,
   notifyRecipeAdded,
   notifyRequestApproved,
 } from "@/lib/notifications";
@@ -132,8 +134,39 @@ describe("notifications: who gets told", () => {
     });
   });
 
+  it("prayers assigned: each assignee except the actor, with their own author's name", async () => {
+    const a = await mkUser(`u_n_pa_${crypto.randomUUID()}`, "Ann");
+    const b = await mkUser(`u_n_pb_${crypto.randomUUID()}`, "Ben");
+    const c = await mkUser(`u_n_pc_${crypto.randomUUID()}`, "Cat");
+    const { groupId: gid } = await createGroup(a, "Assign group");
+    await addMember(a, gid, b);
+    await addMember(a, gid, c);
+    const { meetingId } = await createMeeting(a, gid, { title: "W", date: "2026-11-26" });
+    await postPrayerRequest(a, meetingId, { body: "x" });
+    await postPrayerRequest(b, meetingId, { body: "y" });
+    await postPrayerRequest(c, meetingId, { body: "z" });
+    await assignPrayers(a, meetingId);
+    push.sendToUsers.mockClear();
+
+    await notifyPrayersAssigned({ actorId: a, meetingId });
+
+    const calls = push.sendToUsers.mock.calls as [string[], { body: string; url: string }][];
+    const recipients = calls.flatMap(([users]) => users).sort();
+    expect(recipients).toEqual([b, c].sort());
+    for (const [, payload] of calls) {
+      expect(payload.url).toContain(encodeURIComponent(`/meetings/${meetingId}/prayers`));
+      expect(payload.body).not.toMatch(/[xyz]$/);
+    }
+  });
+
   it("a missing meeting is reported, not thrown", async () => {
     await expect(notifyMeetingCreated({ actorId: alice, meetingId: "nope" })).resolves.toBeUndefined();
+    expect(push.sendToUsers).not.toHaveBeenCalled();
+    expect(monitoring.reportPushFailure).toHaveBeenCalledTimes(1);
+  });
+
+  it("prayers assigned: a missing meeting is reported, not thrown", async () => {
+    await expect(notifyPrayersAssigned({ actorId: alice, meetingId: "nope" })).resolves.toBeUndefined();
     expect(push.sendToUsers).not.toHaveBeenCalled();
     expect(monitoring.reportPushFailure).toHaveBeenCalledTimes(1);
   });

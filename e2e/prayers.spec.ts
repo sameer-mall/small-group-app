@@ -1,20 +1,20 @@
 import { expect, test } from "@playwright/test";
 import { expectApp, memberContext, signIn } from "./helpers";
 
-test("two members fill the bowl, a third holds the draw until they leave, and each writer gets the other's request", async ({ browser }) => {
+test("members post to the wall, I'm in holds assigning, and each poster gets the other's request", async ({ browser }) => {
   const run = Date.now();
   const aliceRequest = `For my dad's surgery ${run}`;
   const bobRequest = `For a new job ${run}`;
   // Today, in the browser's own timezone (the test process shares it): the
-  // bowl only polls within a day of the meeting, which is when groups draw.
+  // wall only polls within a day of the meeting, which is when groups assign.
   const today = new Date().toLocaleDateString("en-CA");
 
   const alice = await (await memberContext(browser)).newPage();
   await signIn(alice, `prayer-alice-${run}@example.com`, "Alice");
   await alice.getByRole("link", { name: "Create a group" }).click();
-  await alice.getByLabel("Group name").fill(`Bowl ${run}`);
+  await alice.getByLabel("Group name").fill(`Wall ${run}`);
   await alice.getByRole("button", { name: "Create group" }).click();
-  await expectApp(alice.getByRole("heading", { name: `Bowl ${run}` })).toBeVisible();
+  await expectApp(alice.getByRole("heading", { name: `Wall ${run}` })).toBeVisible();
 
   // Bob joins through the invite link; Alice approves.
   await alice.getByRole("link", { name: "Group" }).click();
@@ -28,7 +28,7 @@ test("two members fill the bowl, a third holds the draw until they leave, and ea
   await alice.getByRole("button", { name: "Approve" }).click();
   await expectApp(alice.getByTestId("member-row").filter({ hasText: "Bob" })).toBeVisible();
 
-  // Carol joins the group too. She'll opt into the bowl without writing.
+  // Carol joins the group too. She'll tap I'm in without posting.
   const carol = await (await memberContext(browser)).newPage();
   await signIn(carol, `prayer-carol-${run}@example.com`, "Carol");
   await carol.goto(new URL(inviteUrl).pathname);
@@ -47,63 +47,47 @@ test("two members fill the bowl, a third holds the draw until they leave, and ea
   const meetingLink = alice.getByRole("link", { name: new RegExp(`Week ${run}`) });
   await expectApp(meetingLink).toBeVisible();
   await meetingLink.click();
-  await expectApp(alice.getByRole("button", { name: "I'm in" })).toBeVisible();
-  const meetingPath = new URL(alice.url()).pathname;
+  await expectApp(alice.getByRole("link", { name: "Open the prayer wall" })).toBeVisible();
 
-  // Alice signs hers; Bob doesn't.
+  // The meeting page links to the wall.
+  await alice.getByRole("link", { name: "Open the prayer wall" }).click();
+  // The meeting card has a "Prayer wall" heading too, so wait for the URL.
+  await alice.waitForURL(/\/prayers$/);
+  await expectApp(alice.getByRole("heading", { name: "Prayer wall" })).toBeVisible();
+  const wallPath = new URL(alice.url()).pathname;
+
   await alice.getByRole("button", { name: "I'm in" }).click();
-  await alice.getByLabel("Your prayer request").fill(aliceRequest);
-  await alice.getByRole("switch", { name: "Include my name" }).click();
-  await alice.getByRole("button", { name: "Put it in the bowl" }).click();
-  await expectApp(alice.getByText("Submitted")).toBeVisible();
+  await alice.getByLabel("Share a request").fill(aliceRequest);
+  await alice.getByRole("button", { name: "Post to the wall" }).click();
+  await expectApp(alice.getByTestId("wall-request").filter({ hasText: aliceRequest })).toBeVisible();
 
-  await bob.goto(meetingPath);
+  // Bob taps I'm in and posts; both requests show for both.
+  await bob.goto(wallPath);
   await bob.getByRole("button", { name: "I'm in" }).click();
-  await bob.getByLabel("Your prayer request").fill(bobRequest);
-  await bob.getByRole("button", { name: "Put it in the bowl" }).click();
-  await expectApp(bob.getByText("You, Alice")).toBeVisible();
+  await bob.getByLabel("Share a request").fill(bobRequest);
+  await bob.getByRole("button", { name: "Post to the wall" }).click();
+  await expectApp(bob.getByTestId("wall-request").filter({ hasText: aliceRequest })).toBeVisible();
+  await expectApp(alice.getByTestId("wall-request").filter({ hasText: bobRequest })).toBeVisible();
 
-  // Alice's page picks Bob up by polling — and never shows his words.
-  await expectApp(alice.getByRole("button", { name: "Draw the bowl" })).toBeVisible();
-  await expect(alice.getByText(bobRequest)).toHaveCount(0);
-  // Not just the rendered DOM — the inline RSC payload embedded in the page's
-  // HTML can carry a value the visible tree never shows.
-  expect(await alice.content()).not.toContain(bobRequest);
-  // Regression guard: the compiler once dropped the space after the number,
-  // rendering "2people in" instead of "2 people in".
-  await expect(alice.getByText("2 people in · you'll each draw one request")).toBeVisible();
-
-  // Carol taps "I'm in" but doesn't write: the bowl waits for her, so Alice's
-  // page (by polling) stops offering the draw.
-  await carol.goto(meetingPath);
+  // Carol taps I'm in and holds assigning up until she leaves.
+  await carol.goto(wallPath);
   await carol.getByRole("button", { name: "I'm in" }).click();
-  await expectApp(carol.getByLabel("Your prayer request")).toBeVisible();
-  await expectApp(
-    alice.getByText("The bowl can be drawn once everyone who's in has put a request in."),
-  ).toBeVisible();
-  await expect(alice.getByRole("button", { name: "Draw the bowl" })).toHaveCount(0);
-
-  // She steps back out, and the draw is offered again.
+  await expectApp(alice.getByText(/Waiting on Carol to post/)).toBeVisible();
   await carol.getByRole("button", { name: "I'm out" }).click();
-  await expectApp(carol.getByRole("button", { name: "I'm in" })).toBeVisible();
-  await expectApp(alice.getByRole("button", { name: "Draw the bowl" })).toBeVisible();
 
-  await alice.getByRole("button", { name: "Draw the bowl" }).click();
-  await alice.getByRole("dialog").getByRole("button", { name: "Draw the bowl" }).click();
+  await alice.getByRole("button", { name: "Assign prayers" }).click();
+  await alice.getByRole("dialog").getByRole("button", { name: "Assign prayers" }).click();
+  await expectApp(alice.getByText("You're praying for")).toBeVisible();
+  await expectApp(alice.getByText(`"${bobRequest}"`)).toBeVisible();
+  await bob.reload();
+  await expectApp(bob.getByText(`"${aliceRequest}"`)).toBeVisible();
+  await expectApp(bob.getByText("Someone in the group is praying for this")).toBeVisible();
 
-  // With two people the draw is a swap, so the outcome is certain.
-  await expectApp(alice.getByText(bobRequest)).toBeVisible();
-  await expectApp(alice.getByText("Name not shared")).toBeVisible();
-
-  await bob.goto(meetingPath);
-  await expectApp(bob.getByText(aliceRequest)).toBeVisible();
-  await expectApp(bob.getByText("From Alice")).toBeVisible();
-
-  // And it stays prayable from My prayers.
-  await bob.getByRole("link", { name: "My prayers", exact: true }).click();
-  await bob.waitForURL(/\/prayers$/);
-  await expectApp(bob.getByRole("heading", { name: "My prayers", level: 1 })).toBeVisible();
-  await expectApp(bob.locator("article").filter({ hasText: aliceRequest })).toBeVisible();
+  // Home chip and My prayers.
+  await alice.getByRole("link", { name: "Meetings", exact: true }).click();
+  await expectApp(alice.getByText("Prayer wall · 2 requests")).toBeVisible();
+  await alice.getByRole("link", { name: "My prayers" }).click();
+  await expectApp(alice.getByText(`From Bob`)).toBeVisible();
 });
 
 test("Edit my request stays disabled while the submit is in flight", async ({ browser }) => {
@@ -126,10 +110,11 @@ test("Edit my request stays disabled while the submit is in flight", async ({ br
   const meetingLink = alice.getByRole("link", { name: new RegExp(`Week ${run}`) });
   await expectApp(meetingLink).toBeVisible();
   await meetingLink.click();
+  await alice.getByRole("link", { name: "Open the prayer wall" }).click();
   await expectApp(alice.getByRole("button", { name: "I'm in" })).toBeVisible();
 
   await alice.getByRole("button", { name: "I'm in" }).click();
-  await alice.getByLabel("Your prayer request").fill(request);
+  await alice.getByLabel("Share a request").fill(request);
 
   // Hold every server-action POST for 2s, simulating a slow round trip, so
   // the viewer can tap "Edit my request" while the submit is still pending.
@@ -141,7 +126,7 @@ test("Edit my request stays disabled while the submit is in flight", async ({ br
     await route.continue();
   });
 
-  await alice.getByRole("button", { name: "Put it in the bowl" }).click();
+  await alice.getByRole("button", { name: "Post to the wall" }).click();
 
   const editButton = alice.getByRole("button", { name: "Edit my request" });
   await expect(editButton).toBeVisible();
@@ -151,7 +136,12 @@ test("Edit my request stays disabled while the submit is in flight", async ({ br
   await expectApp(editButton).toBeEnabled();
 
   await editButton.click();
-  await expect(alice.getByLabel("Your prayer request")).toHaveValue(request);
+  await expect(alice.getByLabel("Share a request")).toHaveValue(request);
+
+  // Cancel leaves edit mode without saving.
+  await alice.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(alice.getByLabel("Share a request")).toHaveCount(0);
+  await expect(editButton).toBeVisible();
 
   await alice.unrouteAll({ behavior: "wait" });
 });

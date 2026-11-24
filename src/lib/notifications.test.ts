@@ -3,6 +3,7 @@ import {
   joinRequestedCopy,
   mealSetCopy,
   meetingCreatedCopy,
+  prayersAssignedCopy,
   recipeAddedCopy,
   requestApprovedCopy,
 } from "./notifications";
@@ -76,6 +77,17 @@ describe("notification copy", () => {
       title: "Tuesday Group",
       body: "You're in. Welcome to Tuesday Group.",
       url: "/open?group=g1&next=%2F",
+    });
+  });
+
+  it("prayers assigned", () => {
+    expect(
+      prayersAssignedCopy({ groupId: "g1", groupName: "Tuesday Group", authorName: "Dan", meetingId: "m1" }),
+    ).toEqual({
+      title: "Tuesday Group",
+      body: "Prayers are assigned. You're praying for Dan's request this week.",
+      url: "/open?group=g1&next=%2Fmeetings%2Fm1%2Fprayers",
+      tag: "prayers-m1",
     });
   });
 });

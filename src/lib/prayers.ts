@@ -12,22 +12,26 @@ import { derangement } from "@/lib/derangement";
 import { listMembers } from "@/lib/groups";
 import { requireMembership } from "@/lib/membership";
 
-export type BowlMember = { userId: string; name: string };
-
-export type PrayerBowl = {
+export type WallPerson = { userId: string; name: string };
+export type WallRequest = {
+  id: string;
+  authorId: string;
+  name: string;
+  image: string | null;
+  body: string;
+  updatedAt: Date;
+  isMine: boolean;
+};
+export type PrayerWall = {
   meetingId: string;
   status: "open" | "drawn";
-  // Names only — who is in, never what they wrote.
-  submitted: BowlMember[];
-  waiting: BowlMember[];
-  notJoined: BowlMember[];
-  viewer: {
-    joined: boolean;
-    // The viewer's own request, so they can edit it. Nobody else's, ever.
-    request: { body: string; includeName: boolean } | null;
-  };
-  // After the draw, the one request the viewer drew (Task 3).
-  drawn: { body: string; authorName: string | null } | null;
+  requests: WallRequest[]; // newest first, current members only
+  writing: WallPerson[]; // joined, no request; current members; by name
+  notJoined: WallPerson[]; // current members neither joined nor posted; by name
+  viewerJoined: boolean;
+  mine: { body: string } | null;
+  assigned: { body: string; authorName: string; authorImage: string | null } | null;
+  myRequestIsAssigned: boolean;
 };
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -45,11 +49,11 @@ async function requireMeetingMember(userId: string, meetingId: string) {
   return meeting;
 }
 
-// The bowl starts itself: no row exists until the first member joins or
+// The wall starts itself: no row exists until the first member joins or
 // writes, and that member is recorded as having started it. ON CONFLICT DO
-// NOTHING makes members acting in the same instant land in one bowl rather
+// NOTHING makes members acting in the same instant land in one session rather
 // than racing to create two.
-async function ensureBowl(tx: Tx, meetingId: string, userId: string) {
+async function ensureSession(tx: Tx, meetingId: string, userId: string) {
   await tx.insert(prayerSessions).values({ meetingId, startedBy: userId }).onConflictDoNothing();
 }
 
@@ -57,87 +61,87 @@ async function ensureParticipant(tx: Tx, meetingId: string, userId: string) {
   await tx.insert(prayerParticipants).values({ meetingId, userId }).onConflictDoNothing();
 }
 
-// A cryptographically random source for the draw, rather than Math.random —
+// A cryptographically random source for assigning, rather than Math.random —
 // the assignment decides who reads whose private words, so it should not
 // rest on a PRNG that is predictable from its outputs.
 function cryptoRandom(): number {
   return crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
 }
 
-// Locks the bowl's row until this transaction ends and confirms it is still
-// open. FOR SHARE conflicts with the draw's UPDATE, so a write and a draw can
-// never interleave: either the write commits first and the draw includes it,
-// or the draw commits first and the write is refused. Without the lock, a
-// request can land after the draw has read the requests and before it
-// commits — stranded, in a drawn bowl, assigned to nobody.
+// Locks the session's row until this transaction ends and confirms it is still
+// open. FOR SHARE conflicts with assigning's UPDATE, so a write and an assign can
+// never interleave: either the write commits first and the assign includes it,
+// or the assign commits first and the write is refused. Without the lock, a
+// request can land after assigning has read the requests and before it
+// commits — stranded on an assigned wall, given to nobody.
 //
 // It must be FOR SHARE, not the weaker FOR KEY SHARE. An UPDATE that touches
 // no key column (status, drawn_by, drawn_at) takes FOR NO KEY UPDATE, which
 // does not conflict with FOR KEY SHARE — the very lock the foreign-key checks
 // on these inserts already take. That is why the FK checks alone don't keep
-// a write out of a draw, and why this explicit lock exists.
-async function lockOpenBowl(tx: Tx, meetingId: string) {
-  const [bowl] = await tx
+// a write out of an assign, and why this explicit lock exists.
+async function lockOpenSession(tx: Tx, meetingId: string) {
+  const [session] = await tx
     .select({ status: prayerSessions.status })
     .from(prayerSessions)
     .where(eq(prayerSessions.meetingId, meetingId))
     .for("share");
-  if (bowl?.status === "drawn") throw new Error("session-closed");
+  if (session?.status === "drawn") throw new Error("session-closed");
 }
 
-export async function joinPrayerBowl(userId: string, meetingId: string): Promise<void> {
+export async function joinPrayerWall(userId: string, meetingId: string): Promise<void> {
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
-    await ensureBowl(tx, meetingId, userId);
-    await lockOpenBowl(tx, meetingId);
+    await ensureSession(tx, meetingId, userId);
+    await lockOpenSession(tx, meetingId);
     await ensureParticipant(tx, meetingId, userId);
   });
 }
 
-// One request per person per bowl, so writing again edits it. Writing also
-// joins you — putting a request in is the clearest possible "I'm in".
-export async function submitPrayerRequest(
+// One request per person per meeting, so posting again edits it. Posting also
+// joins you: a request on the wall is the clearest possible "I'm in".
+export async function postPrayerRequest(
   userId: string,
   meetingId: string,
-  input: { body: string; includeName: boolean },
+  input: { body: string },
 ): Promise<void> {
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
-    await ensureBowl(tx, meetingId, userId);
-    await lockOpenBowl(tx, meetingId);
+    await ensureSession(tx, meetingId, userId);
+    await lockOpenSession(tx, meetingId);
     await ensureParticipant(tx, meetingId, userId);
     await tx
       .insert(prayerRequests)
-      .values({ meetingId, authorId: userId, body: input.body, includeName: input.includeName })
+      .values({ meetingId, authorId: userId, body: input.body })
       .onConflictDoUpdate({
         target: [prayerRequests.meetingId, prayerRequests.authorId],
-        set: { body: input.body, includeName: input.includeName, updatedAt: new Date() },
+        set: { body: input.body, updatedAt: new Date() },
       });
   });
 }
 
-// Takes your request back out. You stay in the bowl — you're just not holding
+// Takes your request back out. You stay in — you're just not holding
 // a request any more — and doing it twice is harmless.
-export async function withdrawPrayerRequest(userId: string, meetingId: string): Promise<void> {
+export async function deletePrayerRequest(userId: string, meetingId: string): Promise<void> {
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
-    // No bowl means nothing to withdraw; lockOpenBowl lets that through.
-    await lockOpenBowl(tx, meetingId);
+    // No session means nothing to withdraw; lockOpenSession lets that through.
+    await lockOpenSession(tx, meetingId);
     await tx
       .delete(prayerRequests)
       .where(and(eq(prayerRequests.meetingId, meetingId), eq(prayerRequests.authorId, userId)));
   });
 }
 
-// Takes you out of the bowl, and your request with you if you wrote one.
-// Since the bowl can't be drawn while anyone who's in is still writing, this
+// Takes you out (I'm out), and your request with you if you wrote one.
+// Since prayers can't be assigned while anyone who's in is still writing, this
 // is how someone who tapped "I'm in" and changed their mind stops holding
 // everyone else up. Doing it twice is harmless.
-export async function leavePrayerBowl(userId: string, meetingId: string): Promise<void> {
+export async function leavePrayerWall(userId: string, meetingId: string): Promise<void> {
   await requireMeetingMember(userId, meetingId);
   await db.transaction(async (tx) => {
-    // No bowl means nothing to leave; lockOpenBowl lets that through.
-    await lockOpenBowl(tx, meetingId);
+    // No session means nothing to leave; lockOpenSession lets that through.
+    await lockOpenSession(tx, meetingId);
     await tx
       .delete(prayerRequests)
       .where(and(eq(prayerRequests.meetingId, meetingId), eq(prayerRequests.authorId, userId)));
@@ -149,15 +153,15 @@ export async function leavePrayerBowl(userId: string, meetingId: string): Promis
   });
 }
 
-export async function drawPrayerBowl(
+export async function assignPrayers(
   userId: string,
   meetingId: string,
-): Promise<{ drew: boolean }> {
+): Promise<{ assigned: boolean }> {
   const meeting = await requireMeetingMember(userId, meetingId);
 
   return db.transaction(async (tx) => {
     // The guarded transition. The UPDATE takes the row lock, so of any number
-    // of simultaneous draws exactly one flips open → drawn; the rest wait,
+    // of simultaneous assigns exactly one flips open → drawn; the rest wait,
     // re-check the WHERE once it commits, match nothing, and fall through.
     const [flipped] = await tx
       .update(prayerSessions)
@@ -166,19 +170,19 @@ export async function drawPrayerBowl(
       .returning({ meetingId: prayerSessions.meetingId });
 
     if (!flipped) {
-      const [bowl] = await tx
+      const [session] = await tx
         .select({ status: prayerSessions.status })
         .from(prayerSessions)
         .where(eq(prayerSessions.meetingId, meetingId));
-      // Already drawn — by someone else, a moment ago. What the tap asked for
+      // Already assigned — by someone else, a moment ago. What the tap asked for
       // has happened, so this is a no-op rather than an error.
-      if (bowl?.status === "drawn") return { drew: false };
-      // No bowl at all: nobody has joined, so there is nothing to draw.
+      if (session?.status === "drawn") return { assigned: false };
+      // No session at all: nobody has joined, so there is nothing to assign.
       throw new Error("too-few-requests");
     }
 
     // Only requests from people still in the group. Someone removed after
-    // writing would draw a request they can never open, and theirs would
+    // writing would be assigned a request they can never open, and theirs would
     // reach someone else unread, so they are left out entirely.
     const requests = await tx
       .select({ id: prayerRequests.id, authorId: prayerRequests.authorId })
@@ -190,11 +194,11 @@ export async function drawPrayerBowl(
       .where(eq(prayerRequests.meetingId, meetingId))
       .orderBy(asc(prayerRequests.id));
 
-    // Throwing rolls the transition back, so the bowl stays open for more.
+    // Throwing rolls the transition back, so the wall stays open for more.
     if (requests.length < 2) throw new Error("too-few-requests");
 
     // Nobody who's in gets left behind: while anyone has joined without
-    // writing, the bowl waits for them to write or leave. Read after the
+    // writing, assigning waits for them to write or leave. Read after the
     // UPDATE, like the requests above, so a join can't slip in between this
     // check and the transition. Current members only, matching the buckets.
     const [stillWriting] = await tx
@@ -216,7 +220,7 @@ export async function drawPrayerBowl(
     if (stillWriting) throw new Error("still-writing");
 
     // Request i goes to the author of request p[i]. p has no fixed points and
-    // each author wrote exactly one request, so nobody draws their own.
+    // each author wrote exactly one request, so nobody gets their own.
     const p = derangement(requests.length, cryptoRandom);
     await tx.insert(prayerAssignments).values(
       requests.map((request, i) => ({
@@ -225,18 +229,17 @@ export async function drawPrayerBowl(
         assigneeId: requests[p[i]].authorId,
       })),
     );
-    return { drew: true };
+    return { assigned: true };
   });
 }
 
-// The read model behind the meeting page's prayer section. It reveals who is
-// in — names, never words — plus the viewer's own request so they can edit
-// it. It checks membership itself rather than trusting the page to have done
-// so: a leak here is the feature's one unforgivable failure.
-export async function getPrayerBowl(viewerId: string, meetingId: string): Promise<PrayerBowl> {
+// The read model behind the wall page and the meeting card. Every request is
+// group-visible by design; what stays private is who was assigned whose, so
+// the only assignment read here is filtered to the viewer.
+export async function getPrayerWall(viewerId: string, meetingId: string): Promise<PrayerWall> {
   const meeting = await requireMeetingMember(viewerId, meetingId);
 
-  const [[session], members, participants, authors, own] = await Promise.all([
+  const [[session], members, participants, requestRows, [assignedRow], [myAssignment]] = await Promise.all([
     db
       .select({ status: prayerSessions.status })
       .from(prayerSessions)
@@ -246,93 +249,118 @@ export async function getPrayerBowl(viewerId: string, meetingId: string): Promis
       .select({ userId: prayerParticipants.userId })
       .from(prayerParticipants)
       .where(eq(prayerParticipants.meetingId, meetingId)),
-    // Who wrote — and deliberately nothing else. Bodies are not selected
-    // here, so they cannot leak from here.
     db
-      .select({ userId: prayerRequests.authorId })
-      .from(prayerRequests)
-      .where(eq(prayerRequests.meetingId, meetingId)),
-    db
-      .select({ body: prayerRequests.body, includeName: prayerRequests.includeName })
-      .from(prayerRequests)
-      .where(and(eq(prayerRequests.meetingId, meetingId), eq(prayerRequests.authorId, viewerId))),
-  ]);
-
-  const joined = new Set(participants.map((p) => p.userId));
-  const wrote = new Set(authors.map((a) => a.userId));
-  // Buckets come from the group's *current* members, so anyone removed from
-  // the group drops out of every list.
-  const people = members
-    .map((m) => ({ userId: m.userId, name: m.name }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  let drawn: PrayerBowl["drawn"] = null;
-  if (session?.status === "drawn") {
-    const [assigned] = await db
       .select({
+        id: prayerRequests.id,
+        authorId: prayerRequests.authorId,
         body: prayerRequests.body,
-        includeName: prayerRequests.includeName,
+        updatedAt: prayerRequests.updatedAt,
+      })
+      .from(prayerRequests)
+      .where(eq(prayerRequests.meetingId, meetingId))
+      .orderBy(desc(prayerRequests.updatedAt), asc(prayerRequests.id)),
+    db
+      .select({
+        authorId: prayerRequests.authorId,
+        body: prayerRequests.body,
         authorName: user.name,
+        authorImage: user.image,
       })
       .from(prayerAssignments)
       .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
       .innerJoin(user, eq(user.id, prayerRequests.authorId))
       .where(
         and(eq(prayerAssignments.meetingId, meetingId), eq(prayerAssignments.assigneeId, viewerId)),
-      );
-    if (assigned) {
-      // The writer's name leaves the server only if they signed it — and no
-      // author id is returned at all, signed or not.
-      drawn = {
-        body: assigned.body,
-        authorName: assigned.includeName ? assigned.authorName : null,
+      ),
+    // Whether someone was assigned the viewer's own request. Keyed on author,
+    // not request id, so it runs alongside the reads above.
+    db
+      .select({ requestId: prayerAssignments.requestId })
+      .from(prayerAssignments)
+      .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
+      .where(and(eq(prayerAssignments.meetingId, meetingId), eq(prayerRequests.authorId, viewerId)))
+      .limit(1),
+  ]);
+
+  // Current members only: a removed member drops out of every list and their
+  // words leave the wall.
+  const byId = new Map(members.map((m) => [m.userId, m]));
+  const requests: WallRequest[] = requestRows
+    .filter((r) => byId.has(r.authorId))
+    .map((r) => {
+      const author = byId.get(r.authorId)!;
+      return {
+        id: r.id,
+        authorId: r.authorId,
+        name: author.name,
+        image: author.image,
+        body: r.body,
+        updatedAt: r.updatedAt,
+        isMine: r.authorId === viewerId,
       };
-    }
-  }
+    });
+
+  const joined = new Set(participants.map((p) => p.userId));
+  const wrote = new Set(requests.map((r) => r.authorId));
+  const people = members
+    .map((m) => ({ userId: m.userId, name: m.name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  const mineRow = requests.find((r) => r.isMine);
 
   return {
     meetingId,
     status: session?.status ?? "open",
-    submitted: people.filter((p) => wrote.has(p.userId)),
-    waiting: people.filter((p) => joined.has(p.userId) && !wrote.has(p.userId)),
-    notJoined: people.filter((p) => !joined.has(p.userId)),
-    viewer: { joined: joined.has(viewerId), request: own[0] ?? null },
-    drawn,
+    requests,
+    writing: people.filter((p) => joined.has(p.userId) && !wrote.has(p.userId)),
+    notJoined: people.filter((p) => !joined.has(p.userId) && !wrote.has(p.userId)),
+    viewerJoined: joined.has(viewerId) || wrote.has(viewerId),
+    mine: mineRow ? { body: mineRow.body } : null,
+    assigned:
+      assignedRow && byId.has(assignedRow.authorId)
+        ? {
+            body: assignedRow.body,
+            authorName: assignedRow.authorName,
+            authorImage: assignedRow.authorImage,
+          }
+        : null,
+    myRequestIsAssigned: Boolean(myAssignment),
   };
 }
 
-export type DrawnPrayer = {
+export type AssignedPrayer = {
   meetingId: string;
   meetingTitle: string;
   meetingDate: string;
   body: string;
-  authorName: string | null;
+  authorName: string;
 };
 
-// Every request this member has drawn in this group, newest meeting first, so
-// past weeks stay prayable. The assignee filter is the whole privacy story:
-// this can only ever return requests drawn *by* the caller.
-export async function listMyDrawnPrayers(userId: string, groupId: string): Promise<DrawnPrayer[]> {
+// Every request this member has been assigned in this group, newest meeting
+// first, so past weeks stay prayable. The assignee filter keeps it to the
+// caller's own assignments.
+export async function listMyAssignedPrayers(
+  userId: string,
+  groupId: string,
+): Promise<AssignedPrayer[]> {
   await requireMembership(userId, groupId);
-  const rows = await db
+  return db
     .select({
       meetingId: meetings.id,
       meetingTitle: meetings.title,
       meetingDate: meetings.date,
       body: prayerRequests.body,
-      includeName: prayerRequests.includeName,
       authorName: user.name,
     })
     .from(prayerAssignments)
     .innerJoin(prayerRequests, eq(prayerRequests.id, prayerAssignments.requestId))
     .innerJoin(meetings, eq(meetings.id, prayerAssignments.meetingId))
     .innerJoin(user, eq(user.id, prayerRequests.authorId))
+    // Current members only, as on the wall: once an author leaves the group,
+    // their words leave My prayers too.
+    .innerJoin(
+      member,
+      and(eq(member.userId, prayerRequests.authorId), eq(member.organizationId, meetings.groupId)),
+    )
     .where(and(eq(prayerAssignments.assigneeId, userId), eq(meetings.groupId, groupId)))
     .orderBy(desc(meetings.date), desc(meetings.createdAt));
-
-  // Same rule as the meeting page: a name leaves the server only if signed.
-  return rows.map(({ includeName, authorName, ...prayer }) => ({
-    ...prayer,
-    authorName: includeName ? authorName : null,
-  }));
 }

@@ -1,28 +1,18 @@
 import { cn } from "@/lib/utils";
-import type { BowlMember } from "@/lib/prayers";
-
-// The viewer reads as "You", first in whichever bucket they're in — 3n shows
-// "You, Sarah, Dan, Ruth".
-function namesFor(list: BowlMember[], currentUserId: string) {
-  const includesMe = list.some((m) => m.userId === currentUserId);
-  const others = list.filter((m) => m.userId !== currentUserId).map((m) => m.name);
-  return (includesMe ? ["You", ...others] : others).join(", ");
-}
+import type { WallPerson } from "@/lib/prayers";
+import { viewerFirst } from "@/components/assign-prayers-copy";
 
 export function PrayerBuckets({
-  submitted,
-  waiting,
+  writing,
   notJoined,
   currentUserId,
 }: {
-  submitted: BowlMember[];
-  waiting: BowlMember[];
-  notJoined: BowlMember[];
+  writing: WallPerson[];
+  notJoined: WallPerson[];
   currentUserId: string;
 }) {
   const rows = [
-    { glyph: "✓", glyphClass: "text-success font-bold", label: "Submitted", members: submitted, namesClass: "font-semibold" },
-    { glyph: "…", glyphClass: "text-primary font-bold", label: "Waiting on", members: waiting, namesClass: "" },
+    { glyph: "…", glyphClass: "text-primary font-bold", label: "Writing", members: writing, namesClass: "" },
     { glyph: "○", glyphClass: "text-slot-dashed", label: "Not joined", members: notJoined, namesClass: "text-tertiary" },
   ].filter((row) => row.members.length > 0);
 
@@ -36,7 +26,7 @@ export function PrayerBuckets({
           <span className="text-muted-foreground w-[82px] shrink-0 text-[13px]">{row.label}</span>
           {/* A long list of names wraps onto further lines; it never truncates. */}
           <span className={cn("min-w-0 break-words", row.namesClass)}>
-            {namesFor(row.members, currentUserId)}
+            {viewerFirst(row.members, currentUserId, "You").join(", ")}
           </span>
         </div>
       ))}

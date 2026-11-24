@@ -1,15 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/dal";
 import { logRefusal } from "@/lib/monitoring";
+import { notifyPrayersAssigned } from "@/lib/notifications";
 import {
-  drawPrayerBowl,
-  joinPrayerBowl,
-  leavePrayerBowl,
-  submitPrayerRequest,
-  withdrawPrayerRequest,
+  assignPrayers,
+  deletePrayerRequest,
+  joinPrayerWall,
+  leavePrayerWall,
+  postPrayerRequest,
 } from "@/lib/prayers";
 
 export type ActionState = { error: string | null; success: boolean };
@@ -21,8 +23,6 @@ const prayerRequestForm = z.object({
     .trim()
     .min(1, "Write your request first.")
     .max(1000, "Keep it under 1,000 characters."),
-  // The switch posts a hidden "on" only while it is switched on.
-  includeName: z.stringbool().default(false),
 });
 
 // Domain functions throw plain Error("forbidden" | "not-found" |
@@ -31,44 +31,52 @@ const prayerRequestForm = z.object({
 function mapError(err: unknown): string {
   logRefusal(err);
   if (err instanceof Error) {
-    if (err.message === "session-closed") return "The bowl has already been drawn.";
+    if (err.message === "session-closed") return "Prayers have already been assigned.";
     if (err.message === "forbidden") return "Only group members can do that.";
     if (err.message === "not-found") return "That didn't work. Try refreshing the page.";
     if (err.message === "too-few-requests") {
-      return "The bowl needs at least two requests before anyone can draw.";
+      return "Prayers can be assigned once two requests are in.";
     }
     if (err.message === "still-writing") {
-      return "The bowl can be drawn once everyone who's in has put a request in.";
+      return "Prayers can be assigned once everyone who's in has posted.";
     }
   }
   throw err;
 }
 
+// The wall, its meeting card, and the home chip all read the same rows.
+function revalidateWall(meetingId: string) {
+  revalidatePath(`/meetings/${meetingId}/prayers`);
+  revalidatePath(`/meetings/${meetingId}`);
+  revalidatePath("/");
+}
+
 // A refused write revalidates too. The parent spec asks for "a plain-language
 // message and refreshed data" on rejection — and the commonest rejection here
-// is a bowl that was drawn a moment ago, which the refreshed page then shows.
+// is a wall whose prayers were assigned a moment ago, which the refreshed page
+// then shows.
 function refused(err: unknown, meetingId: string): ActionState {
   const error = mapError(err);
-  revalidatePath(`/meetings/${meetingId}`);
+  revalidateWall(meetingId);
   return { error, success: false };
 }
 
-export async function joinPrayerBowlAction(
+export async function joinPrayerWallAction(
   meetingId: string,
   _prevState: ActionState,
   _formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
   try {
-    await joinPrayerBowl(user.id, meetingId);
+    await joinPrayerWall(user.id, meetingId);
   } catch (err) {
     return refused(err, meetingId);
   }
-  revalidatePath(`/meetings/${meetingId}`);
+  revalidateWall(meetingId);
   return { error: null, success: true };
 }
 
-export async function submitPrayerRequestAction(
+export async function postPrayerRequestAction(
   meetingId: string,
   _prevState: ActionState,
   formData: FormData,
@@ -77,59 +85,59 @@ export async function submitPrayerRequestAction(
   const form = prayerRequestForm.safeParse(Object.fromEntries(formData));
   if (!form.success) return { error: form.error.issues[0].message, success: false };
   try {
-    await submitPrayerRequest(user.id, meetingId, form.data);
+    await postPrayerRequest(user.id, meetingId, form.data);
   } catch (err) {
     return refused(err, meetingId);
   }
-  revalidatePath(`/meetings/${meetingId}`);
+  revalidateWall(meetingId);
   return { error: null, success: true };
 }
 
-export async function withdrawPrayerRequestAction(
+export async function deletePrayerRequestAction(
   meetingId: string,
   _prevState: ActionState,
   _formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
   try {
-    await withdrawPrayerRequest(user.id, meetingId);
+    await deletePrayerRequest(user.id, meetingId);
   } catch (err) {
     return refused(err, meetingId);
   }
-  revalidatePath(`/meetings/${meetingId}`);
+  revalidateWall(meetingId);
   return { error: null, success: true };
 }
 
-export async function leavePrayerBowlAction(
+export async function leavePrayerWallAction(
   meetingId: string,
   _prevState: ActionState,
   _formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
   try {
-    await leavePrayerBowl(user.id, meetingId);
+    await leavePrayerWall(user.id, meetingId);
   } catch (err) {
     return refused(err, meetingId);
   }
-  revalidatePath(`/meetings/${meetingId}`);
+  revalidateWall(meetingId);
   return { error: null, success: true };
 }
 
-export async function drawPrayerBowlAction(
+export async function assignPrayersAction(
   meetingId: string,
   _prevState: ActionState,
   _formData: FormData,
 ): Promise<ActionState> {
   const user = await requireUser();
+  let result: { assigned: boolean };
   try {
-    // { drew: false } means someone else drew a moment earlier. The bowl got
-    // drawn, which is what the tap asked for, so it is not reported as an
-    // error — the refreshed page shows the drawn bowl either way.
-    await drawPrayerBowl(user.id, meetingId);
+    result = await assignPrayers(user.id, meetingId);
   } catch (err) {
     return refused(err, meetingId);
   }
-  revalidatePath(`/meetings/${meetingId}`);
+  // Only the tap that actually assigned tells people; a second tap is a no-op.
+  if (result.assigned) after(() => notifyPrayersAssigned({ actorId: user.id, meetingId }));
+  revalidateWall(meetingId);
   revalidatePath("/prayers");
   return { error: null, success: true };
 }

@@ -90,11 +90,14 @@ export const itemClaims = pgTable("item_claims", {
 });
 
 export const prayerSessions = pgTable("prayer_sessions", {
-  // One bowl per meeting, ever — after the draw it stays as that night's
-  // record — so the meeting id *is* the key, as it is for meal_plans.
+  // One prayer wall per meeting, ever: after prayers are assigned it stays as
+  // that night's record, so the meeting id *is* the key, as it is for
+  // meal_plans. status "drawn" means prayers have been assigned (and drawn_by /
+  // drawn_at record who and when); the names predate the wall and were kept to
+  // avoid a rename migration.
   meetingId: text("meeting_id").primaryKey().references(() => meetings.id, { onDelete: "cascade" }),
   status: text("status", { enum: ["open", "drawn"] }).notNull().default("open"),
-  // Whoever joined or wrote first: the bowl starts itself on that first write.
+  // Whoever joined or wrote first: the wall starts itself on that first write.
   startedBy: text("started_by").notNull().references(() => user.id),
   startedAt: timestamp("started_at").notNull().defaultNow(),
   drawnBy: text("drawn_by").references(() => user.id),
@@ -122,18 +125,20 @@ export const prayerRequests = pgTable(
       .references(() => prayerSessions.meetingId, { onDelete: "cascade" }),
     authorId: text("author_id").notNull().references(() => user.id, { onDelete: "cascade" }),
     body: text("body").notNull(),
-    // The author's choice, like signing the paper. Off unless they opt in.
+    // Unused since the prayer wall (every request shows its author's name).
+    // Dropped in a follow-up PR once this code is live: dropping it in the same
+    // deploy would break the previous deployment while the migration runs.
     includeName: boolean("include_name").notNull().default(false),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
   },
-  // One request per person per bowl.
+  // One request per person per wall.
   (t) => [uniqueIndex("prayer_requests_one_per_author").on(t.meetingId, t.authorId)],
 );
 
 export const prayerAssignments = pgTable(
   "prayer_assignments",
   {
-    // Each request is drawn by exactly one person…
+    // Each request is assigned to exactly one person…
     requestId: text("request_id")
       .primaryKey()
       .references(() => prayerRequests.id, { onDelete: "cascade" }),
@@ -142,7 +147,7 @@ export const prayerAssignments = pgTable(
       .references(() => prayerSessions.meetingId, { onDelete: "cascade" }),
     assigneeId: text("assignee_id").notNull().references(() => user.id, { onDelete: "cascade" }),
   },
-  // …and each person draws exactly one.
+  // …and each person is assigned exactly one.
   (t) => [uniqueIndex("prayer_assignments_one_per_assignee").on(t.meetingId, t.assigneeId)],
 );
 

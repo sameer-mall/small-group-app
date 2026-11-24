@@ -45,8 +45,9 @@ test("set a meal from a recipe, then claim and release an item", async ({ browse
 
   await alice.getByRole("button", { name: "Claim" }).first().click();
   await expectApp(alice.getByRole("button", { name: "Release" })).toBeVisible();
-  // Scoped to the meal section: the meeting page also renders the prayer
-  // bowl, whose buckets list the viewer as "You" too.
+  // Scoped to the meal section so "You" can't match anything else on the
+  // meeting page. The meeting page no longer renders the wall's rows, so this
+  // scoping is kept defensively.
   await expectApp(
     alice.locator("section").filter({ hasText: recipeName }).getByText("You", { exact: true }),
   ).toBeVisible();

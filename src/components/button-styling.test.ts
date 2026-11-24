@@ -13,7 +13,6 @@ const SRC = join(ROOT, "src");
 // sense. The count is exact, so a new raw button in one of these files (or a
 // stale entry) still fails.
 const ALLOWED: Record<string, { count: number; why: string }> = {
-  "src/components/prayer-compose.tsx": { count: 1, why: "the include-my-name switch" },
   "src/components/appearance-card.tsx": { count: 1, why: "the segmented theme picker" },
   "src/components/recipe-picker.tsx": { count: 1, why: "tappable recipe list rows" },
   "src/components/tab-bar.tsx": { count: 1, why: "the tab bar" },

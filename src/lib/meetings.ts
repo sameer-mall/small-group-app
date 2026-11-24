@@ -1,6 +1,7 @@
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { meetings, notes } from "@/db/schema";
+import { member } from "@/db/auth-schema";
+import { meetings, notes, prayerRequests } from "@/db/schema";
 import { requireMembership } from "@/lib/membership";
 
 export type Meeting = {
@@ -10,6 +11,10 @@ export type Meeting = {
   date: string;
   createdBy: string;
 };
+
+// What the home list needs on top of a Meeting: how many prayer requests are
+// on its wall. Only listMeetings computes it.
+export type MeetingWithPrayers = Meeting & { prayerRequestCount: number };
 
 // Loads the meeting and confirms the actor may manage it: its creator, or an
 // admin of its group. Any non-member fails the membership check first.
@@ -56,7 +61,7 @@ export async function getMeeting(meetingId: string): Promise<Meeting | null> {
 // evening's meeting into "past" while the group is still sitting in it. The
 // split therefore belongs in the UI (Task 2), where the browser's timezone is
 // known. Staying clock-free also makes this function's test deterministic.
-export async function listMeetings(groupId: string): Promise<Meeting[]> {
+export async function listMeetings(groupId: string): Promise<MeetingWithPrayers[]> {
   return db
     .select({
       id: meetings.id,
@@ -64,6 +69,15 @@ export async function listMeetings(groupId: string): Promise<Meeting[]> {
       title: meetings.title,
       date: meetings.date,
       createdBy: meetings.createdBy,
+      // Current members only, like the wall itself. The outer columns are
+      // written out because drizzle drops table qualifiers in a single-table
+      // select, which would make "id" ambiguous inside the subquery.
+      prayerRequestCount: sql<number>`(
+        select count(*)::int from ${prayerRequests}
+        join ${member} on ${member.userId} = ${prayerRequests.authorId}
+          and ${member.organizationId} = "meetings"."group_id"
+        where ${prayerRequests.meetingId} = "meetings"."id"
+      )`,
     })
     .from(meetings)
     .where(eq(meetings.groupId, groupId))
